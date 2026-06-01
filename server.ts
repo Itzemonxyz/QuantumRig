@@ -11,7 +11,7 @@ setLogLevel('silent');
 
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 const originalConsoleError = console.error;
 console.error = (...args) => {
@@ -39,7 +39,7 @@ const firebaseConfigPath = path.join(process.cwd(), "firebase-applet-config.json
 if (fs.existsSync(firebaseConfigPath)) {
   const firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, "utf-8"));
   const firebaseApp = initializeApp(firebaseConfig);
-  db = initializeFirestore(firebaseApp, { experimentalForceLongPolling: true });
+  db = initializeFirestore(firebaseApp, { experimentalForceLongPolling: true }, firebaseConfig.firestoreDatabaseId || "(default)");
   console.log("🔥 Connected to Firebase Firestore with Long Polling");
 }
 
