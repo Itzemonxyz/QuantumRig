@@ -2,9 +2,16 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, setDoc } from 'firebase/firestore';
 import fs from 'fs';
 
-const firebaseConfig = JSON.parse(fs.readFileSync('./firebase-applet-config.json', 'utf8'));
+const firebaseConfig = {
+  apiKey: process.env.VITE_FIREBASE_API_KEY || "AIzaSyAlqrNk_-ZxBbinAw8FxMRefiF9025_JCo",
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "notional-acre-4sjh2.firebaseapp.com",
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "notional-acre-4sjh2",
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "notional-acre-4sjh2.firebasestorage.app",
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "73118880539",
+  appId: process.env.VITE_FIREBASE_APP_ID || "1:73118880539:web:6412f38e40ff8eb56079be"
+};
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+const db = getFirestore(app, process.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || "ai-studio-2ce2e3ea-fdac-4626-b157-6f3d919c293c");
 
 import { demoProducts } from './src/data/demoProducts.ts';
 
@@ -47,7 +54,7 @@ async function seed() {
     const pData: any = {
       ...p,
       id: `p${Date.now() + i}`,
-      code: p.code || `PRD-${10000 + i}`
+      code: (p as any).code || `PRD-${10000 + i}`
     };
     await setDoc(doc(db, 'products', pData.id), pData);
   }

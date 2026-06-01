@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Product } from '../types';
 import { useStore } from '../store';
-import { ArrowLeftRight, Check, Eye, X, ShoppingCart, Share2 } from 'lucide-react';
+import { ArrowLeftRight, Check, Eye, X, ShoppingCart, Share2, TrendingDown, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ProductCardProps {
@@ -53,6 +53,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const hasDiscount = product.discountPrice !== undefined && product.discountPrice > 0;
   const displayPrice = hasDiscount ? product.discountPrice! : product.price;
   const saveAmount = hasDiscount ? (product.price - product.discountPrice!) : 0;
+  const stockTrend = product.inventoryCount !== undefined ? (product.inventoryCount < 10 ? 'depleting' : 'replenishing') : 'unknown';
 
   return (
     <>
@@ -68,9 +69,13 @@ export default function ProductCard({ product }: ProductCardProps) {
       )}
 
       {/* Badges mapped to top left, just under the save badge if it exists, or left normally */}
-      {(isOutOfStock || isLowStock) && (
-        <div className={`absolute left-0 z-10 ${saveAmount > 0 ? 'top-7 rounded-none rounded-br-2xl' : 'top-0 rounded-br-2xl'} text-white text-[10px] sm:text-xs px-2 py-1 font-bold text-center ${isOutOfStock ? 'bg-rose-600' : 'bg-amber-500'}`}>
-          {isOutOfStock ? 'Out of Stock' : 'Low Stock'}
+      {(isOutOfStock || stockTrend !== 'unknown') && (
+        <div className={`absolute left-0 z-10 ${saveAmount > 0 ? 'top-7 rounded-none rounded-br-2xl' : 'top-0 rounded-br-2xl'} text-white text-[10px] sm:text-xs px-2 py-1 font-bold flex items-center gap-1 ${isOutOfStock ? 'bg-rose-600' : (stockTrend === 'depleting' ? 'bg-amber-500' : 'bg-emerald-500')}`}>
+          {isOutOfStock ? 'Out of Stock' : stockTrend === 'depleting' ? (
+            <><TrendingDown className="w-3 h-3" /> Low Stock</>
+          ) : (
+            <><TrendingUp className="w-3 h-3" /> In Stock</>
+          )}
         </div>
       )}
 

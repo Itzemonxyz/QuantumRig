@@ -185,14 +185,29 @@ app.post("/api/auth/login", (req, res) => {
 });
 
 app.post("/api/auth/register", (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, phone } = req.body;
   if (users.find(u => u.email === email)) {
     return res.status(400).json({ error: "Email taken" });
   }
-  const newUser: User = { id: `u${Date.now()}`, name, email, password, role: "user", savedProductIds: [] };
+  const newUser: User = { id: `u${Date.now()}`, name, email, password, phone, role: "user", savedProductIds: [] };
   users.push(newUser);
   const { password: _, ...userWithoutPassword } = newUser;
   res.json({ token: `dummy-token-${newUser.id}`, user: userWithoutPassword });
+});
+
+app.post("/api/auth/google", (req, res) => {
+  const { email, name, avatar, phone } = req.body;
+  let user = users.find((u) => u.email === email);
+  if (user) {
+    if (phone) user.phone = phone;
+    if (avatar) user.avatar = avatar;
+    if (name) user.name = name;
+  } else {
+    user = { id: `u${Date.now()}`, name, email, phone, avatar, role: "user", savedProductIds: [] };
+    users.push(user);
+  }
+  const { password, ...userWithoutPassword } = user;
+  res.json({ token: `dummy-token-${user.id}`, user: userWithoutPassword });
 });
 
 app.get("/api/users/me", (req, res) => {

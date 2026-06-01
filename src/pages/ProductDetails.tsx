@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store';
 import { api } from '../lib/api';
-import { ShoppingCart, ArrowLeft, Check, AlertTriangle, Heart, Share2, CheckCircle2, ChevronDown, ChevronUp, HelpCircle, X, Scale, Zap, Bell } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, Check, AlertTriangle, Heart, Share2, CheckCircle2, ChevronDown, ChevronUp, HelpCircle, X, Scale, Zap, Bell, TrendingUp, TrendingDown } from 'lucide-react';
 import Breadcrumbs from '../components/Breadcrumbs';
 import ScrollToTopButton from '../components/ScrollToTopButton';
 import { motion, AnimatePresence } from 'motion/react';
@@ -28,6 +28,7 @@ export default function ProductDetails() {
   const category = categories.find(c => c.id === product.categoryId);
   const isOutOfStock = product.stockStatus === 'Out of Stock' || product.inventoryCount === 0;
   const isLowStock = !isOutOfStock && product.inventoryCount !== undefined && product.inventoryCount < 5;
+  const stockTrend = product.inventoryCount !== undefined ? (product.inventoryCount < 10 ? 'depleting' : 'replenishing') : 'unknown';
 
   const isSaved = user?.savedProductIds?.includes(product.id) || false;
   const [copiedLink, setCopiedLink] = useState(false);
@@ -283,14 +284,14 @@ export default function ProductDetails() {
                 <AlertTriangle className="w-4 h-4 mr-1" />
                 Out of Stock
               </span>
-            ) : isLowStock ? (
+            ) : stockTrend === 'depleting' ? (
               <span className="px-3 py-1 bg-amber-50 text-amber-500 rounded-full text-sm font-bold flex items-center border border-amber-200">
-                <AlertTriangle className="w-4 h-4 mr-1" />
+                <TrendingDown className="w-4 h-4 mr-1" />
                 Only {product.inventoryCount} Left
               </span>
             ) : (
               <span className="px-3 py-1 bg-emerald-50 text-emerald-500 rounded-full text-sm font-bold flex items-center border border-emerald-200">
-                <Check className="w-4 h-4 mr-1" />
+                <TrendingUp className="w-4 h-4 mr-1" />
                 In Stock
               </span>
             )}

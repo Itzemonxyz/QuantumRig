@@ -16,6 +16,32 @@ export default function Layout() {
   const searchRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('recentSearches');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const saveRecentSearch = (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    setRecentSearches(prev => {
+      const updated = [trimmed, ...prev.filter(q => q.toLowerCase() !== trimmed.toLowerCase())].slice(0, 3);
+      localStorage.setItem('recentSearches', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleSearchSubmit = (query: string) => {
+    saveRecentSearch(query);
+    navigate(`/products?search=${encodeURIComponent(query.trim())}`);
+    setSearchQuery('');
+    setIsSearchOpen(false);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -83,11 +109,13 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-900">
-      <div className="bg-indigo-600 text-white text-xs py-1.5 overflow-hidden w-full relative">
-        <div className="animate-marquee font-medium tracking-wider uppercase">
-          Welcome to QuantumRig Tech — The Ultimate Destination for PC Components and Custom Builds
+      {location.pathname === '/' && (
+        <div className="bg-indigo-600 text-white text-xs py-1.5 overflow-hidden w-full relative">
+          <div className="animate-marquee font-medium tracking-wider uppercase">
+            Welcome to QuantumRig Tech — The Ultimate Destination for PC Components and Custom Builds
+          </div>
         </div>
-      </div>
+      )}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-24">
@@ -110,7 +138,7 @@ export default function Layout() {
                     if (e.key === 'Enter') {
                       setIsSearchOpen(false);
                       if (searchQuery.trim()) {
-                        navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+                        handleSearchSubmit(searchQuery);
                       } else {
                         navigate('/products');
                       }
@@ -123,7 +151,7 @@ export default function Layout() {
               </div>
               
               <AnimatePresence>
-                {isSearchOpen && searchQuery.trim() !== '' && (
+                {isSearchOpen && (searchQuery.trim() !== '' || recentSearches.length > 0) && (
                   <motion.div 
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -131,6 +159,34 @@ export default function Layout() {
                     className="absolute top-14 left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-2xl shadow-indigo-900/10 overflow-hidden z-50"
                   >
                     <div className="max-h-[28rem] overflow-y-auto overflow-x-hidden">
+                      {searchQuery.trim() === '' && recentSearches.length > 0 && (
+                        <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+                          <div className="flex items-center justify-between px-2 mb-2">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Recent Searches</h4>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRecentSearches([]);
+                                localStorage.removeItem('recentSearches');
+                              }}
+                              className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                            >
+                              Clear
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2 px-2">
+                            {recentSearches.map((rs, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => handleSearchSubmit(rs)}
+                                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 hover:border-indigo-300 hover:text-indigo-600 transition-colors shadow-sm"
+                              >
+                                {rs}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {categoryResults.length > 0 && (
                         <div className="p-3 border-b border-slate-100">
                           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">Categories</h4>
@@ -175,7 +231,7 @@ export default function Layout() {
                             </div>
                           ))}
                         </div>
-                      ) : categoryResults.length === 0 ? (
+                      ) : searchQuery.trim() !== '' && categoryResults.length === 0 ? (
                         <div className="p-8 text-center text-slate-500 flex flex-col items-center justify-center">
                           <Package className="w-8 h-8 text-slate-300 mb-2" />
                           <p className="text-sm font-medium">No results found for "{searchQuery}"</p>

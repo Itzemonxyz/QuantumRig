@@ -10,6 +10,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string;
+  avatar?: string;
   password?: string;
   role: 'admin' | 'user';
   savedProductIds?: string[];

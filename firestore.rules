@@ -7,12 +7,14 @@ service cloud.firestore {
     function isAdmin() { 
       return isSignedIn() && (
         request.auth.token.email == 'itzemon990@gmail.com' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
       ); 
     }
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
 
     match /users/{userId} {
       function isValidUser(data) {
@@ -47,19 +49,21 @@ service cloud.firestore {
     }
     
     match /orders/{orderId} {
-      allow read: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid) || true; 
-      allow create: if true;
+      allow read: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid); 
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
       allow update: if isAdmin();
     }
 
     match /restockRequests/{requestId} {
       allow read: if isAdmin();
-      allow write: if true;
+      allow write: if isAdmin(); // Should be restricted
+      allow create: if true; // anyone can create a restock request
     }
     
     match /supportTickets/{ticketId} {
       allow read: if isAdmin();
-      allow write: if true;
+      allow write: if isAdmin();
+      allow create: if true;
     }
     
     match /offers/{offerId} {

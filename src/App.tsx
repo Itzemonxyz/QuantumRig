@@ -27,9 +27,6 @@ import AdminDashboard from './pages/admin/Dashboard';
 import TrackOrder from './pages/TrackOrder';
 import Offers from './pages/Offers';
 
-import { auth } from './lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-
 export default function App() {
   const { setCategories, setBrands, setProducts, setOffers, setSettings, token, login, logout, setIsLoading } = useStore();
 
@@ -44,11 +41,23 @@ export default function App() {
           api.get('/offers'),
           api.get('/settings')
         ]);
-        setCategories(cats);
-        setBrands(brnds);
-        setProducts(prods);
-        setOffers(ofrs);
-        setSettings(sets);
+        
+        setCategories(cats || []);
+        setBrands(brnds || []);
+        setProducts(prods || []);
+        setOffers(ofrs || []);
+        setSettings(sets || null);
+        
+        // Also fetch user if token exists
+        if (token) {
+          try {
+            const u = await api.get('/users/me', token);
+            if (u) login(u as any, token);
+          } catch (e) {
+             console.error("User fetch failed", e);
+             logout();
+          }
+        }
       } catch (err) {
         console.error("Failed to boot app catalog", err);
       } finally {
@@ -56,22 +65,6 @@ export default function App() {
       }
     };
     boot();
-    
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          // Now that auth is resolved, fetch me
-          const u = await api.get('/users/me', user.uid);
-          login(u as any, user.uid);
-        } catch (e) {
-          console.error("User fetch failed", e);
-        }
-      } else {
-        if (token) logout();
-      }
-    });
-    
-    return () => unsubscribe();
   }, [setCategories, setBrands, setProducts, setOffers, setSettings, login, logout, setIsLoading]);
 
   return (
