@@ -36,8 +36,8 @@ export default function Home() {
 
   const searchResults = searchQuery.trim() 
     ? products.filter(p => 
-        p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        p.description.toLowerCase().includes(searchQuery.toLowerCase())
+        (p.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (p.description || '').toLowerCase().includes(searchQuery.toLowerCase())
       ).slice(0, 5) // limit to 5 results
     : [];
 
@@ -133,11 +133,11 @@ export default function Home() {
                       <div className="text-sm font-bold flex flex-col items-end">
                         {product.discountPrice ? (
                           <>
-                            <span className="text-rose-600">৳{product.discountPrice.toFixed(2)}</span>
-                            <span className="text-[10px] text-slate-400 line-through">৳{product.price.toFixed(2)}</span>
+                            <span className="text-rose-600">৳{Number(product.discountPrice || 0).toFixed(2)}</span>
+                            <span className="text-[10px] text-slate-400 line-through">৳{Number(product.price || 0).toFixed(2)}</span>
                           </>
                         ) : (
-                          <span className="text-indigo-600">৳{product.price.toFixed(2)}</span>
+                          <span className="text-indigo-600">৳{Number(product.price || 0).toFixed(2)}</span>
                         )}
                       </div>
                     </div>
@@ -205,8 +205,8 @@ export default function Home() {
                 <div className="text-xs font-medium text-indigo-600 mb-1">{p.brand || 'Premium'}</div>
                 <h3 className="font-bold text-slate-900 leading-tight mb-2 line-clamp-2">{p.title}</h3>
                 <div className="flex items-baseline gap-2">
-                  <span className="font-bold text-lg text-slate-900">৳{p.discountPrice ? p.discountPrice.toFixed(2) : p.price.toFixed(2)}</span>
-                  {p.discountPrice && <span className="text-xs text-slate-400 line-through">৳{p.price.toFixed(2)}</span>}
+                  <span className="font-bold text-lg text-slate-900">৳{p.discountPrice ? Number(p.discountPrice || 0).toFixed(2) : Number(p.price || 0).toFixed(2)}</span>
+                  {p.discountPrice && <span className="text-xs text-slate-400 line-through">৳{Number(p.price || 0).toFixed(2)}</span>}
                 </div>
               </div>
             </div>

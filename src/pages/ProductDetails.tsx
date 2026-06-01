@@ -273,11 +273,11 @@ export default function ProductDetails() {
           <div className="flex flex-wrap items-center gap-4 mb-6">
             {product.discountPrice ? (
               <div className="flex items-center gap-3">
-                <span className="text-3xl font-bold text-rose-600">৳{product.discountPrice.toFixed(0)}</span>
-                <span className="text-xl font-medium text-slate-400 line-through">৳{product.price.toFixed(0)}</span>
+                <span className="text-3xl font-bold text-rose-600">৳{Number(product.discountPrice || 0).toFixed(0)}</span>
+                <span className="text-xl font-medium text-slate-400 line-through">৳{Number(product.price || 0).toFixed(0)}</span>
               </div>
             ) : (
-              <span className="text-3xl font-bold text-indigo-600">৳{product.price.toFixed(0)}</span>
+              <span className="text-3xl font-bold text-indigo-600">৳{Number(product.price || 0).toFixed(0)}</span>
             )}
             {isOutOfStock ? (
               <span className="px-3 py-1 bg-rose-50 text-rose-500 rounded-full text-sm font-bold flex items-center border border-rose-200">
@@ -508,8 +508,8 @@ export default function ProductDetails() {
                 <div className="text-xs font-medium text-indigo-600 mb-1">{p.brand || 'Premium'}</div>
                 <h3 className="font-bold text-slate-900 leading-tight mb-2 line-clamp-2">{p.title}</h3>
                 <div className="flex items-baseline gap-2">
-                  <span className="font-bold text-lg text-slate-900">৳{p.discountPrice ? p.discountPrice.toFixed(2) : p.price.toFixed(2)}</span>
-                  {p.discountPrice && <span className="text-xs text-slate-400 line-through">৳{p.price.toFixed(2)}</span>}
+                  <span className="font-bold text-lg text-slate-900">৳{p.discountPrice ? Number(p.discountPrice || 0).toFixed(2) : Number(p.price || 0).toFixed(2)}</span>
+                  {p.discountPrice && <span className="text-xs text-slate-400 line-through">৳{Number(p.price || 0).toFixed(2)}</span>}
                 </div>
               </div>
             </div>
@@ -626,7 +626,7 @@ export default function ProductDetails() {
               <div className="space-y-3 mb-8">
                 <div className="flex justify-between text-slate-600">
                   <span>Subtotal</span>
-                  <span className="font-medium">৳{((product.discountPrice || product.price) * quantity).toFixed(2)}</span>
+                  <span className="font-medium">৳{Number(((product.discountPrice || product.price) * quantity) || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
                   <span>Shipping</span>
@@ -634,7 +634,7 @@ export default function ProductDetails() {
                 </div>
                 <div className="flex justify-between text-xl font-bold text-slate-900 pt-3 border-t border-slate-200">
                   <span>Total</span>
-                  <span>৳{((product.discountPrice || product.price) * quantity).toFixed(2)}</span>
+                  <span>৳{Number(((product.discountPrice || product.price) * quantity) || 0).toFixed(2)}</span>
                 </div>
               </div>
 

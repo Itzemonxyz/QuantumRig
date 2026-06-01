@@ -80,7 +80,7 @@ export default function TrackOrder() {
               </div>
               <div className="text-right">
                 <div className="text-slate-500 text-sm mb-1">Total Amount</div>
-                <div className="font-bold text-xl text-slate-900">৳{orderData.totalAmount.toFixed(2)}</div>
+                <div className="font-bold text-xl text-slate-900">৳{Number(orderData.totalAmount || 0).toFixed(2)}</div>
               </div>
             </div>
 
@@ -116,7 +116,7 @@ export default function TrackOrder() {
                     </div>
                     <div className="flex-1">
                       <h4 className="font-bold text-slate-900 text-sm line-clamp-2 leading-tight mb-1">{item.title}</h4>
-                      <div className="text-xs text-slate-500">Qty: {item.quantity} × ৳{item.price.toFixed(2)}</div>
+                      <div className="text-xs text-slate-500">Qty: {item.quantity} × ৳{Number(item.price || 0).toFixed(2)}</div>
                     </div>
                   </div>
                 ))}

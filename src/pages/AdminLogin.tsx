@@ -5,8 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState('admin@quantumrig.tech');
-  const [password, setPassword] = useState('admin6207');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

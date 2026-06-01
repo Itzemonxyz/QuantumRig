@@ -7,7 +7,7 @@ import BottomNav from './BottomNav';
 import { api } from '../lib/api';
 
 export default function Layout() {
-  const { user, cart, settings, logout, products, categories, token, notifications, setNotifications, markNotificationRead } = useStore();
+  const { user, cart, settings, socialLinks, logout, products, categories, token, notifications, setNotifications, markNotificationRead } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,22 +97,22 @@ export default function Layout() {
 
   const searchResults = searchQuery.trim() 
     ? products.filter(p => 
-        p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.brand?.toLowerCase().includes(searchQuery.toLowerCase())
+        (p.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (p.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.brand || '').toLowerCase().includes(searchQuery.toLowerCase())
       ).slice(0, 5)
     : [];
 
   const categoryResults = searchQuery.trim()
-    ? categories.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 3)
+    ? categories.filter(c => (c.name || '').toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 3)
     : [];
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-900">
       {location.pathname === '/' && (
-        <div className="bg-indigo-600 text-white text-xs py-1.5 overflow-hidden w-full relative">
-          <div className="animate-marquee font-medium tracking-wider uppercase">
-            Welcome to QuantumRig Tech — The Ultimate Destination for PC Components and Custom Builds
+        <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-700 text-white text-xs py-2 overflow-hidden w-full relative border-b border-indigo-800 shadow-sm whitespace-nowrap">
+          <div className="animate-marquee font-medium tracking-widest uppercase items-center">
+            <span className="mx-4">🌟</span> Welcome to QuantumRig Tech — The Ultimate Destination for PC Components and Custom Builds <span className="mx-4">🌟</span> Use code <span className="font-bold text-cyan-300 mx-2">QUANTUM24</span> for 10% off!
           </div>
         </div>
       )}
@@ -226,7 +226,7 @@ export default function Layout() {
                                 <p className="text-xs text-slate-500 truncate">{product.categoryId ? categories.find(c => c.id === product.categoryId)?.name : ''}</p>
                               </div>
                               <div className="text-sm font-bold text-slate-900">
-                                ৳{product.price.toFixed(2)}
+                                ৳{Number(product.price || 0).toFixed(2)}
                               </div>
                             </div>
                           ))}
@@ -381,9 +381,20 @@ export default function Layout() {
           <div>
             <h3 className="text-white font-medium mb-4">Connect With Us</h3>
             <ul className="space-y-2 text-sm">
-              {settings?.facebookUrl && <li><a href={settings.facebookUrl} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Facebook</a></li>}
-              {settings?.whatsappUrl && <li><a href={settings.whatsappUrl} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">WhatsApp</a></li>}
-              {settings?.instagramUrl && <li><a href={settings.instagramUrl} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Instagram</a></li>}
+              {socialLinks.map(link => (
+                <li key={link.id}>
+                  <a href={link.url} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+                    {link.name}
+                  </a>
+                </li>
+              ))}
+              {socialLinks.length === 0 && (
+                <>
+                  {settings?.facebookUrl && <li><a href={settings.facebookUrl} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Facebook</a></li>}
+                  {settings?.whatsappUrl && <li><a href={settings.whatsappUrl} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">WhatsApp</a></li>}
+                  {settings?.instagramUrl && <li><a href={settings.instagramUrl} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Instagram</a></li>}
+                </>
+              )}
             </ul>
           </div>
         </div>

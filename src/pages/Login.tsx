@@ -3,8 +3,9 @@ import { useStore } from '../store';
 import { api } from '../lib/api';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Shield, ArrowLeft, Eye, EyeOff } from 'lucide-react';
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '../lib/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 type AuthMode = 'login' | 'register' | 'forgot-password' | 'google-details';
 
@@ -33,10 +34,28 @@ export default function Login() {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       if (result.user) {
-        setEmail(result.user.email || '');
-        setName(result.user.displayName || '');
-        setAvatar(result.user.photoURL || '');
-        setMode('google-details');
+        // Check if user already exists
+        const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+        
+        if (userDoc.exists()) {
+          // User exists, log them in directly
+          const userData = userDoc.data();
+          const res = await api.post('/auth/google', { 
+            email: result.user.email, 
+            name: userData.name || result.user.displayName, 
+            avatar: result.user.photoURL, 
+            phone: userData.phone || result.user.phoneNumber 
+          });
+          login(res.user, res.token);
+          const from = (location.state as any)?.from?.pathname || '/';
+          navigate(from, { replace: true });
+        } else {
+          // New user, ask for details
+          setEmail(result.user.email || '');
+          setName(result.user.displayName || '');
+          setAvatar(result.user.photoURL || '');
+          setMode('google-details');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Google authentication failed');
@@ -59,19 +78,50 @@ export default function Login() {
 
     try {
       if (mode === 'login') {
-        const res = await api.post('/auth/login', { email, password });
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        // Sync with backend memory to establish token, using the google endpoint which gracefully handles missing users
+        const res = await api.post('/auth/google', { email: userCredential.user.email, name: userCredential.user.displayName || email.split('@')[0], avatar: userCredential.user.photoURL, phone: userCredential.user.phoneNumber });
         login(res.user, res.token);
         const from = (location.state as any)?.from?.pathname || '/';
         navigate(from, { replace: true });
       } else if (mode === 'register') {
-        const res = await api.post('/auth/register', { name, email, password, phone });
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const firebaseUser = userCredential.user;
+        
+        const userRole = (email === 'itzemon990@gmail.com' || email === 'admin@quantumrig.tech') ? 'admin' : 'user';
+
+        // Save to Firestore
+        await setDoc(doc(db, 'users', firebaseUser.uid), {
+          id: firebaseUser.uid,
+          name,
+          email,
+          phone,
+          role: userRole,
+          savedProductIds: []
+        });
+
+        // Also sync to backend for current system compatibility
+        const res = await api.post('/auth/register', { name, email, password, phone, role: userRole });
         login(res.user, res.token);
         navigate('/');
       } else if (mode === 'forgot-password') {
         await api.post('/auth/forgot-password', { email });
         setMessage('Password reset email sent. Please check your inbox.');
       } else if (mode === 'google-details') {
-        const res = await api.post('/auth/google', { email, name, avatar, phone });
+        const user = auth.currentUser;
+        if (user) {
+          const userRole = (email === 'itzemon990@gmail.com' || email === 'admin@quantumrig.tech') ? 'admin' : 'user';
+          await setDoc(doc(db, 'users', user.uid), {
+            id: user.uid,
+            name,
+            email,
+            phone,
+            avatar,
+            role: userRole,
+            savedProductIds: []
+          }, { merge: true });
+        }
+        const res = await api.post('/auth/google', { email, name, avatar, phone, role: (email === 'itzemon990@gmail.com' || email === 'admin@quantumrig.tech') ? 'admin' : 'user' });
         login(res.user, res.token);
         const from = (location.state as any)?.from?.pathname || '/';
         navigate(from, { replace: true });
@@ -124,19 +174,6 @@ export default function Login() {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
               <input required type="text" value={name} onChange={e => setName(e.target.value)} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" />
-            </div>
-          )}
-          
-          {mode === 'google-details' && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Profile Image URL (Optional)</label>
-              <input type="url" value={avatar} onChange={e => setAvatar(e.target.value)} placeholder="https://example.com/image.jpg" className="w-full border border-slate-300 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" />
-              {avatar && (
-                <div className="mt-3 flex items-center gap-3">
-                  <img src={avatar} alt="Avatar preview" className="w-10 h-10 rounded-full object-cover border border-slate-200" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                  <span className="text-xs text-slate-500">Preview</span>
-                </div>
-              )}
             </div>
           )}
           

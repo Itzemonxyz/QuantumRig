@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { User, Category, Brand, Product, Order, Settings, Offer, Analytics, UserNotification } from './types';
+import { User, Category, Brand, Product, Order, Settings, Offer, Analytics, UserNotification, SocialLink } from './types';
 
 interface StoreState {
   user: User | null;
@@ -9,6 +9,7 @@ interface StoreState {
   products: Product[];
   offers: Offer[];
   settings: Settings | null;
+  socialLinks: SocialLink[];
   analytics: Analytics | null;
   notifications: UserNotification[];
   cart: { product: Product; quantity: number }[];
@@ -25,6 +26,7 @@ interface StoreState {
   setProducts: (products: Product[]) => void;
   setOffers: (offers: Offer[]) => void;
   setSettings: (settings: Settings) => void;
+  setSocialLinks: (socialLinks: SocialLink[]) => void;
   setAnalytics: (analytics: Analytics) => void;
   setNotifications: (notifications: UserNotification[]) => void;
   markNotificationRead: (id: string) => void;
@@ -54,6 +56,7 @@ export const useStore = create<StoreState>((set) => ({
   products: [],
   offers: [],
   settings: null,
+  socialLinks: [],
   analytics: null,
   notifications: [],
   cart: [],
@@ -76,6 +79,7 @@ export const useStore = create<StoreState>((set) => ({
   setProducts: (products) => set({ products }),
   setOffers: (offers) => set({ offers }),
   setSettings: (settings) => set({ settings }),
+  setSocialLinks: (socialLinks) => set({ socialLinks }),
   setAnalytics: (analytics) => set({ analytics }),
   setNotifications: (notifications) => set({ notifications }),
   markNotificationRead: (id) => set((state) => ({ 

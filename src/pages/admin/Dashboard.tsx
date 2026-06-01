@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '../../store';
 import { useNavigate, Routes, Route, Link, Outlet, useLocation } from 'react-router-dom';
-import { Package, FolderTree, ShoppingCart, Settings as SettingsIcon, Ticket, AlertTriangle, Zap, LogOut, AreaChart, HelpCircle, ArrowLeft, BarChart3, Search, RefreshCw } from 'lucide-react';
+import { Package, FolderTree, ShoppingCart, Settings as SettingsIcon, Ticket, AlertTriangle, Zap, LogOut, AreaChart, HelpCircle, ArrowLeft, BarChart3, Search, RefreshCw, Link as LinkIcon } from 'lucide-react';
 import AnalyticsTab from './AnalyticsTab';
 import ProductsTab from './ProductsTab';
 import CategoriesTab from './CategoriesTab';
@@ -11,8 +11,11 @@ import CouponsTab from './CouponsTab';
 import SettingsTab from './SettingsTab';
 import OffersTab from './OffersTab';
 import SupportTab from './SupportTab';
+import SocialLinksTab from './SocialLinksTab';
 
 import RestockRequestsTab from './RestockRequestsTab';
+
+import { SeedButton } from './SeedButton';
 
 const boardOptions = [
   { to: '/admin/analytics', icon: <AreaChart className="w-8 h-8 text-indigo-500 mb-4" />, label: 'Analytics', desc: 'View store performance and analytics' },
@@ -24,6 +27,7 @@ const boardOptions = [
   { to: '/admin/offers', icon: <Zap className="w-8 h-8 text-indigo-500 mb-4" />, label: 'Offers', desc: 'Manage special promotions' },
   { to: '/admin/support', icon: <HelpCircle className="w-8 h-8 text-indigo-500 mb-4" />, label: 'Support', desc: 'Handle customer inquiries' },
   { to: '/admin/restock', icon: <RefreshCw className="w-8 h-8 text-indigo-500 mb-4" />, label: 'Restock', desc: 'Manage requested inventory' },
+  { to: '/admin/social-links', icon: <LinkIcon className="w-8 h-8 text-indigo-500 mb-4" />, label: 'Social Links', desc: 'Manage external social media' },
   { to: '/admin/settings', icon: <SettingsIcon className="w-8 h-8 text-indigo-500 mb-4" />, label: 'Settings', desc: 'Store configuration' },
 ];
 
@@ -53,6 +57,8 @@ function AdminBoard() {
            </Link>
         ))}
         
+        <SeedButton />
+        
         <button 
            onClick={handleLogout}
            className="bg-rose-50 border text-center border-rose-200 p-8 rounded-2xl shadow-sm hover:shadow-md hover:border-rose-300 transition-all flex flex-col items-center group cursor-pointer"
@@ -76,7 +82,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
-      navigate('/login');
+      navigate('/admin-login');
     }
   }, [user, navigate]);
 
@@ -145,6 +151,7 @@ export default function AdminDashboard() {
               <Route path="offers" element={<OffersTab />} />
               <Route path="support" element={<SupportTab />} />
               <Route path="restock" element={<RestockRequestsTab />} />
+              <Route path="social-links" element={<SocialLinksTab />} />
               <Route path="settings" element={<SettingsTab />} />
             </Routes>
         </div>}

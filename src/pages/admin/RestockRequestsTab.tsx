@@ -1,27 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { useStore } from '../../store';
-import { RefreshCw, CheckCircle, Package } from 'lucide-react';
+import { RefreshCw, CheckCircle, Package, Trash2, Loader2 } from 'lucide-react';
 
 export default function RestockRequestsTab() {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const { token } = useStore();
 
-  const loadRequests = async () => {
-    setLoading(true);
+  const loadRequests = async (isBackground = false) => {
+    if (!isBackground) setLoading(true);
     try {
       const data = await api.get('/admin/restock-requests', token);
       setRequests(data);
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    try {
+      await api.delete(`/restock-requests/${id}`, token);
+      loadRequests(true);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDeletingId(null);
     }
   };
 
   useEffect(() => {
     loadRequests();
+    const intervalId = setInterval(() => {
+      loadRequests(true);
+    }, 5000);
+    return () => clearInterval(intervalId);
   }, []);
 
   return (
@@ -48,6 +65,7 @@ export default function RestockRequestsTab() {
                 <th className="p-3 text-sm font-bold text-slate-500">Product</th>
                 <th className="p-3 text-sm font-bold text-slate-500">User Details</th>
                 <th className="p-3 text-sm font-bold text-slate-500">Status</th>
+                <th className="p-3 text-sm font-bold text-slate-500 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -72,6 +90,11 @@ export default function RestockRequestsTab() {
                         <CheckCircle className="w-3 h-3 mr-1" /> Notified
                       </span>
                     )}
+                  </td>
+                  <td className="p-3 text-right">
+                    <button onClick={() => handleDelete(req.id)} disabled={deletingId === req.id} className="p-1.5 text-slate-400 hover:text-rose-500 transition-colors disabled:opacity-50 inline-flex items-center justify-center">
+                      {deletingId === req.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />}
+                    </button>
                   </td>
                 </tr>
               ))}

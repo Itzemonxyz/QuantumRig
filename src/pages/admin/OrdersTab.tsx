@@ -14,6 +14,11 @@ export default function OrdersTab() {
 
   useEffect(() => {
     fetchOrders();
+    const intervalId = setInterval(() => {
+      fetchOrders();
+    }, 5000); // Poll every 5 seconds
+    
+    return () => clearInterval(intervalId);
   }, []);
 
   const getSortedOrders = (data: Order[], option: string) => {
@@ -35,8 +40,8 @@ export default function OrdersTab() {
         });
       case 'most_items':
         return list.sort((a, b) => {
-          const aItems = a.items.reduce((sum, item) => sum + item.quantity, 0);
-          const bItems = b.items.reduce((sum, item) => sum + item.quantity, 0);
+          const aItems = (a.items || []).reduce((sum, item) => sum + item.quantity, 0);
+          const bItems = (b.items || []).reduce((sum, item) => sum + item.quantity, 0);
           return bItems - aItems;
         });
       default:
@@ -85,8 +90,8 @@ export default function OrdersTab() {
       order.paymentMethod || 'Cash on Delivery',
       order.paymentStatus || 'Pending',
       order.transactionId || 'N/A',
-      order.totalAmount.toFixed(2),
-      order.items.reduce((sum, item) => sum + item.quantity, 0).toString()
+      Number(order.totalAmount || 0).toFixed(2),
+      (order.items || []).reduce((sum, item) => sum + item.quantity, 0).toString()
     ]);
 
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -119,8 +124,8 @@ export default function OrdersTab() {
       order.deliveryDetails.fullName,
       order.status,
       order.paymentStatus || 'Pending',
-      `$${order.totalAmount.toFixed(2)}`,
-      order.items.reduce((sum, item) => sum + item.quantity, 0).toString()
+      `$${Number(order.totalAmount || 0).toFixed(2)}`,
+      (order.items || []).reduce((sum, item) => sum + item.quantity, 0).toString()
     ]);
     
     autoTable(doc, {
@@ -229,7 +234,7 @@ export default function OrdersTab() {
                   <p className="text-sm text-slate-500">{new Date(order.createdAt).toLocaleString()}</p>
                 </div>
                 <div className="mt-4 md:mt-0 flex flex-wrap items-center gap-4">
-                  <span className="font-bold text-xl text-indigo-600">৳{order.totalAmount.toFixed(2)}</span>
+                  <span className="font-bold text-xl text-indigo-600">৳{Number(order.totalAmount || 0).toFixed(2)}</span>
                   <select 
                     value={order.status}
                     onChange={(e) => updateStatus(order.id, e.target.value)}
@@ -325,14 +330,14 @@ export default function OrdersTab() {
                     {order.items.map(item => (
                       <li key={item.productId} className="flex justify-between border-b border-slate-200/60 pb-2 last:border-0 last:pb-0">
                         <span className="text-slate-700 line-clamp-1 flex-1 pr-4 font-medium">{item.quantity}x {item.title}</span>
-                        <span className="font-bold text-slate-900">৳{(item.price * item.quantity).toFixed(2)}</span>
+                        <span className="font-bold text-slate-900">৳{Number((item.price * item.quantity) || 0).toFixed(2)}</span>
                       </li>
                     ))}
                   </ul>
                   {order.discountAmount ? (
                     <div className="mt-4 flex justify-between items-center text-sm px-4">
                       <span className="text-slate-500">Discount Added</span>
-                      <span className="text-emerald-600 font-bold">-৳{(order.discountAmount).toFixed(2)}</span>
+                      <span className="text-emerald-600 font-bold">-৳{Number(order.discountAmount || 0).toFixed(2)}</span>
                     </div>
                   ) : null}
                 </div>

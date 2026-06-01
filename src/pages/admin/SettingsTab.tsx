@@ -43,22 +43,6 @@ export default function SettingsTab() {
           </div>
         </div>
 
-        <div className="bg-slate-50 p-4 border border-slate-200 rounded-lg space-y-4">
-          <h3 className="font-bold text-slate-900">Social Media Links</h3>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-slate-700">Facebook URL</label>
-            <input type="url" value={form.facebookUrl} onChange={e => setForm({...form, facebookUrl: e.target.value})} className="w-full border border-slate-300 rounded px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-slate-700">WhatsApp URL</label>
-            <input type="url" value={form.whatsappUrl} onChange={e => setForm({...form, whatsappUrl: e.target.value})} className="w-full border border-slate-300 rounded px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-slate-700">Instagram URL</label>
-            <input type="url" value={form.instagramUrl} onChange={e => setForm({...form, instagramUrl: e.target.value})} className="w-full border border-slate-300 rounded px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500" />
-          </div>
-        </div>
-
         <button type="submit" disabled={saving} className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg shadow font-medium flex items-center hover:bg-indigo-500 transition-colors disabled:opacity-70">
           <Save className="w-4 h-4 mr-2" />
           {saving ? 'Saving...' : 'Save Settings'}

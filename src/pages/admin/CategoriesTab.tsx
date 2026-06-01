@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { useStore } from '../../store';
 import { api } from '../../lib/api';
 import { Category } from '../../types';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2 } from 'lucide-react';
 
 export default function CategoriesTab() {
   const { categories, setCategories, token } = useStore();
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,10 +36,16 @@ export default function CategoriesTab() {
   };
 
   const handleDelete = async (id: string) => {
-    if(!confirm("Sure?")) return;
-    await api.delete(`/categories/${id}`, token);
-    const updated = await api.get('/categories');
-    setCategories(updated);
+    setDeletingId(id);
+    try {
+      await api.delete(`/categories/${id}`, token);
+      const updated = await api.get('/categories');
+      setCategories(updated);
+    } catch(e) {
+      alert("Failed to delete");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -72,8 +79,10 @@ export default function CategoriesTab() {
                   <td className="px-6 py-4 font-medium text-slate-900">{c.name}</td>
                   <td className="px-6 py-4 text-slate-500">{c.slug}</td>
                   <td className="px-6 py-4 text-right">
-                    <button onClick={() => handleEdit(c)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded mr-2"><Edit2 className="w-4 h-4"/></button>
-                    <button onClick={() => handleDelete(c.id)} className="text-rose-600 hover:bg-rose-50 p-1.5 rounded"><Trash2 className="w-4 h-4"/></button>
+                    <button onClick={() => handleEdit(c)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded mr-2 disabled:opacity-50" disabled={deletingId === c.id}><Edit2 className="w-4 h-4"/></button>
+                    <button onClick={() => handleDelete(c.id)} className="text-rose-600 hover:bg-rose-50 p-1.5 rounded disabled:opacity-50" disabled={deletingId === c.id}>
+                      {deletingId === c.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4"/>}
+                    </button>
                   </td>
                 </tr>
               ))}

@@ -117,9 +117,16 @@ export interface Order {
 
 export interface Settings {
   announcementText: string;
-  facebookUrl: string;
-  whatsappUrl: string;
-  instagramUrl: string;
+  facebookUrl?: string; // Legacy
+  whatsappUrl?: string; // Legacy
+  instagramUrl?: string; // Legacy
+}
+
+export interface SocialLink {
+  id: string;
+  name: string;
+  url: string;
+  icon?: string;
 }
 
 export interface Analytics {

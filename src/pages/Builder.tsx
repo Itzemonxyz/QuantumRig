@@ -83,7 +83,7 @@ export default function Builder() {
         </div>
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 min-w-[250px]">
           <div className="text-sm text-slate-500 mb-1">Estimated Total</div>
-          <div className="text-3xl font-bold text-indigo-600">৳{totalCost.toFixed(2)}</div>
+          <div className="text-3xl font-bold text-indigo-600">৳{Number(totalCost || 0).toFixed(2)}</div>
           <div className="text-xs text-slate-400 mt-1">Est. Wattage: {compatibility.totalWattage}W</div>
           <div className="flex gap-2 mt-4 w-full">
             <button 
@@ -156,11 +156,11 @@ export default function Builder() {
                       <div className="flex flex-col items-end">
                         {selected.discountPrice ? (
                           <>
-                            <span className="text-[10px] sm:text-xs text-slate-500 line-through">৳{selected.price.toFixed(2)}</span>
-                            <span className="font-bold text-rose-600">৳{selected.discountPrice.toFixed(2)}</span>
+                            <span className="text-[10px] sm:text-xs text-slate-500 line-through">৳{Number(selected.price || 0).toFixed(2)}</span>
+                            <span className="font-bold text-rose-600">৳{Number(selected.discountPrice || 0).toFixed(2)}</span>
                           </>
                         ) : (
-                          <span className="font-bold text-slate-900">৳{selected.price.toFixed(2)}</span>
+                          <span className="font-bold text-slate-900">৳{Number(selected.price || 0).toFixed(2)}</span>
                         )}
                       </div>
                     )}
@@ -204,7 +204,7 @@ export default function Builder() {
                           <div className="p-4 flex-1 flex flex-col bg-slate-50/50 rounded-b-xl">
                             <h4 className="font-medium text-slate-900 text-sm line-clamp-2 mb-2" title={p.title}>{p.title}</h4>
                             <div className="text-[10px] text-slate-500 mb-3 flex flex-wrap gap-1.5 line-clamp-2">
-                               {Object.entries(p.specs).slice(0, 3).map(([k, v]) => (
+                               {Object.entries(p.specs || {}).slice(0, 3).map(([k, v]) => (
                                  <span key={k} className="bg-white border border-slate-200 px-1.5 py-0.5 rounded shadow-sm">{k}: {v as string}</span>
                                ))}
                                {p.socket && <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded shadow-sm">Socket: {p.socket}</span>}
@@ -213,11 +213,11 @@ export default function Builder() {
                               <div className="flex flex-col items-start whitespace-nowrap">
                                 {p.discountPrice ? (
                                   <>
-                                    <span className="text-[10px] text-slate-500 line-through">৳{p.price.toFixed(2)}</span>
-                                    <span className="font-bold text-rose-600 text-sm">৳{p.discountPrice.toFixed(2)}</span>
+                                    <span className="text-[10px] text-slate-500 line-through">৳{Number(p.price || 0).toFixed(2)}</span>
+                                    <span className="font-bold text-rose-600 text-sm">৳{Number(p.discountPrice || 0).toFixed(2)}</span>
                                   </>
                                 ) : (
-                                  <span className="font-bold text-slate-900 text-sm">৳{p.price.toFixed(2)}</span>
+                                  <span className="font-bold text-slate-900 text-sm">৳{Number(p.price || 0).toFixed(2)}</span>
                                 )}
                               </div>
                               <button 
@@ -262,12 +262,12 @@ export default function Builder() {
                 {Object.values(builderCart).map(p => (
                   <div key={p.id} className="flex justify-between items-start text-sm">
                     <span className="text-slate-600 max-w-[200px] line-clamp-2">{p.title}</span>
-                    <span className="font-bold text-slate-900 block ml-4 whitespace-nowrap">৳{(p.discountPrice || p.price).toFixed(2)}</span>
+                    <span className="font-bold text-slate-900 block ml-4 whitespace-nowrap">৳{Number(p.discountPrice || p.price || 0).toFixed(2)}</span>
                   </div>
                 ))}
                 <div className="pt-4 border-t border-slate-200 mt-6 flex justify-between items-center text-lg font-bold text-slate-900">
                   <span>Total</span>
-                  <span>৳{totalCost.toFixed(2)}</span>
+                  <span>৳{Number(totalCost || 0).toFixed(2)}</span>
                 </div>
              </div>
            )}

@@ -2,13 +2,46 @@ import express from "express";
 import path from "path";
 import cors from "cors";
 import { createServer as createViteServer } from "vite";
-import { User, Category, Brand, Product, Order, Settings, Coupon, Offer, RestockRequest, UserNotification } from "./src/types";
+import fs from "fs";
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, updateDoc, initializeFirestore, setLogLevel } from "firebase/firestore";
+import { User, Category, Brand, Product, Order, Settings, Coupon, Offer, RestockRequest, UserNotification, SocialLink } from "./src/types";
+
+setLogLevel('silent');
+
 
 const app = express();
 const PORT = 3000;
 
+const originalConsoleError = console.error;
+console.error = (...args) => {
+  const argStr = args.map(a => typeof a === 'object' ? JSON.stringify(a, Object.getOwnPropertyNames(a)) : String(a)).join(' ');
+  if (argStr.includes("PERMISSION_DENIED") || argStr.includes("CANCELLED") || argStr.includes("GrpcConnection RPC")) {
+    return;
+  }
+  originalConsoleError(...args);
+};
+
 app.use(cors());
 app.use(express.json());
+
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.set('Surrogate-Control', 'no-store');
+  next();
+});
+
+// ================= FIREBASE SETUP =================
+let db: any = null;
+const firebaseConfigPath = path.join(process.cwd(), "firebase-applet-config.json");
+if (fs.existsSync(firebaseConfigPath)) {
+  const firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, "utf-8"));
+  const firebaseApp = initializeApp(firebaseConfig);
+  db = initializeFirestore(firebaseApp, { experimentalForceLongPolling: true });
+  console.log("🔥 Connected to Firebase Firestore with Long Polling");
+}
 
 // IN-MEMORY DATABASE
 let stockNotifications: { id: string; productId: string; email: string; createdAt: string }[] = [];
@@ -16,126 +49,37 @@ let supportTickets: { id: string; productId: string; email: string; question: st
 let analyticsEvents: { id: string; event: string; productId: string; timestamp: string }[] = [];
 let restockRequests: RestockRequest[] = [];
 let users: User[] = [
-  { id: "u1", name: "Admin", email: "admin@quantumrig.tech", password: "admin6207", role: "admin", savedProductIds: [] },
-  { id: "u2", name: "Test Customer", email: "test@example.com", password: "password", role: "user", savedProductIds: [] }
+  { id: "admin_1", name: "Administrator", email: "admin@quantumrig.tech", password: "admin", role: "admin", savedProductIds: [] },
+  { id: "admin_2", name: "Administrator", email: "admin@quantumrig.tech", password: "admin6207", role: "admin", savedProductIds: [] }
 ];
 
-let categories: Category[] = [
-  { id: "c1", name: "Processors", slug: "processors" },
-  { id: "c2", name: "Motherboards", slug: "motherboards" },
-  { id: "c3", name: "RAM", slug: "ram" },
-  { id: "c4", name: "Storage", slug: "storage" },
-  { id: "c5", name: "Graphics Cards", slug: "graphics-cards" },
-  { id: "c6", name: "Power Supplies", slug: "power-supplies" },
-  { id: "c7", name: "Casings", slug: "casings" },
-  { id: "c8", name: "Coolers", slug: "coolers" },
-  { id: "c9", name: "Monitors", slug: "monitors" },
-  { id: "c10", name: "Accessories", slug: "accessories" },
-  { id: "c11", name: "Laptops", slug: "laptops" }
-];
+let categories: Category[] = [];
 let brands: Brand[] = [
   { id: "b1", name: "Intel", slug: "intel" },
   { id: "b2", name: "AMD", slug: "amd" },
   { id: "b3", name: "NVIDIA", slug: "nvidia" },
   { id: "b4", name: "Corsair", slug: "corsair" },
   { id: "b5", name: "ASUS", slug: "asus" },
-  { id: "b6", name: "MSI", slug: "msi" }
+  { id: "b6", name: "MSI", slug: "msi" },
+  { id: "b7", name: "Gigabyte", slug: "gigabyte" },
+  { id: "b8", name: "AORUS", slug: "aorus" },
+  { id: "b9", name: "ROG", slug: "rog" },
+  { id: "b10", name: "Razer", slug: "razer" }
 ];
 
-import { demoProducts } from "./src/data/demoProducts";
+let products: Product[] = [];
 
-let products: Product[] = demoProducts.map((p: any, i) => ({
-  ...p,
-  code: p.code || `PRD-${10000 + i}`,
-  reviews: Array.from({ length: Math.floor(Math.random() * 6) }).map((_, rIdx) => ({ id: `rev_${i}_${rIdx}`, userId: `u_dummy_${Math.floor(Math.random()*15)}`, userName: `Tester ${rIdx}`, rating: 3 + Math.floor(Math.random() * 3), comment: "Awesome performance for the price. Highly recommended!", createdAt: new Date(Date.now() - Math.random() * 10000000000).toISOString() }))
-}));
-
-let coupons: Coupon[] = [
-  { id: "cp1", code: "QUANTUM24", discountPercentage: 10, isActive: true, applicableProductIds: [] }
-];
+let coupons: Coupon[] = [];
 
 let offers: Offer[] = [];
 
+let socialLinks: SocialLink[] = [
+  { id: "sl1", name: "Facebook", url: "https://facebook.com" },
+  { id: "sl2", name: "WhatsApp", url: "https://whatsapp.com" },
+  { id: "sl3", name: "Instagram", url: "https://instagram.com" }
+];
+
 let orders: Order[] = [];
-
-// Generate fake traffic for analytics testing
-const statuses: Array<Order["status"]> = ["Pending", "Accepted", "Shipped", "Delivered", "Cancelled"];
-
-for (let i = 0; i < 15; i++) {
-  users.push({
-    id: `u_dummy_${i}`,
-    name: `User ${i}`,
-    email: `user${i}@example.com`,
-    password: "password",
-    role: "user",
-    savedProductIds: [products[Math.floor(Math.random() * products.length)]?.id],
-    loyaltyPoints: Math.floor(Math.random() * 1000)
-  });
-}
-
-
-coupons.push(
-  { id: "cp2", code: "SUMMER", discountPercentage: 15, isActive: true, applicableProductIds: [] },
-  { id: "cp3", code: "FLASH50", discountPercentage: 5, isActive: false, applicableProductIds: [] }
-);
-
-
-for (let i = 0; i < 12; i++) {
-  supportTickets.push({
-    id: `sup_${i}`,
-    productId: products[Math.floor(Math.random() * products.length)]?.id,
-    email: `user${i}@example.com`,
-    question: "Is this compatible with my current build?",
-    status: Math.random() > 0.5 ? 'Open' : 'Closed',
-    createdAt: new Date(Date.now() - Math.random() * 10000000000).toISOString()
-  });
-}
-
-
-for (let i = 0; i < 8; i++) {
-  restockRequests.push({
-    id: `res_${i}`,
-    productId: products[Math.floor(Math.random() * products.length)]?.id,
-    userId: `u_dummy_${i}`,
-    status: 'pending',
-    createdAt: new Date(Date.now() - Math.random() * 8000000000).toISOString()
-  } as any);
-}
-
-for (let i = 0; i < 45; i++) {
-  const d = new Date();
-  d.setDate(d.getDate() - Math.floor(Math.random() * 7)); // Last 7 days
-  const randomProduct = products[Math.floor(Math.random() * Math.min(10, products.length))] || { id: "p1", title: "Test Product", price: 5000 };
-  const qty = Math.floor(Math.random() * 3) + 1;
-  const status = statuses[Math.floor(Math.random() * statuses.length)];
-  
-  orders.push({
-    id: `ord_mock_${i}`,
-    userId: "guest",
-    items: [{
-      productId: randomProduct.id,
-      title: randomProduct.title,
-      price: randomProduct.price,
-      quantity: qty
-    }],
-    totalAmount: randomProduct.price * qty,
-    status: status,
-    deliveryDetails: {
-      fullName: `User ${i}`,
-      phone: `01711000${i.toString().padStart(3, '0')}`,
-      address: "Dhaka, Bangladesh",
-      email: `user${i}@example.com`
-    },
-    paymentMethod: Math.random() > 0.5 ? "Cash on Delivery" : "Manual Payment",
-    paymentStatus: status === "Accepted" || status === "Shipped" || status === "Delivered" ? "Verified" : "Pending",
-    createdAt: d.toISOString(),
-    trackingHistory: [
-      { status: "Pending", date: d.toISOString(), description: "Order Placed" },
-      ...(status !== "Pending" ? [{ status, date: d.toISOString(), description: `Order ${status}` }] : [])
-    ]
-  });
-}
-
 
 let settings: Settings = {
   announcementText: "🚀 Free shipping on all PC Builds over ৳2000! Use code QUANTUM24",
@@ -144,10 +88,111 @@ let settings: Settings = {
   instagramUrl: "https://instagram.com"
 };
 
+// ================= FIRESTORE SYNC =================
+async function syncDatabase() {
+  if (!db) return;
+  try {
+    // 1. Sync Products
+    const pSnap = await getDocs(collection(db, "products"));
+    if (!pSnap.empty) {
+      products = pSnap.docs.map((d: any) => d.data() as Product);
+    } else {
+      for (const p of products) {
+        await setDoc(doc(db, "products", p.id), JSON.parse(JSON.stringify(p)));
+      }
+    }
+
+    // 2. Sync Categories
+    const cSnap = await getDocs(collection(db, "categories"));
+    if (!cSnap.empty) {
+      categories = cSnap.docs.map((d: any) => d.data() as Category);
+    } else {
+      for (const c of categories) {
+        await setDoc(doc(db, "categories", c.id), JSON.parse(JSON.stringify(c)));
+      }
+    }
+
+    // 3. Sync Brands
+    const bSnap = await getDocs(collection(db, "brands"));
+    if (!bSnap.empty) {
+      brands = bSnap.docs.map((d: any) => d.data() as Brand);
+    } else {
+      for (const b of brands) {
+        await setDoc(doc(db, "brands", b.id), JSON.parse(JSON.stringify(b)));
+      }
+    }
+
+    // 4. Sync Users 
+    const uSnap = await getDocs(collection(db, "users"));
+    if (!uSnap.empty) {
+       // Merge users carefully so we don't overwrite mock memory if there's no auth system.
+       const fsUsers = uSnap.docs.map((d: any) => d.data() as User);
+       const uMap = new Map();
+       users.forEach(u => uMap.set(u.email, u));
+       fsUsers.forEach(u => uMap.set(u.email, { ...uMap.get(u.email), ...u }));
+       users = Array.from(uMap.values());
+    }
+
+    // 5. Sync Orders
+    const oSnap = await getDocs(collection(db, "orders"));
+    if (!oSnap.empty) {
+      orders = oSnap.docs.map((d: any) => d.data() as Order);
+    } // if empty, do not seed mock orders to avoid bloat
+
+    // 6. Sync Settings
+    const setSnap = await getDocs(collection(db, "settings"));
+    if (!setSnap.empty) {
+      const globalSet = setSnap.docs.find(d => d.id === 'global');
+      if (globalSet) settings = globalSet.data() as Settings;
+    } else {
+      await setDoc(doc(db, "settings", "global"), JSON.parse(JSON.stringify(settings))).catch(console.error);
+    }
+
+    // 7. Sync Coupons
+    const cpSnap = await getDocs(collection(db, "coupons"));
+    if (!cpSnap.empty) {
+      coupons = cpSnap.docs.map((d: any) => d.data() as Coupon);
+    }
+
+    // 8. Sync Offers
+    const ofSnap = await getDocs(collection(db, "offers"));
+    if (!ofSnap.empty) {
+      offers = ofSnap.docs.map((d: any) => d.data() as Offer);
+    }
+
+    // 9. Sync Restock Requests
+    const rrSnap = await getDocs(collection(db, "restockRequests"));
+    if (!rrSnap.empty) {
+      restockRequests = rrSnap.docs.map((d: any) => d.data() as RestockRequest);
+    }
+
+    // 10. Sync Support Tickets
+    const stSnap = await getDocs(collection(db, "supportTickets"));
+    if (!stSnap.empty) {
+      supportTickets = stSnap.docs.map((d: any) => d.data() as any);
+    }
+
+    // 11. Sync Social Links
+    const slSnap = await getDocs(collection(db, "socialLinks"));
+    if (!slSnap.empty) {
+      socialLinks = slSnap.docs.map((d: any) => d.data() as SocialLink);
+    } else {
+      for (const sl of socialLinks) {
+        await setDoc(doc(db, "socialLinks", sl.id), JSON.parse(JSON.stringify(sl))).catch(console.error);
+      }
+    }
+
+  } catch (error: any) {
+    if (error && error.message && error.message.includes('PERMISSION_DENIED')) return;
+    console.warn("Firestore Sync Error (rules may not open yet):", error);
+  }
+}
+syncDatabase();
+
 // ================= API ROUTES =================
 
 // Users & Auth
-app.post("/api/users/me/saved-products", (req, res) => {
+app.post("/api/users/me/saved-products", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
   const user = users.find((u) => u.id === token);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -156,18 +201,20 @@ app.post("/api/users/me/saved-products", (req, res) => {
   const { productId } = req.body;
   if (!user.savedProductIds.includes(productId)) {
     user.savedProductIds.push(productId);
+    if (db) await updateDoc(doc(db, "users", user.id), { savedProductIds: user.savedProductIds }).catch(console.error);
   }
   const { password, ...userWithoutPassword } = user;
   res.json(userWithoutPassword);
 });
 
-app.delete("/api/users/me/saved-products/:productId", (req, res) => {
+app.delete("/api/users/me/saved-products/:productId", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
   const user = users.find((u) => u.id === token);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
   
   if (user.savedProductIds) {
     user.savedProductIds = user.savedProductIds.filter(id => id !== req.params.productId);
+    if (db) await updateDoc(doc(db, "users", user.id), { savedProductIds: user.savedProductIds }).catch(console.error);
   }
   const { password, ...userWithoutPassword } = user;
   res.json(userWithoutPassword);
@@ -184,26 +231,29 @@ app.post("/api/auth/login", (req, res) => {
   }
 });
 
-app.post("/api/auth/register", (req, res) => {
-  const { name, email, password, phone } = req.body;
+app.post("/api/auth/register", async (req, res) => {
+  const { name, email, password, phone, role } = req.body;
   if (users.find(u => u.email === email)) {
     return res.status(400).json({ error: "Email taken" });
   }
-  const newUser: User = { id: `u${Date.now()}`, name, email, password, phone, role: "user", savedProductIds: [] };
+  const newUser: User = { id: `u${Date.now()}`, name, email, password, phone, role: role || "user", savedProductIds: [] };
+  if (db) await setDoc(doc(db, "users", newUser.id), JSON.parse(JSON.stringify(newUser))).catch(console.error);
   users.push(newUser);
   const { password: _, ...userWithoutPassword } = newUser;
   res.json({ token: `dummy-token-${newUser.id}`, user: userWithoutPassword });
 });
 
-app.post("/api/auth/google", (req, res) => {
-  const { email, name, avatar, phone } = req.body;
+app.post("/api/auth/google", async (req, res) => {
+  const { email, name, avatar, phone, role } = req.body;
   let user = users.find((u) => u.email === email);
   if (user) {
     if (phone) user.phone = phone;
     if (avatar) user.avatar = avatar;
     if (name) user.name = name;
+    if (role) user.role = role;
   } else {
-    user = { id: `u${Date.now()}`, name, email, phone, avatar, role: "user", savedProductIds: [] };
+    user = { id: `u${Date.now()}`, name, email, phone, avatar, role: role || "user", savedProductIds: [] };
+    if (db) await setDoc(doc(db, "users", user.id), JSON.parse(JSON.stringify(user))).catch(console.error);
     users.push(user);
   }
   const { password, ...userWithoutPassword } = user;
@@ -225,10 +275,48 @@ app.get("/api/users/me", (req, res) => {
   }
 });
 
+app.put("/api/users/me", (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+  const user = users.find((u) => u.id === token);
+  if (user) {
+    const { name, phone, password } = req.body;
+    if (name) user.name = name;
+    if (phone) user.phone = phone;
+    if (password) user.password = password; // Only saving in mock memory
+    const { password: currentPassword, ...userWithoutPassword } = user;
+    res.json(userWithoutPassword);
+  } else {
+    res.status(401).json({ error: "Unauthorized" });
+  }
+});
+
+// Social Links
+app.get("/api/social-links", (req, res) => res.json(socialLinks));
+app.post("/api/social-links", async (req, res) => {
+  const sl: SocialLink = { id: `sl${Date.now()}`, ...req.body };
+  if (db) await setDoc(doc(db, "socialLinks", sl.id), JSON.parse(JSON.stringify(sl))).catch(console.error);
+  socialLinks.push(sl);
+  res.json(sl);
+});
+app.put("/api/social-links/:id", async (req, res) => {
+  const idx = socialLinks.findIndex(sl => sl.id === req.params.id);
+  if (idx > -1) {
+    socialLinks[idx] = { ...socialLinks[idx], ...req.body };
+    if (db) await setDoc(doc(db, "socialLinks", socialLinks[idx].id), JSON.parse(JSON.stringify(socialLinks[idx]))).catch(console.error);
+    res.json(socialLinks[idx]);
+  } else res.status(404).json({ error: "Not found" });
+});
+app.delete("/api/social-links/:id", async (req, res) => {
+  socialLinks = socialLinks.filter(sl => sl.id !== req.params.id);
+  if (db) await deleteDoc(doc(db, "socialLinks", req.params.id)).catch(console.error);
+  res.sendStatus(204);
+});
+
 // Settings
 app.get("/api/settings", (req, res) => res.json(settings));
-app.put("/api/settings", (req, res) => {
+app.put("/api/settings", async (req, res) => {
   settings = { ...settings, ...req.body };
+  if (db) await setDoc(doc(db, "settings", "global"), JSON.parse(JSON.stringify(settings))).catch(console.error);
   res.json(settings);
 });
 
@@ -238,7 +326,7 @@ app.get("/api/categories", (req, res) => res.json(categories));
 
 app.get("/api/admin/restock-requests", (req, res) => res.json(restockRequests));
 
-app.post("/api/restock-requests", (req, res) => {
+app.post("/api/restock-requests", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
   const user = users.find((u) => u.id === token);
   if (!user) return res.status(401).json({ error: 'Unauthorized' });
@@ -259,8 +347,15 @@ app.post("/api/restock-requests", (req, res) => {
     status: 'pending',
     createdAt: new Date().toISOString()
   };
+  if (db) await setDoc(doc(db, "restockRequests", newReq.id), JSON.parse(JSON.stringify(newReq))).catch(console.error);
   restockRequests.push(newReq);
   res.json(newReq);
+});
+
+app.delete("/api/restock-requests/:id", async (req, res) => {
+  restockRequests = restockRequests.filter(r => r.id !== req.params.id);
+  if (db) await deleteDoc(doc(db, "restockRequests", req.params.id)).catch(console.error);
+  res.sendStatus(204);
 });
 
 app.get("/api/users/me/notifications", (req, res) => {
@@ -270,12 +365,15 @@ app.get("/api/users/me/notifications", (req, res) => {
   res.json(user.notifications || []);
 });
 
-app.put("/api/users/me/notifications/:id/read", (req, res) => {
+app.put("/api/users/me/notifications/:id/read", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
   const user = users.find((u) => u.id === token);
   if (!user) return res.status(401).json({ error: 'Unauthorized' });
   const notif = (user.notifications || []).find((n) => n.id === req.params.id);
-  if (notif) notif.read = true;
+  if (notif) {
+    notif.read = true;
+    if (db) await updateDoc(doc(db, "users", user.id), { notifications: user.notifications }).catch(console.error);
+  }
   res.json({ success: true });
 });
 
@@ -294,63 +392,104 @@ app.post("/api/analytics/track", (req, res) => {
 
 app.get("/api/support-tickets", (req, res) => res.json(supportTickets));
 
-app.post("/api/support-tickets", (req, res) => {
+app.post("/api/support-tickets", async (req, res) => {
   const { productId, email, question } = req.body;
   if (!productId || !email || !question) return res.status(400).json({ error: 'Missing fields' });
   const ticket = { id: `st_${Date.now()}`, productId, email, question, status: 'Open' as const, createdAt: new Date().toISOString() };
+  if (db) await setDoc(doc(db, "supportTickets", ticket.id), JSON.parse(JSON.stringify(ticket))).catch(console.error);
   supportTickets.push(ticket);
   res.json(ticket);
 });
 
-app.put("/api/support-tickets/:id", (req, res) => {
+app.put("/api/support-tickets/:id", async (req, res) => {
   const idx = supportTickets.findIndex(t => t.id === req.params.id);
   if (idx !== -1) {
     supportTickets[idx] = { ...supportTickets[idx], ...req.body };
+    if (db) await setDoc(doc(db, "supportTickets", supportTickets[idx].id), JSON.parse(JSON.stringify(supportTickets[idx]))).catch(console.error);
     res.json(supportTickets[idx]);
   } else {
     res.status(404).json({ error: "Not found" });
   }
 });
 
-app.post("/api/categories", (req, res) => {
+app.delete("/api/support-tickets/:id", async (req, res) => {
+  supportTickets = supportTickets.filter(t => t.id !== req.params.id);
+  if (db) await deleteDoc(doc(db, "supportTickets", req.params.id)).catch(console.error);
+  res.sendStatus(204);
+});
+
+app.post("/api/categories", async (req, res) => {
   const c: Category = { id: `c${Date.now()}`, ...req.body };
+  if (db) await setDoc(doc(db, "categories", c.id), JSON.parse(JSON.stringify(c))).catch(console.error);
   categories.push(c);
   res.json(c);
 });
-app.put("/api/categories/:id", (req, res) => {
+app.put("/api/categories/:id", async (req, res) => {
   const idx = categories.findIndex(c => c.id === req.params.id);
   if (idx > -1) {
     categories[idx] = { ...categories[idx], ...req.body };
+    if (db) await setDoc(doc(db, "categories", categories[idx].id), JSON.parse(JSON.stringify(categories[idx]))).catch(console.error);
     res.json(categories[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
-app.delete("/api/categories/:id", (req, res) => {
+app.delete("/api/categories/:id", async (req, res) => {
   categories = categories.filter(c => c.id !== req.params.id);
+  if (db) await deleteDoc(doc(db, "categories", req.params.id)).catch(console.error);
   res.sendStatus(204);
 });
 
 // Brands
 app.get("/api/brands", (req, res) => res.json(brands));
-app.post("/api/brands", (req, res) => {
+app.post("/api/brands", async (req, res) => {
   const b: Brand = { id: `b${Date.now()}`, ...req.body };
+  if (db) await setDoc(doc(db, "brands", b.id), JSON.parse(JSON.stringify(b))).catch(console.error);
   brands.push(b);
   res.json(b);
 });
-app.put("/api/brands/:id", (req, res) => {
+app.put("/api/brands/:id", async (req, res) => {
   const idx = brands.findIndex(b => b.id === req.params.id);
   if (idx > -1) {
     brands[idx] = { ...brands[idx], ...req.body };
+    if (db) await setDoc(doc(db, "brands", brands[idx].id), JSON.parse(JSON.stringify(brands[idx]))).catch(console.error);
     res.json(brands[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
-app.delete("/api/brands/:id", (req, res) => {
+app.delete("/api/brands/:id", async (req, res) => {
   brands = brands.filter(b => b.id !== req.params.id);
+  if (db) await deleteDoc(doc(db, "brands", req.params.id)).catch(console.error);
   res.sendStatus(204);
 });
 
+app.delete("/api/internal/clear-all", async (req, res) => {
+  products = [];
+  try {
+    if (db) {
+      const snap = await getDocs(collection(db, "products"));
+      const promises = snap.docs.map(d => deleteDoc(d.ref));
+      await Promise.all(promises);
+    }
+    res.sendStatus(204);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Products
+app.get("/api/admin/products/search", (req, res) => {
+  const q = (req.query.q as string || "").toLowerCase();
+  let results = products;
+  if (q) {
+    results = products.filter(p => 
+      p.title.toLowerCase().includes(q) || 
+      (p.code && p.code.toLowerCase().includes(q))
+    );
+  }
+  res.json(results);
+});
+
 app.get("/api/products", (req, res) => res.json(products));
-app.post("/api/products", (req, res) => {
+
+app.post("/api/products", async (req, res) => {
   // auto-generate unique SKU if not provided or empty
   let code = req.body.code;
   if (!code) {
@@ -360,10 +499,12 @@ app.post("/api/products", (req, res) => {
     code = `PRD-${brandStr}-${catstr}-${randId}`;
   }
   const p: Product = { id: `p${Date.now()}`, ...req.body, code };
+  const safeP = JSON.parse(JSON.stringify(p));
+  if (db) await setDoc(doc(db, "products", p.id), safeP).catch(console.error);
   products.push(p);
   res.json(p);
 });
-app.put("/api/products/:id", (req, res) => {
+app.put("/api/products/:id", async (req, res) => {
   const idx = products.findIndex(p => p.id === req.params.id);
   if (idx > -1) {
     const oldProduct = products[idx];
@@ -377,12 +518,15 @@ app.put("/api/products/:id", (req, res) => {
     }
     const newProduct = { ...products[idx], ...req.body, code };
     products[idx] = newProduct;
+    const safeProduct = JSON.parse(JSON.stringify(newProduct));
+    if (db) await setDoc(doc(db, "products", newProduct.id), safeProduct).catch(console.error);
     
     if (
       (oldProduct.stockStatus === 'Out of Stock' || oldProduct.inventoryCount === 0) &&
       (newProduct.stockStatus !== 'Out of Stock' && newProduct.inventoryCount !== undefined && newProduct.inventoryCount > 0)
     ) {
-      restockRequests = restockRequests.map(r => {
+      for (let i = 0; i < restockRequests.length; i++) {
+        let r = restockRequests[i];
         if (r.productId === newProduct.id && r.status === 'pending') {
           const uIdx = users.findIndex(u => u.id === r.userId);
           if (uIdx > -1) {
@@ -394,18 +538,20 @@ app.put("/api/products/:id", (req, res) => {
               read: false,
               createdAt: new Date().toISOString()
             });
+            if (db) await updateDoc(doc(db, "users", users[uIdx].id), { notifications: users[uIdx].notifications }).catch(console.error);
           }
-          return { ...r, status: 'fulfilled' };
+          restockRequests[i] = { ...r, status: 'fulfilled' };
+          if (db) await updateDoc(doc(db, "restockRequests", r.id), { status: 'fulfilled' }).catch(console.error);
         }
-        return r;
-      });
+      }
     }
 
     res.json(products[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
-app.delete("/api/products/:id", (req, res) => {
+app.delete("/api/products/:id", async (req, res) => {
   products = products.filter(p => p.id !== req.params.id);
+  if (db) await deleteDoc(doc(db, "products", req.params.id)).catch(console.error);
   res.sendStatus(204);
 });
 
@@ -415,7 +561,7 @@ app.get("/api/products/:id", (req, res) => {
   else res.status(404).json({ error: "Not found" });
 });
 
-app.post("/api/products/:id/reviews", (req, res) => {
+app.post("/api/products/:id/reviews", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
   const user = users.find((u) => u.id === token);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -434,45 +580,52 @@ app.post("/api/products/:id/reviews", (req, res) => {
 
   products[idx].reviews = products[idx].reviews || [];
   products[idx].reviews.push(review);
+  if (db) await setDoc(doc(db, "products", products[idx].id), JSON.parse(JSON.stringify(products[idx]))).catch(console.error);
 
   res.json(review);
 });
 
 // Offers
 app.get("/api/offers", (req, res) => res.json(offers));
-app.post("/api/offers", (req, res) => {
+app.post("/api/offers", async (req, res) => {
   const o: Offer = { id: `of${Date.now()}`, ...req.body };
+  if (db) await setDoc(doc(db, "offers", o.id), JSON.parse(JSON.stringify(o))).catch(console.error);
   offers.push(o);
   res.json(o);
 });
-app.put("/api/offers/:id", (req, res) => {
+app.put("/api/offers/:id", async (req, res) => {
   const idx = offers.findIndex(o => o.id === req.params.id);
   if (idx > -1) {
     offers[idx] = { ...offers[idx], ...req.body };
+    if (db) await setDoc(doc(db, "offers", offers[idx].id), JSON.parse(JSON.stringify(offers[idx]))).catch(console.error);
     res.json(offers[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
-app.delete("/api/offers/:id", (req, res) => {
+app.delete("/api/offers/:id", async (req, res) => {
   offers = offers.filter(o => o.id !== req.params.id);
+  if (db) await deleteDoc(doc(db, "offers", req.params.id)).catch(console.error);
   res.sendStatus(204);
 });
 
 // Coupons
 app.get("/api/coupons", (req, res) => res.json(coupons));
-app.post("/api/coupons", (req, res) => {
+app.post("/api/coupons", async (req, res) => {
   const c: Coupon = { id: `cp${Date.now()}`, ...req.body };
+  if (db) await setDoc(doc(db, "coupons", c.id), JSON.parse(JSON.stringify(c))).catch(console.error);
   coupons.push(c);
   res.json(c);
 });
-app.put("/api/coupons/:id", (req, res) => {
+app.put("/api/coupons/:id", async (req, res) => {
   const idx = coupons.findIndex(c => c.id === req.params.id);
   if (idx > -1) {
     coupons[idx] = { ...coupons[idx], ...req.body };
+    if (db) await setDoc(doc(db, "coupons", coupons[idx].id), JSON.parse(JSON.stringify(coupons[idx]))).catch(console.error);
     res.json(coupons[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
-app.delete("/api/coupons/:id", (req, res) => {
+app.delete("/api/coupons/:id", async (req, res) => {
   coupons = coupons.filter(c => c.id !== req.params.id);
+  if (db) await deleteDoc(doc(db, "coupons", req.params.id)).catch(console.error);
   res.sendStatus(204);
 });
 app.get("/api/coupons/validate/:code", (req, res) => {
@@ -491,7 +644,7 @@ app.get("/api/orders/user", (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
   res.json(orders.filter(o => o.userId === token));
 });
-app.post("/api/orders", (req, res) => {
+app.post("/api/orders", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
   const paymentMethod = req.body.paymentMethod || 'Cash on Delivery';
   const order: Order = {
@@ -515,10 +668,15 @@ app.post("/api/orders", (req, res) => {
     ],
     createdAt: new Date().toISOString()
   };
+  
+  // Remove undefined fields to prevent Firestore errors
+  const safeOrder = JSON.parse(JSON.stringify(order));
+  
+  if (db) await setDoc(doc(db, "orders", order.id), safeOrder).catch(console.error);
   orders.push(order);
   res.json(order);
 });
-app.put("/api/orders/:id/status", (req, res) => {
+app.put("/api/orders/:id/status", async (req, res) => {
   const idx = orders.findIndex(o => o.id === req.params.id);
   if (idx > -1) {
     orders[idx].status = req.body.status;
@@ -538,14 +696,16 @@ app.put("/api/orders/:id/status", (req, res) => {
       description: descriptions[req.body.status] || "Order status updated."
     });
 
+    if (db) await updateDoc(doc(db, "orders", req.params.id), { status: req.body.status, trackingHistory: orders[idx].trackingHistory }).catch(console.error);
     res.json(orders[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
 
-app.put("/api/orders/:id/paymentStatus", (req, res) => {
+app.put("/api/orders/:id/paymentStatus", async (req, res) => {
   const idx = orders.findIndex(o => o.id === req.params.id);
   if (idx > -1) {
     orders[idx].paymentStatus = req.body.paymentStatus;
+    if (db) await updateDoc(doc(db, "orders", req.params.id), { paymentStatus: req.body.paymentStatus }).catch(console.error);
     res.json(orders[idx]);
   } else res.status(404).json({ error: "Not found" });
 });

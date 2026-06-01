@@ -2,16 +2,28 @@ import React, { useEffect, useState } from 'react';
 import { useStore } from '../store';
 import { api } from '../lib/api';
 import { Order } from '../types';
-import { Package, MapPin, ChevronDown, ChevronUp, CheckCircle2, Heart, Printer, Star, Gift, Search } from 'lucide-react';
+import { Package, MapPin, ChevronDown, ChevronUp, CheckCircle2, Heart, Printer, Star, Gift, Search, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
+import { auth, db } from '../lib/firebase';
+import { updateProfile, updatePassword } from 'firebase/auth';
+import { doc, updateDoc, setDoc } from 'firebase/firestore';
 
 export default function Profile() {
-  const { user, token, products } = useStore();
+  const { user, login: setLoginData, token, products } = useStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<'orders' | 'saved' | 'rewards'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'saved' | 'rewards' | 'settings'>('orders');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Profile edit states
+  const [editName, setEditName] = useState(user?.name || '');
+  const [editPhone, setEditPhone] = useState(user?.phone || '');
+  const [newPassword, setNewPassword] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
+  const [editMsg, setEditMsg] = useState('');
+  const [editError, setEditError] = useState('');
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,6 +49,35 @@ export default function Profile() {
   }, [user, token, navigate]);
 
   if (!user) return null;
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditError('');
+    setEditMsg('');
+    setEditLoading(true);
+
+    try {
+      if (auth.currentUser) {
+        if (editName !== user.name) {
+          await updateProfile(auth.currentUser, { displayName: editName });
+        }
+        if (newPassword) {
+          await updatePassword(auth.currentUser, newPassword);
+        }
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        await updateDoc(userRef, { name: editName, phone: editPhone });
+      }
+
+      const res = await api.put('/users/me', { name: editName, phone: editPhone, password: newPassword }, token);
+      setLoginData(res, token);
+      setEditMsg('Profile updated successfully!');
+      setNewPassword('');
+    } catch (err: any) {
+      setEditError(err.message || 'Failed to update profile');
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   const toggleOrderExpand = (id: string) => {
     const newExpanded = new Set(expandedOrders);
@@ -107,12 +148,12 @@ export default function Profile() {
                   <tr>
                     <td>${item.title}</td>
                     <td>${item.quantity}</td>
-                    <td>৳${(item.price * item.quantity).toFixed(2)}</td>
+                    <td>৳${Number((item.price * item.quantity) || 0).toFixed(2)}</td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
-            <div class="total">Total: ৳${order.totalAmount.toFixed(2)}</div>
+            <div class="total">Total: ৳${Number(order.totalAmount || 0).toFixed(2)}</div>
           </div>
 
           <div class="section">
@@ -130,7 +171,7 @@ export default function Profile() {
             <div class="section">
               <h2>Tracking History</h2>
               <ul class="tracking">
-                ${order.trackingHistory.map(step => `
+                ${(order.trackingHistory || []).map(step => `
                   <li>
                     <div class="tracking-date">${new Date(step.date).toLocaleDateString()} ${new Date(step.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${step.status}</div>
                     <div class="tracking-status">${step.description}</div>
@@ -202,9 +243,13 @@ export default function Profile() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="md:col-span-1 space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sticky top-24">
-            <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-2xl mb-4">
-              {user.name.charAt(0).toUpperCase()}
-            </div>
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.name} className="w-16 h-16 rounded-full object-cover mb-4 border-2 border-indigo-100 shadow-sm" />
+            ) : (
+              <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-2xl mb-4 shadow-sm">
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+            )}
             <h2 className="font-bold text-slate-900 text-lg">{user.name}</h2>
             <p className="text-sm text-slate-500">{user.email}</p>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -272,6 +317,13 @@ export default function Profile() {
                 <Gift className="w-5 h-5 mr-2" />
                 Rewards History
               </button>
+              <button 
+                onClick={() => setActiveTab('settings')}
+                className={`pb-4 text-sm font-bold capitalize transition-colors flex items-center ${activeTab === 'settings' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent'}`}
+              >
+                <Settings className="w-5 h-5 mr-2" />
+                Edit Profile
+              </button>
             </div>
           </div>
 
@@ -292,8 +344,8 @@ export default function Profile() {
                   You haven't placed any orders yet.
                 </div>
               ) : orders.filter(order => 
-                order.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                order.items.some(item => item.title.toLowerCase().includes(searchQuery.toLowerCase()))
+                (order.id || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                (order.items || []).some(item => (item.title || '').toLowerCase().includes(searchQuery.toLowerCase()))
               ).length === 0 ? (
                 <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg">
                   No orders match your search query.
@@ -301,8 +353,8 @@ export default function Profile() {
               ) : (
                 <div className="space-y-6">
                 {orders.filter(order => 
-                  order.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                  order.items.some(item => item.title.toLowerCase().includes(searchQuery.toLowerCase()))
+                  (order.id || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                  (order.items || []).some(item => (item.title || '').toLowerCase().includes(searchQuery.toLowerCase()))
                 ).map(order => {
                   const isExpanded = expandedOrders.has(order.id);
                   return (
@@ -316,7 +368,7 @@ export default function Profile() {
                         </div>
                         <div className="mt-2 sm:mt-0">
                            <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold block sm:inline">Total</span>
-                           <span className="text-sm text-slate-900 font-medium block sm:inline sm:ml-2">৳{order.totalAmount.toFixed(2)}</span>
+                           <span className="text-sm text-slate-900 font-medium block sm:inline sm:ml-2">৳{Number(order.totalAmount || 0).toFixed(2)}</span>
                         </div>
                         <div className="mt-2 sm:mt-0">
                           <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold block sm:inline sm:hidden">Order ID</span>
@@ -376,7 +428,7 @@ export default function Profile() {
                               </h3>
                               {order.trackingHistory && order.trackingHistory.length > 0 ? (
                                 <div className="space-y-6 relative before:absolute before:inset-0 before:ml-2 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-slate-200">
-                                  {order.trackingHistory.map((step, idx) => (
+                                  {(order.trackingHistory || []).map((step, idx) => (
                                     <div key={idx} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                                       <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-white bg-indigo-500 text-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow z-10 translate-x-[3px]">
                                         <CheckCircle2 className="w-3 h-3" />
@@ -479,7 +531,7 @@ export default function Profile() {
                             <span className="font-bold text-slate-900">Order #{order.id.slice(0, 8)}</span>
                             <span className="text-xs text-slate-500">• {new Date(order.createdAt).toLocaleDateString()}</span>
                           </div>
-                          <p className="text-sm text-slate-600 mt-1">Amount: ৳{order.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Earned at {(order.rate * 100).toFixed(0)}% rate)</p>
+                          <p className="text-sm text-slate-600 mt-1">Amount: ৳{order.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Earned at {Number((order.rate * 100) || 0).toFixed(0)}% rate)</p>
                         </div>
                         <div className="mt-3 sm:mt-0 flex items-center bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
                           <Gift className="w-4 h-4 text-indigo-600 mr-2" />
@@ -489,6 +541,57 @@ export default function Profile() {
                     ))}
                 </div>
               )}
+            </div>
+          )}
+          {activeTab === 'settings' && (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <h2 className="text-xl font-bold text-slate-900 mb-6 border-b border-slate-100 pb-4">Edit Profile</h2>
+              
+              {editError && (
+                <div className="bg-rose-50 text-rose-600 p-3 rounded-lg text-sm mb-6 border border-rose-100">
+                  {editError}
+                </div>
+              )}
+              {editMsg && (
+                <div className="bg-emerald-50 text-emerald-600 p-3 rounded-lg text-sm mb-6 border border-emerald-100">
+                  {editMsg}
+                </div>
+              )}
+
+              <form onSubmit={handleSaveProfile} className="space-y-6 max-w-md">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                  <input type="email" value={user.email} disabled className="w-full border border-slate-300 rounded-lg px-4 py-2.5 bg-slate-50 text-slate-500 cursor-not-allowed" />
+                  <p className="text-xs text-slate-500 mt-1">Email address cannot be changed.</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                  <input required type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
+                  <input required type="tel" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" />
+                </div>
+                
+                <div className="pt-4 border-t border-slate-100">
+                  <h3 className="text-sm font-bold text-slate-900 mb-3">Change Password (Optional)</h3>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
+                    <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Leave blank to keep current password" className="w-full border border-slate-300 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" />
+                    <p className="text-xs text-slate-500 mt-1">If you registered via Google, setting a password here will allow you to login with email next time.</p>
+                  </div>
+                </div>
+                
+                <button 
+                  type="submit" 
+                  disabled={editLoading}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-70"
+                >
+                  {editLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </form>
             </div>
           )}
         </div>

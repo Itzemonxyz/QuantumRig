@@ -16,6 +16,7 @@ export default function ProductsTab() {
   });
   const [specsText, setSpecsText] = useState('');
   const [additionalImagesText, setAdditionalImagesText] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   
   const queryParams = new URLSearchParams(location.search);
   const [searchQuery, setSearchQuery] = useState(queryParams.get('q') || '');
@@ -25,6 +26,8 @@ export default function ProductsTab() {
   const [sortField, setSortField] = useState<string>('');
   const [sortAsc, setSortAsc] = useState<boolean>(true);
 
+  const [searchedProducts, setSearchedProducts] = useState<Product[]>([]);
+
   useEffect(() => {
     const q = new URLSearchParams(location.search).get('q');
     if (q !== null && q !== searchQuery) {
@@ -32,9 +35,29 @@ export default function ProductsTab() {
     }
   }, [location.search]);
 
-  const filteredProducts = products.filter(p => p.code?.toLowerCase().includes(searchQuery.toLowerCase()) || p.title.toLowerCase().includes(searchQuery.toLowerCase()));
+  useEffect(() => {
+    const fetchSearch = async () => {
+      try {
+        if (!searchQuery.trim()) {
+           setSearchedProducts(products);
+           return;
+        }
+        const results = await api.get(`/admin/products/search?q=${encodeURIComponent(searchQuery)}`, token);
+        setSearchedProducts(results);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    
+    // Simple debounce
+    const timer = setTimeout(() => {
+      fetchSearch();
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [searchQuery, products, token]);
 
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
+  const sortedProducts = [...searchedProducts].sort((a, b) => {
     if (sortField === 'stock') {
       const aStock = a.inventoryCount || 0;
       const bStock = b.inventoryCount || 0;
@@ -97,14 +120,14 @@ export default function ProductsTab() {
     else newCode = `${newCode}-CLONE`;
     
     setForm({ ...rest, title: `${rest.title} (Clone)`, code: newCode });
-    setSpecsText(Object.entries(p.specs).map(([k, v]) => `${k}:${v}`).join('\n'));
+    setSpecsText(Object.entries(p.specs || {}).map(([k, v]) => `${k}:${v}`).join('\n'));
     setAdditionalImagesText(p.additionalImages?.join('\n') || '');
     setIsEditing(true);
   };
 
   const handleEdit = (p: Product) => {
     setForm(p);
-    setSpecsText(Object.entries(p.specs).map(([k, v]) => `${k}:${v}`).join('\n'));
+    setSpecsText(Object.entries(p.specs || {}).map(([k, v]) => `${k}:${v}`).join('\n'));
     setAdditionalImagesText(p.additionalImages?.join('\n') || '');
     setIsEditing(true);
   };
@@ -117,10 +140,17 @@ export default function ProductsTab() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure?')) return;
-    await api.delete(`/products/${id}`, token);
-    const updated = await api.get('/products');
-    setProducts(updated);
+    setDeletingId(id);
+    try {
+      await api.delete(`/products/${id}`, token);
+      const updated = await api.get('/products');
+      setProducts(updated);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to delete product');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleQuickRestock = async (p: Product) => {
@@ -207,11 +237,11 @@ export default function ProductsTab() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Regular Price</label>
-              <input required type="number" step="0.01" value={form.price} onChange={e => setForm({...form, price: parseFloat(e.target.value)})} className="w-full border rounded p-2" />
+              <input required type="number" step="0.01" value={form.price === undefined || isNaN(form.price) ? '' : form.price} onChange={e => setForm({...form, price: parseFloat(e.target.value)})} className="w-full border rounded p-2" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Offer Price (Optional)</label>
-              <input type="number" step="0.01" value={form.discountPrice || ''} onChange={e => setForm({...form, discountPrice: e.target.value ? parseFloat(e.target.value) : undefined})} className="w-full border rounded p-2" />
+              <input type="number" step="0.01" value={form.discountPrice === undefined || isNaN(form.discountPrice) ? '' : form.discountPrice} onChange={e => setForm({...form, discountPrice: e.target.value ? parseFloat(e.target.value) : undefined})} className="w-full border rounded p-2" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Stock Status</label>
@@ -223,7 +253,7 @@ export default function ProductsTab() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Inventory Count</label>
-              <input required type="number" min="0" value={form.inventoryCount || 0} onChange={e => setForm({...form, inventoryCount: parseInt(e.target.value)})} className="w-full border rounded p-2" />
+              <input required type="number" min="0" value={form.inventoryCount === undefined || isNaN(form.inventoryCount) ? '' : form.inventoryCount} onChange={e => setForm({...form, inventoryCount: parseInt(e.target.value)})} className="w-full border rounded p-2" />
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium mb-1">Image URL</label>
@@ -243,7 +273,7 @@ export default function ProductsTab() {
             </div>
              <div>
               <label className="block text-sm font-medium mb-1">Wattage (Optional)</label>
-              <input type="number" value={form.wattage || 0} onChange={e => setForm({...form, wattage: parseInt(e.target.value)})} className="w-full border rounded p-2" />
+              <input type="number" value={form.wattage === undefined || isNaN(form.wattage) ? '' : form.wattage} onChange={e => setForm({...form, wattage: parseInt(e.target.value)})} className="w-full border rounded p-2" />
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium mb-1">Specs (Format: Key:Value per line)</label>
@@ -260,7 +290,7 @@ export default function ProductsTab() {
     const headers = ['Title', 'Price', 'Stock Count'];
     const csvContent = [
       headers.join(','),
-      ...products.map(p => `"${p.title.replace(/"/g, '""')}",${p.price.toFixed(2)},${p.inventoryCount || 0}`)
+      ...products.map(p => `"${p.title.replace(/"/g, '""')}",${Number(p.price || 0).toFixed(2)},${p.inventoryCount || 0}`)
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -349,7 +379,7 @@ export default function ProductsTab() {
               <th className="px-6 py-3 w-10">
                 <input 
                   type="checkbox" 
-                  checked={filteredProducts.length > 0 && selectedIds.length === filteredProducts.length}
+                  checked={searchedProducts.length > 0 && selectedIds.length === searchedProducts.length}
                   onChange={handleSelectAll}
                   className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                 />
@@ -390,10 +420,10 @@ export default function ProductsTab() {
                 <td className="px-6 py-4 text-slate-500">{categories.find(c => c.id === p.categoryId)?.name}</td>
                 <td className="px-6 py-4">
                   <div className="flex flex-col">
-                    <span className="font-bold text-slate-900">${p.price.toFixed(2)}</span>
+                    <span className="font-bold text-slate-900">${Number(p.price || 0).toFixed(2)}</span>
                     {p.discountPrice && (
                       <span className={`text-xs mt-0.5 ${p.discountPrice > p.price ? 'text-rose-600 font-bold flex items-center gap-1' : 'text-emerald-600 font-medium'}`} title={p.discountPrice > p.price ? "Offer price is higher than regular price!" : ""}>
-                        ${p.discountPrice.toFixed(2)} (Offer)
+                        ${Number(p.discountPrice || 0).toFixed(2)} (Offer)
                         {p.discountPrice > p.price && <AlertCircle className="w-3.5 h-3.5" />}
                       </span>
                     )}
@@ -426,7 +456,9 @@ export default function ProductsTab() {
                   <button onClick={() => handleQuickRestock(p)} className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded mr-2" title="Quick Restock (+10)"><PackagePlus className="w-4 h-4"/></button>
                   <button onClick={() => handleClone(p)} title="Clone Product" className="text-blue-600 hover:bg-blue-50 p-1.5 rounded mr-2"><Copy className="w-4 h-4"/></button>
                   <button onClick={() => handleEdit(p)} title="Edit" className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded mr-2"><Edit2 className="w-4 h-4"/></button>
-                  <button onClick={() => handleDelete(p.id)} title="Delete" className="text-rose-600 hover:bg-rose-50 p-1.5 rounded"><Trash2 className="w-4 h-4"/></button>
+                  <button onClick={() => handleDelete(p.id)} disabled={deletingId === p.id} title="Delete" className="text-rose-600 hover:bg-rose-50 p-1.5 rounded disabled:opacity-50">
+                    {deletingId === p.id ? <div className="w-4 h-4 rounded-full border-2 border-rose-600 border-t-transparent animate-spin"/> : <Trash2 className="w-4 h-4"/>}
+                  </button>
                 </td>
               </tr>
             ))}

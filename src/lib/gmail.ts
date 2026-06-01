@@ -17,7 +17,7 @@ export const sendReceiptEmail = async (orderId: string, total: number, itemsCoun
           <h2 style="margin-top: 0;">Order Summary</h2>
           <p><strong>Order ID:</strong> ${orderId}</p>
           <p><strong>Total Items:</strong> ${itemsCount}</p>
-          <p><strong>Total Amount:</strong> ৳${total.toFixed(2)}</p>
+          <p><strong>Total Amount:</strong> ৳${Number(total || 0).toFixed(2)}</p>
         </div>
         <p>Thank you for shopping with By Gamers, For Gamers.</p>
       </div>

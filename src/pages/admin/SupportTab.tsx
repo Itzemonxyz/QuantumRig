@@ -2,14 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { useStore } from '../../store';
 import { SupportTicket } from '../../types';
+import { Trash2, Loader2 } from 'lucide-react';
 
 export default function SupportTab() {
   const { token } = useStore();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadTickets();
+    const intervalId = setInterval(() => {
+      loadTickets();
+    }, 5000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const loadTickets = async () => {
@@ -29,6 +35,18 @@ export default function SupportTab() {
       loadTickets();
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    try {
+      await api.delete(`/support-tickets/${id}`, token);
+      loadTickets();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -70,7 +88,7 @@ export default function SupportTab() {
                       {ticket.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right space-x-3 text-sm">
+                  <td className="px-6 py-4 text-right space-x-3 text-sm flex items-center justify-end">
                     {ticket.status === 'Open' ? (
                       <button 
                         onClick={() => handleUpdateStatus(ticket.id, 'Closed')}
@@ -86,6 +104,9 @@ export default function SupportTab() {
                         Reopen
                       </button>
                     )}
+                    <button onClick={() => handleDelete(ticket.id)} disabled={deletingId === ticket.id} className="p-1.5 text-slate-400 hover:text-rose-500 transition-colors disabled:opacity-50">
+                      {deletingId === ticket.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />}
+                    </button>
                   </td>
                 </tr>
               ))}

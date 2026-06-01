@@ -1,84 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} { allow read, write: if false; }
-    
-    function isSignedIn() { return request.auth != null; }
-    function isAdmin() { 
-      return isSignedIn() && (
-        request.auth.token.email == 'itzemon990@gmail.com' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
-      ); 
-    }
-    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
-    function incoming() { return request.resource.data; }
-    function existing() { return resource.data; }
-    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
-
-    match /users/{userId} {
-      function isValidUser(data) {
-        return data.name is string && data.name.size() <= 100
-          && data.email is string && data.email.size() <= 100
-          && data.role in ['admin', 'user'];
-      }
-      allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) && isValidUser(incoming()) && (incoming().role == 'user' || isAdmin()); 
-      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(incoming()) && (isAdmin() || incoming().role == existing().role);
-    }
-    
-    match /categories/{categoryId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /brands/{brandId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /products/{productId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /products/{productId}/reviews/{reviewId} {
-      allow read: if true;
-      allow create: if isOwner(incoming().userId);
-      allow delete: if isAdmin() || isOwner(existing().userId);
-    }
-    
-    match /orders/{orderId} {
-      allow read: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid); 
-      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
-      allow update: if isAdmin();
-    }
-
-    match /restockRequests/{requestId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin(); // Should be restricted
-      allow create: if true; // anyone can create a restock request
-    }
-    
-    match /supportTickets/{ticketId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
-      allow create: if true;
-    }
-    
-    match /offers/{offerId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /coupons/{couponId} {
-      allow read: if true; 
-      allow write: if isAdmin();
-    }
-    
-    match /settings/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }

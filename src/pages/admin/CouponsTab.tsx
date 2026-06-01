@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Coupon, Product } from '../../types';
 import { api } from '../../lib/api';
 import { useStore } from '../../store';
-import { Plus, Trash2, Edit2, Ticket } from 'lucide-react';
+import { Plus, Trash2, Edit2, Ticket, Loader2 } from 'lucide-react';
 
 export default function CouponsTab() {
   const { token, products } = useStore();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<Coupon>>({
     code: '', discountPercentage: 10, isActive: true, applicableProductIds: []
   });
@@ -24,6 +25,10 @@ export default function CouponsTab() {
 
   useEffect(() => {
     fetchCoupons();
+    const intervalId = setInterval(() => {
+      fetchCoupons();
+    }, 5000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleNew = () => {
@@ -37,9 +42,14 @@ export default function CouponsTab() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Delete this coupon?')) {
+    setDeletingId(id);
+    try {
       await api.delete(`/coupons/${id}`, token);
       fetchCoupons();
+    } catch(e) {
+      console.error(e);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -154,8 +164,10 @@ export default function CouponsTab() {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <button onClick={() => handleEdit(c)} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded mr-2"><Edit2 className="w-4 h-4"/></button>
-                  <button onClick={() => handleDelete(c.id)} className="text-rose-600 hover:bg-rose-50 p-1.5 rounded"><Trash2 className="w-4 h-4"/></button>
+                  <button onClick={() => handleEdit(c)} disabled={deletingId === c.id} className="text-indigo-600 hover:bg-indigo-50 p-1.5 rounded mr-2 disabled:opacity-50"><Edit2 className="w-4 h-4"/></button>
+                  <button onClick={() => handleDelete(c.id)} disabled={deletingId === c.id} className="text-rose-600 hover:bg-rose-50 p-1.5 rounded disabled:opacity-50">
+                    {deletingId === c.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4"/>}
+                  </button>
                 </td>
               </tr>
             ))}

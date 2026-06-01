@@ -64,7 +64,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     >
       {saveAmount > 0 && (
          <div className="absolute top-0 left-0 bg-rose-600 text-white text-[10px] sm:text-xs px-3 py-1 rounded-br-2xl font-medium z-10">
-            Save: {saveAmount.toFixed(0)}৳
+            Save: {Number(saveAmount || 0).toFixed(0)}৳
          </div>
       )}
 
@@ -131,11 +131,11 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="flex flex-col">
              {hasDiscount ? (
                <>
-                 <span className="text-[10px] sm:text-xs text-slate-500 line-through">৳{product.price.toFixed(0)}</span>
-                 <span className="text-sm sm:text-lg font-bold text-rose-600">৳{displayPrice.toFixed(0)}</span>
+                 <span className="text-[10px] sm:text-xs text-slate-500 line-through">৳{Number(product.price).toFixed(0)}</span>
+                 <span className="text-sm sm:text-lg font-bold text-rose-600">৳{Number(displayPrice).toFixed(0)}</span>
                </>
              ) : (
-               <span className="text-sm sm:text-lg font-bold text-indigo-600 mt-auto">৳{displayPrice.toFixed(0)}</span>
+               <span className="text-sm sm:text-lg font-bold text-indigo-600 mt-auto">৳{Number(displayPrice).toFixed(0)}</span>
              )}
           </div>
         </div>
@@ -174,9 +174,9 @@ export default function ProductCard({ product }: ProductCardProps) {
               <h2 className="text-2xl font-bold text-slate-900 mb-4 leading-tight">{product.title}</h2>
               
               <div className="flex items-end gap-3 mb-6">
-                <span className="text-3xl font-bold text-slate-900">৳{displayPrice.toFixed(2)}</span>
+                <span className="text-3xl font-bold text-slate-900">৳{Number(displayPrice || 0).toFixed(2)}</span>
                 {hasDiscount && (
-                  <span className="text-lg text-slate-400 line-through mb-1">৳{product.price.toFixed(2)}</span>
+                  <span className="text-lg text-slate-400 line-through mb-1">৳{Number(product.price || 0).toFixed(2)}</span>
                 )}
               </div>
               

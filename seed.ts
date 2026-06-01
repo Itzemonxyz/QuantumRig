@@ -3,15 +3,15 @@ import { getFirestore, collection, doc, setDoc } from 'firebase/firestore';
 import fs from 'fs';
 
 const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY || "AIzaSyAlqrNk_-ZxBbinAw8FxMRefiF9025_JCo",
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "notional-acre-4sjh2.firebaseapp.com",
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "notional-acre-4sjh2",
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "notional-acre-4sjh2.firebasestorage.app",
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "73118880539",
-  appId: process.env.VITE_FIREBASE_APP_ID || "1:73118880539:web:6412f38e40ff8eb56079be"
+  apiKey: process.env.VITE_FIREBASE_API_KEY,
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "emonxyz-48285.firebaseapp.com",
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "emonxyz-48285",
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "emonxyz-48285.firebasestorage.app",
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.VITE_FIREBASE_APP_ID
 };
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app, process.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || "ai-studio-2ce2e3ea-fdac-4626-b157-6f3d919c293c");
+const db = getFirestore(app, process.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || "(default)");
 
 import { demoProducts } from './src/data/demoProducts.ts';
 

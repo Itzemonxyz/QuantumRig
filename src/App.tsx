@@ -28,18 +28,19 @@ import TrackOrder from './pages/TrackOrder';
 import Offers from './pages/Offers';
 
 export default function App() {
-  const { setCategories, setBrands, setProducts, setOffers, setSettings, token, login, logout, setIsLoading } = useStore();
+  const { setCategories, setBrands, setProducts, setOffers, setSettings, setSocialLinks, token, login, logout, setIsLoading } = useStore();
 
   useEffect(() => {
     // Initial fetch
     const boot = async () => {
       try {
-        const [cats, brnds, prods, ofrs, sets] = await Promise.all([
+        const [cats, brnds, prods, ofrs, sets, slinks] = await Promise.all([
           api.get('/categories'),
           api.get('/brands'),
           api.get('/products'),
           api.get('/offers'),
-          api.get('/settings')
+          api.get('/settings'),
+          api.get('/social-links')
         ]);
         
         setCategories(cats || []);
@@ -47,14 +48,17 @@ export default function App() {
         setProducts(prods || []);
         setOffers(ofrs || []);
         setSettings(sets || null);
+        setSocialLinks(slinks || []);
         
         // Also fetch user if token exists
         if (token) {
           try {
             const u = await api.get('/users/me', token);
             if (u) login(u as any, token);
-          } catch (e) {
-             console.error("User fetch failed", e);
+          } catch (e: any) {
+             if (e.message !== "Unauthorized") {
+               console.error("User fetch failed", e);
+             }
              logout();
           }
         }

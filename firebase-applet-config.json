@@ -1,10 +1,10 @@
 {
-  "projectId": "notional-acre-4sjh2",
-  "appId": "1:73118880539:web:6412f38e40ff8eb56079be",
-  "apiKey": "AIzaSyAlqrNk_-ZxBbinAw8FxMRefiF9025_JCo",
-  "authDomain": "notional-acre-4sjh2.firebaseapp.com",
+  "projectId": "emonxyz-48285",
+  "appId": "1:1035995553022:web:129353f22b2503864c99af",
+  "apiKey": "AIzaSyDYoNvGjDRk-HDFhuTpF4eaYJExqDyF1p0",
+  "authDomain": "emonxyz-48285.firebaseapp.com",
   "firestoreDatabaseId": "ai-studio-2ce2e3ea-fdac-4626-b157-6f3d919c293c",
-  "storageBucket": "notional-acre-4sjh2.firebasestorage.app",
-  "messagingSenderId": "73118880539",
+  "storageBucket": "emonxyz-48285.firebasestorage.app",
+  "messagingSenderId": "1035995553022",
   "measurementId": ""
 }

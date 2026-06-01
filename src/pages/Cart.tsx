@@ -204,11 +204,11 @@ export default function Cart() {
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     {item.product.discountPrice ? (
                       <>
-                        <span className="text-rose-600 font-medium">৳{item.product.discountPrice.toFixed(2)}</span>
-                        <span className="text-xs text-slate-400 line-through">৳{item.product.price.toFixed(2)}</span>
+                        <span className="text-rose-600 font-medium">৳{Number(item.product.discountPrice || 0).toFixed(2)}</span>
+                        <span className="text-xs text-slate-400 line-through">৳{Number(item.product.price || 0).toFixed(2)}</span>
                       </>
                     ) : (
-                      <span className="text-indigo-600 font-medium">৳{item.product.price.toFixed(2)}</span>
+                      <span className="text-indigo-600 font-medium">৳{Number(item.product.price || 0).toFixed(2)}</span>
                     )}
                   </div>
                 </div>
@@ -268,21 +268,21 @@ export default function Cart() {
             <div className="space-y-3 text-sm mb-6">
               <div className="flex justify-between text-slate-600">
                 <span>Subtotal ({cart.length} items)</span>
-                <span>৳{subtotal.toFixed(2)}</span>
+                <span>৳{Number(subtotal || 0).toFixed(2)}</span>
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-medium">
                   <span>Discount ({appliedCoupon?.code})</span>
-                  <span>-৳{discountAmount.toFixed(2)}</span>
+                  <span>-৳{Number(discountAmount || 0).toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between text-slate-600">
                 <span>Shipping</span>
-                <span>{shipping === 0 ? <span className="text-emerald-600 font-medium">Free</span> : `৳${shipping.toFixed(2)}`}</span>
+                <span>{shipping === 0 ? <span className="text-emerald-600 font-medium">Free</span> : `৳${Number(shipping || 0).toFixed(2)}`}</span>
               </div>
               <div className="border-t border-slate-100 pt-3 flex justify-between font-bold text-lg text-slate-900">
                 <span>Total</span>
-                <span>৳{total.toFixed(2)}</span>
+                <span>৳{Number(total || 0).toFixed(2)}</span>
               </div>
             </div>
 

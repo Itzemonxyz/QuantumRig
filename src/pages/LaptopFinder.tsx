@@ -25,7 +25,7 @@ export default function LaptopFinder() {
       
       // UseCase matching (dummy logic based on title/description)
       let useCaseMatch = true;
-      const lowerDesc = laptop.description.toLowerCase() + ' ' + laptop.title.toLowerCase();
+      const lowerDesc = (laptop.description || '').toLowerCase() + ' ' + (laptop.title || '').toLowerCase();
       if (useCase === 'gaming') {
         useCaseMatch = lowerDesc.includes('gaming') || lowerDesc.includes('rtx') || lowerDesc.includes('gpu');
       }

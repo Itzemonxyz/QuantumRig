@@ -1,13 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../../store';
 import { api } from '../../lib/api';
-import { Plus, Edit2, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { Offer } from '../../types';
 
 export default function OffersTab() {
-  const { offers, setOffers } = useStore();
+  const { offers, setOffers, token } = useStore();
   const [isEditing, setIsEditing] = useState(false);
   const [currentOffer, setCurrentOffer] = useState<Partial<Offer>>({});
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const fetchOffers = async () => {
+    try {
+      const data = await api.get('/offers', token);
+      setOffers(data || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchOffers();
+    }, 5000);
+    return () => clearInterval(intervalId);
+  }, [token]);
+
   
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,13 +45,14 @@ export default function OffersTab() {
   };
 
   const handleDelete = async (id: string) => {
-    if(confirm('Are you sure you want to delete this offer?')) {
-      try {
-        await api.delete(`/offers/${id}`);
-        setOffers(offers.filter(o => o.id !== id));
-      } catch (err) {
-        console.error(err);
-      }
+    setDeletingId(id);
+    try {
+      await api.delete(`/offers/${id}`);
+      setOffers(offers.filter(o => o.id !== id));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -125,11 +144,11 @@ export default function OffersTab() {
                                   <span className="text-rose-600 flex items-center text-sm font-medium"><XCircle className="w-4 h-4 mr-1"/> Inactive</span>}
                 </td>
                 <td className="py-3 text-right">
-                  <button onClick={() => { setCurrentOffer(offer); setIsEditing(true); }} className="p-1.5 text-slate-400 hover:text-indigo-600 transition-colors mx-1">
+                  <button onClick={() => { setCurrentOffer(offer); setIsEditing(true); }} disabled={deletingId === offer.id} className="p-1.5 text-slate-400 hover:text-indigo-600 transition-colors mx-1 disabled:opacity-50">
                     <Edit2 className="w-4 h-4" />
                   </button>
-                  <button onClick={() => handleDelete(offer.id)} className="p-1.5 text-slate-400 hover:text-rose-500 transition-colors mx-1">
-                    <Trash2 className="w-4 h-4" />
+                  <button onClick={() => handleDelete(offer.id)} disabled={deletingId === offer.id} className="p-1.5 text-slate-400 hover:text-rose-500 transition-colors mx-1 disabled:opacity-50">
+                    {deletingId === offer.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />}
                   </button>
                 </td>
               </tr>

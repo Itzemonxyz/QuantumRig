@@ -44,9 +44,9 @@ export default function Products() {
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
     filteredProducts = filteredProducts.filter(p => 
-      p.title.toLowerCase().includes(q) || 
-      p.description.toLowerCase().includes(q) || 
-      (p.brand && p.brand.toLowerCase().includes(q))
+      (p.title || '').toLowerCase().includes(q) || 
+      (p.description || '').toLowerCase().includes(q) || 
+      (p.brand || '').toLowerCase().includes(q)
     );
   }
 
@@ -136,7 +136,7 @@ export default function Products() {
     ...(activeCategory ? [{ label: categories.find(c => c.id === activeCategory)?.name || 'Category' }] : [])
   ];
 
-  const productPrices = products.map(p => p.price);
+  const productPrices = products.map(p => Number(p.price)).filter(p => !isNaN(p));
   const minPriceLimit = productPrices.length > 0 ? Math.floor(Math.min(...productPrices)) : 0;
   const maxPriceLimit = productPrices.length > 0 ? Math.ceil(Math.max(...productPrices)) : 100000;
 
@@ -412,7 +412,7 @@ export default function Products() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {sortedProducts.map((p, index) => (
                 <motion.div 
-                  key={p.id}
+                  key={p.id || `product-${index}`}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
@@ -437,11 +437,11 @@ export default function Products() {
                   <div className="flex items-center gap-1.5 line-clamp-1">
                     {p.discountPrice ? (
                       <>
-                        <p className="text-[10px] text-slate-500 line-through">৳{p.price.toFixed(0)}</p>
-                        <p className="text-xs font-bold text-rose-600">৳{p.discountPrice.toFixed(0)}</p>
+                        <p className="text-[10px] text-slate-500 line-through">৳{Number(p.price).toFixed(0)}</p>
+                        <p className="text-xs font-bold text-rose-600">৳{Number(p.discountPrice).toFixed(0)}</p>
                       </>
                     ) : (
-                      <p className="text-xs font-bold text-indigo-600">৳{p.price.toFixed(0)}</p>
+                      <p className="text-xs font-bold text-indigo-600">৳{Number(p.price).toFixed(0)}</p>
                     )}
                   </div>
                 </div>
@@ -506,11 +506,11 @@ export default function Products() {
                      <div className="mb-6 flex flex-wrap items-center gap-2">
                        {p.discountPrice ? (
                          <>
-                           <span className="text-2xl font-bold text-rose-600">৳{p.discountPrice.toFixed(0)}</span>
-                           <span className="text-sm font-medium text-slate-400 line-through">৳{p.price.toFixed(0)}</span>
+                           <span className="text-2xl font-bold text-rose-600">৳{Number(p.discountPrice).toFixed(0)}</span>
+                           <span className="text-sm font-medium text-slate-400 line-through">৳{Number(p.price).toFixed(0)}</span>
                          </>
                        ) : (
-                         <span className="text-2xl font-bold text-indigo-600">৳{p.price.toFixed(0)}</span>
+                         <span className="text-2xl font-bold text-indigo-600">৳{Number(p.price).toFixed(0)}</span>
                        )}
                      </div>
                      

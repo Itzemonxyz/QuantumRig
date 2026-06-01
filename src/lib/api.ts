@@ -1,6 +1,8 @@
 export const api = {
   get: async (endpoint: string, token?: string | null) => {
-    const res = await fetch(`/api${endpoint}`, {
+    const timestamp = Date.now();
+    const url = endpoint.includes('?') ? `/api${endpoint}&_t=${timestamp}` : `/api${endpoint}?_t=${timestamp}`;
+    const res = await fetch(url, {
       headers: {
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       }
