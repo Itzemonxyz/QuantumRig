@@ -109,6 +109,61 @@
         "whatsappUrl": { "type": "string" },
         "instagramUrl": { "type": "string" }
       }
+    },
+    "Restock": {
+      "title": "Restock",
+      "description": "Restock request",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "productId": { "type": "string" },
+        "productTitle": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "fulfilled"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "userName", "userEmail", "productId", "productTitle", "status", "createdAt"]
+    },
+    "Support": {
+      "title": "Support",
+      "description": "Support Ticket",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "email": { "type": "string" },
+        "question": { "type": "string" },
+        "status": { "type": "string", "enum": ["Open", "Closed"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "productId", "email", "question", "status", "createdAt"]
+    },
+    "Offer": {
+      "title": "Offer",
+      "description": "Offer promotion",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "description": { "type": "string" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "title", "imageUrl", "active"]
+    },
+    "SocialLink": {
+      "title": "SocialLink",
+      "description": "Social media link",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "url": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["id", "name", "url"]
     }
   },
   "firestore": {
@@ -143,6 +198,22 @@
     "settings": {
       "schema": "Settings",
       "description": "Global settings"
+    },
+    "restocks": {
+      "schema": "Restock",
+      "description": "Restock requests"
+    },
+    "support": {
+      "schema": "Support",
+      "description": "Support tickets"
+    },
+    "offers": {
+      "schema": "Offer",
+      "description": "Promotions and offers"
+    },
+    "social_links": {
+      "schema": "SocialLink",
+      "description": "Social media links"
     }
   }
 }

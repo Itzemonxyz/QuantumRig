@@ -161,24 +161,24 @@ async function syncDatabase() {
     }
 
     // 9. Sync Restock Requests
-    const rrSnap = await getDocs(collection(db, "restockRequests"));
+    const rrSnap = await getDocs(collection(db, "restocks"));
     if (!rrSnap.empty) {
       restockRequests = rrSnap.docs.map((d: any) => d.data() as RestockRequest);
     }
 
     // 10. Sync Support Tickets
-    const stSnap = await getDocs(collection(db, "supportTickets"));
+    const stSnap = await getDocs(collection(db, "support"));
     if (!stSnap.empty) {
       supportTickets = stSnap.docs.map((d: any) => d.data() as any);
     }
 
     // 11. Sync Social Links
-    const slSnap = await getDocs(collection(db, "socialLinks"));
+    const slSnap = await getDocs(collection(db, "social_links"));
     if (!slSnap.empty) {
       socialLinks = slSnap.docs.map((d: any) => d.data() as SocialLink);
     } else {
       for (const sl of socialLinks) {
-        await setDoc(doc(db, "socialLinks", sl.id), JSON.parse(JSON.stringify(sl))).catch(console.error);
+        await setDoc(doc(db, "social_links", sl.id), JSON.parse(JSON.stringify(sl))).catch(console.error);
       }
     }
 
@@ -294,7 +294,7 @@ app.put("/api/users/me", (req, res) => {
 app.get("/api/social-links", (req, res) => res.json(socialLinks));
 app.post("/api/social-links", async (req, res) => {
   const sl: SocialLink = { id: `sl${Date.now()}`, ...req.body };
-  if (db) await setDoc(doc(db, "socialLinks", sl.id), JSON.parse(JSON.stringify(sl))).catch(console.error);
+  if (db) await setDoc(doc(db, "social_links", sl.id), JSON.parse(JSON.stringify(sl))).catch(console.error);
   socialLinks.push(sl);
   res.json(sl);
 });
@@ -302,13 +302,13 @@ app.put("/api/social-links/:id", async (req, res) => {
   const idx = socialLinks.findIndex(sl => sl.id === req.params.id);
   if (idx > -1) {
     socialLinks[idx] = { ...socialLinks[idx], ...req.body };
-    if (db) await setDoc(doc(db, "socialLinks", socialLinks[idx].id), JSON.parse(JSON.stringify(socialLinks[idx]))).catch(console.error);
+    if (db) await setDoc(doc(db, "social_links", socialLinks[idx].id), JSON.parse(JSON.stringify(socialLinks[idx]))).catch(console.error);
     res.json(socialLinks[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
 app.delete("/api/social-links/:id", async (req, res) => {
   socialLinks = socialLinks.filter(sl => sl.id !== req.params.id);
-  if (db) await deleteDoc(doc(db, "socialLinks", req.params.id)).catch(console.error);
+  if (db) await deleteDoc(doc(db, "social_links", req.params.id)).catch(console.error);
   res.sendStatus(204);
 });
 
@@ -347,14 +347,14 @@ app.post("/api/restock-requests", async (req, res) => {
     status: 'pending',
     createdAt: new Date().toISOString()
   };
-  if (db) await setDoc(doc(db, "restockRequests", newReq.id), JSON.parse(JSON.stringify(newReq))).catch(console.error);
+  if (db) await setDoc(doc(db, "restocks", newReq.id), JSON.parse(JSON.stringify(newReq))).catch(console.error);
   restockRequests.push(newReq);
   res.json(newReq);
 });
 
 app.delete("/api/restock-requests/:id", async (req, res) => {
   restockRequests = restockRequests.filter(r => r.id !== req.params.id);
-  if (db) await deleteDoc(doc(db, "restockRequests", req.params.id)).catch(console.error);
+  if (db) await deleteDoc(doc(db, "restocks", req.params.id)).catch(console.error);
   res.sendStatus(204);
 });
 
@@ -396,7 +396,7 @@ app.post("/api/support-tickets", async (req, res) => {
   const { productId, email, question } = req.body;
   if (!productId || !email || !question) return res.status(400).json({ error: 'Missing fields' });
   const ticket = { id: `st_${Date.now()}`, productId, email, question, status: 'Open' as const, createdAt: new Date().toISOString() };
-  if (db) await setDoc(doc(db, "supportTickets", ticket.id), JSON.parse(JSON.stringify(ticket))).catch(console.error);
+  if (db) await setDoc(doc(db, "support", ticket.id), JSON.parse(JSON.stringify(ticket))).catch(console.error);
   supportTickets.push(ticket);
   res.json(ticket);
 });
@@ -405,7 +405,7 @@ app.put("/api/support-tickets/:id", async (req, res) => {
   const idx = supportTickets.findIndex(t => t.id === req.params.id);
   if (idx !== -1) {
     supportTickets[idx] = { ...supportTickets[idx], ...req.body };
-    if (db) await setDoc(doc(db, "supportTickets", supportTickets[idx].id), JSON.parse(JSON.stringify(supportTickets[idx]))).catch(console.error);
+    if (db) await setDoc(doc(db, "support", supportTickets[idx].id), JSON.parse(JSON.stringify(supportTickets[idx]))).catch(console.error);
     res.json(supportTickets[idx]);
   } else {
     res.status(404).json({ error: "Not found" });
@@ -414,7 +414,7 @@ app.put("/api/support-tickets/:id", async (req, res) => {
 
 app.delete("/api/support-tickets/:id", async (req, res) => {
   supportTickets = supportTickets.filter(t => t.id !== req.params.id);
-  if (db) await deleteDoc(doc(db, "supportTickets", req.params.id)).catch(console.error);
+  if (db) await deleteDoc(doc(db, "support", req.params.id)).catch(console.error);
   res.sendStatus(204);
 });
 
@@ -541,7 +541,7 @@ app.put("/api/products/:id", async (req, res) => {
             if (db) await updateDoc(doc(db, "users", users[uIdx].id), { notifications: users[uIdx].notifications }).catch(console.error);
           }
           restockRequests[i] = { ...r, status: 'fulfilled' };
-          if (db) await updateDoc(doc(db, "restockRequests", r.id), { status: 'fulfilled' }).catch(console.error);
+          if (db) await updateDoc(doc(db, "restocks", r.id), { status: 'fulfilled' }).catch(console.error);
         }
       }
     }
