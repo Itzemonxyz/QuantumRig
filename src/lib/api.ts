@@ -8,10 +8,17 @@ export const api = {
       }
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
+      const errText = await res.text();
+      let err;
+      try { err = JSON.parse(errText); } catch { err = { error: errText || `Failed to fetch ${endpoint}` }; }
       throw new Error(err.error || `Failed to fetch ${endpoint}`);
     }
-    return res.json();
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
   },
   post: async (endpoint: string, data: any, token?: string | null) => {
     const res = await fetch(`/api${endpoint}`, {
@@ -23,10 +30,13 @@ export const api = {
       body: JSON.stringify(data)
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
+      const errText = await res.text();
+      let err;
+      try { err = JSON.parse(errText); } catch { err = { error: errText || `Failed to post ${endpoint}` }; }
       throw new Error(err.error || `Failed to post ${endpoint}`);
     }
-    return res.json();
+    const text = await res.text();
+    try { return JSON.parse(text); } catch { return null; }
   },
   put: async (endpoint: string, data: any, token?: string | null) => {
     const res = await fetch(`/api${endpoint}`, {
@@ -38,10 +48,13 @@ export const api = {
       body: JSON.stringify(data)
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
+      const errText = await res.text();
+      let err;
+      try { err = JSON.parse(errText); } catch { err = { error: errText || `Failed to put ${endpoint}` }; }
       throw new Error(err.error || `Failed to put ${endpoint}`);
     }
-    return res.json();
+    const text = await res.text();
+    try { return JSON.parse(text); } catch { return null; }
   },
   delete: async (endpoint: string, token?: string | null) => {
     const res = await fetch(`/api${endpoint}`, {
@@ -51,11 +64,14 @@ export const api = {
       }
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
+      const errText = await res.text();
+      let err;
+      try { err = JSON.parse(errText); } catch { err = { error: errText || `Failed to delete ${endpoint}` }; }
       throw new Error(err.error || `Failed to delete ${endpoint}`);
     }
     if (res.status !== 204) {
-      return res.json().catch(() => ({}));
+      const text = await res.text();
+      try { return JSON.parse(text); } catch { return null; }
     }
   }
 };
