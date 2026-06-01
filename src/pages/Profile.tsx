@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useStore } from '../store';
 import { api } from '../lib/api';
 import { Order } from '../types';
-import { Package, MapPin, ChevronDown, ChevronUp, CheckCircle2, Heart, Printer, Star, Gift, Search, Settings } from 'lucide-react';
+import { Package, MapPin, ChevronDown, ChevronUp, CheckCircle2, Heart, Printer, Star, Gift, Search, Settings, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { auth, db } from '../lib/firebase';
@@ -10,7 +10,7 @@ import { updateProfile, updatePassword } from 'firebase/auth';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 
 export default function Profile() {
-  const { user, login: setLoginData, token, products } = useStore();
+  const { user, login: setLoginData, token, products, logout } = useStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'orders' | 'saved' | 'rewards' | 'settings'>('orders');
@@ -25,6 +25,16 @@ export default function Profile() {
   const [editError, setEditError] = useState('');
 
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      logout();
+      navigate('/login');
+    } catch (err) {
+      console.error('Failed to log out:', err);
+    }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -263,6 +273,15 @@ export default function Profile() {
                 </span>
               )}
             </div>
+
+            <button
+              id="btn-logout"
+              onClick={handleLogout}
+              className="mt-6 w-full font-sans font-medium text-xs tracking-tight text-center border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg py-2.5 transition-colors flex items-center justify-center gap-2 shadow-sm"
+            >
+              <LogOut className="w-4 h-4" />
+              Log Out
+            </button>
           </div>
           
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
