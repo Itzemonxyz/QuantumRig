@@ -31,6 +31,14 @@ export default function App() {
   const { setCategories, setBrands, setProducts, setOffers, setSettings, setSocialLinks, token, login, logout, setIsLoading } = useStore();
 
   useEffect(() => {
+    // Ensure no account is left logged in by default upon entering the website
+    const isNewEntry = !sessionStorage.getItem('entered_quantumrig');
+    if (isNewEntry) {
+      localStorage.removeItem('token');
+      logout();
+      sessionStorage.setItem('entered_quantumrig', 'true');
+    }
+
     // Initial fetch
     const boot = async () => {
       try {
@@ -50,11 +58,12 @@ export default function App() {
         setSettings(sets || null);
         setSocialLinks(slinks || []);
         
-        // Also fetch user if token exists
-        if (token) {
+        // Also fetch user if token exists (and isn't cleared)
+        const activeToken = localStorage.getItem('token');
+        if (activeToken) {
           try {
-            const u = await api.get('/users/me', token);
-            if (u) login(u as any, token);
+            const u = await api.get('/users/me', activeToken);
+            if (u) login(u as any, activeToken);
           } catch (e: any) {
              if (e.message !== "Unauthorized") {
                console.error("User fetch failed", e);

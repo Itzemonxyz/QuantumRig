@@ -41,6 +41,7 @@ export default function Login() {
           // User exists, log them in directly
           const userData = userDoc.data();
           const res = await api.post('/auth/google', { 
+            id: result.user.uid,
             email: result.user.email, 
             name: userData.name || result.user.displayName, 
             avatar: result.user.photoURL, 
@@ -80,7 +81,7 @@ export default function Login() {
       if (mode === 'login') {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         // Sync with backend memory to establish token, using the google endpoint which gracefully handles missing users
-        const res = await api.post('/auth/google', { email: userCredential.user.email, name: userCredential.user.displayName || email.split('@')[0], avatar: userCredential.user.photoURL, phone: userCredential.user.phoneNumber });
+        const res = await api.post('/auth/google', { id: userCredential.user.uid, email: userCredential.user.email, name: userCredential.user.displayName || email.split('@')[0], avatar: userCredential.user.photoURL, phone: userCredential.user.phoneNumber });
         login(res.user, res.token);
         const from = (location.state as any)?.from?.pathname || '/';
         navigate(from, { replace: true });
@@ -101,7 +102,7 @@ export default function Login() {
         });
 
         // Also sync to backend for current system compatibility
-        const res = await api.post('/auth/register', { name, email, password, phone, role: userRole });
+        const res = await api.post('/auth/register', { id: firebaseUser.uid, name, email, password, phone, role: userRole });
         login(res.user, res.token);
         navigate('/');
       } else if (mode === 'forgot-password') {
@@ -121,7 +122,7 @@ export default function Login() {
             savedProductIds: []
           }, { merge: true });
         }
-        const res = await api.post('/auth/google', { email, name, avatar, phone, role: (email === 'itzemon990@gmail.com' || email === 'admin@quantumrig.tech') ? 'admin' : 'user' });
+        const res = await api.post('/auth/google', { id: user?.uid, email, name, avatar, phone, role: (email === 'itzemon990@gmail.com' || email === 'admin@quantumrig.tech') ? 'admin' : 'user' });
         login(res.user, res.token);
         const from = (location.state as any)?.from?.pathname || '/';
         navigate(from, { replace: true });

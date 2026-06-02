@@ -83,9 +83,9 @@ export default function OrdersTab() {
     const rows = sortedOrders.map(order => [
       order.id,
       `"${new Date(order.createdAt).toLocaleString().replace(/"/g, '""')}"`,
-      `"${order.deliveryDetails.fullName.replace(/"/g, '""')}"`,
-      `"${order.deliveryDetails.phone.replace(/"/g, '""')}"`,
-      `"${order.deliveryDetails.address.replace(/"/g, '""')}"`,
+      `"${(order.deliveryDetails?.fullName || '').replace(/"/g, '""')}"`,
+      `"${(order.deliveryDetails?.phone || '').replace(/"/g, '""')}"`,
+      `"${(order.deliveryDetails?.address || '').replace(/"/g, '""')}"`,
       order.status,
       order.paymentMethod || 'Cash on Delivery',
       order.paymentStatus || 'Pending',
@@ -121,7 +121,7 @@ export default function OrdersTab() {
     const data = sortedOrders.map(order => [
       order.id.slice(0, 8) + '...',
       new Date(order.createdAt).toLocaleDateString(),
-      order.deliveryDetails.fullName,
+      order.deliveryDetails?.fullName || 'N/A',
       order.status,
       order.paymentStatus || 'Pending',
       `$${Number(order.totalAmount || 0).toFixed(2)}`,
@@ -261,10 +261,10 @@ export default function OrdersTab() {
                   <div>
                     <h4 className="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Customer Details</h4>
                     <div className="text-sm text-slate-700 bg-slate-50 p-4 rounded-lg border border-slate-100 space-y-1">
-                      <p><span className="font-medium text-slate-900">Name:</span> {order.deliveryDetails.fullName}</p>
-                      <p><span className="font-medium text-slate-900">Phone:</span> {order.deliveryDetails.phone}</p>
-                      <p><span className="font-medium text-slate-900">Address:</span> {order.deliveryDetails.address}</p>
-                      {order.deliveryDetails.instructions && (
+                      <p><span className="font-medium text-slate-900">Name:</span> {order.deliveryDetails?.fullName || 'N/A'}</p>
+                      <p><span className="font-medium text-slate-900">Phone:</span> {order.deliveryDetails?.phone || 'N/A'}</p>
+                      <p><span className="font-medium text-slate-900">Address:</span> {order.deliveryDetails?.address || 'N/A'}</p>
+                      {order.deliveryDetails?.instructions && (
                         <div className="pt-2 mt-2 border-t border-slate-200/60">
                           <p><span className="font-medium text-slate-900 block mb-1">Instructions:</span> 
                             <span className="text-slate-600 block bg-slate-100 p-2 rounded italic">{order.deliveryDetails.instructions}</span>

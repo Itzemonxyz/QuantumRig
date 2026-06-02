@@ -6,12 +6,25 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import ScrollToTopButton from '../components/ScrollToTopButton';
 
 export default function Builder() {
-  const { categories, products, builderCart, addToBuilder, removeFromBuilder, addToCart } = useStore();
+  const { categories, products, builderCart, addToBuilder, removeFromBuilder, addToCart, isLoading } = useStore();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [loadingCategory, setLoadingCategory] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [copiedLink, setCopiedLink] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
+
+  useEffect(() => {
+    if (activeCategory) {
+      setLoadingCategory(activeCategory);
+      const timer = setTimeout(() => {
+        setLoadingCategory(null);
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setLoadingCategory(null);
+    }
+  }, [activeCategory]);
 
   useEffect(() => {
     const buildParam = searchParams.get('build');
@@ -178,71 +191,110 @@ export default function Builder() {
                 {/* Product Selection Drawer */}
                 {activeCategory === category.id && (
                   <div className="p-4 bg-slate-50 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-slate-200">
-                    {products.filter(p => p.categoryId === category.id).map(p => {
-                      const isSelected = selected?.id === p.id;
-                      return (
+                    {loadingCategory === category.id || isLoading ? (
+                      Array.from({ length: 3 }).map((_, idx) => (
                         <div 
-                          key={p.id} 
-                          className={`product-card-container relative bg-white rounded-xl border-2 flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer ${isSelected ? 'border-indigo-600 shadow-md ring-2 ring-indigo-600/20' : 'border-slate-200 hover:border-indigo-300'}`}
-                          onClick={() => {
-                            if (isSelected) {
-                              removeFromBuilder(category.id);
-                            } else {
-                              addToBuilder(category.id, p);
-                              setActiveCategory(categories.find((_, i) => categories[i].id === category.id && i < categories.length - 1 ? categories[i+1].id : null)?.id ?? null);
-                            }
-                          }}
+                          key={`loader-${idx}`}
+                          className="product-card-container relative bg-white rounded-xl border border-slate-200 flex flex-col overflow-hidden animate-pulse h-full min-h-[340px] pointer-events-none"
                         >
-                          {isSelected && (
-                            <div className="absolute top-3 left-3 z-10 bg-indigo-600 text-white rounded-full p-1.5 shadow-sm">
-                              <Check className="w-4 h-4" />
-                            </div>
-                          )}
-                          <div className="p-4 flex justify-center h-36 relative bg-white rounded-t-xl group border-b border-slate-100">
-                            <img src={p.imageUrl} className="max-w-full h-full object-contain mix-blend-multiply transition-transform group-hover:scale-105 duration-300" alt={p.title} />
+                          <div className="p-4 flex justify-center items-center h-36 relative bg-slate-100/50">
+                            {/* Shimmer Image Box */}
+                            <div className="w-24 h-24 bg-slate-200 rounded-lg"></div>
                           </div>
-                          <div className="p-4 flex-1 flex flex-col bg-slate-50/50 rounded-b-xl">
-                            <h4 className="font-medium text-slate-900 text-sm line-clamp-2 mb-2" title={p.title}>{p.title}</h4>
-                            <div className="text-[10px] text-slate-500 mb-3 flex flex-wrap gap-1.5 line-clamp-2">
-                               {Object.entries(p.specs || {}).slice(0, 3).map(([k, v]) => (
-                                 <span key={k} className="bg-white border border-slate-200 px-1.5 py-0.5 rounded shadow-sm">{k}: {v as string}</span>
-                               ))}
-                               {p.socket && <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded shadow-sm">Socket: {p.socket}</span>}
+                          <div className="p-4 flex-1 flex flex-col bg-slate-50/50 space-y-3">
+                            {/* Shimmer Title lines */}
+                            <div className="space-y-2">
+                              <div className="h-4 bg-slate-200 rounded w-11/12"></div>
+                              <div className="h-4 bg-slate-200 rounded w-3/4"></div>
                             </div>
-                            <div className="mt-auto pt-3 border-t border-slate-200 flex justify-between items-center gap-2 grow-0 shrink-0">
-                              <div className="flex flex-col items-start whitespace-nowrap">
-                                {p.discountPrice ? (
-                                  <>
-                                    <span className="text-[10px] text-slate-500 line-through">৳{Number(p.price || 0).toFixed(2)}</span>
-                                    <span className="font-bold text-rose-600 text-sm">৳{Number(p.discountPrice || 0).toFixed(2)}</span>
-                                  </>
-                                ) : (
-                                  <span className="font-bold text-slate-900 text-sm">৳{Number(p.price || 0).toFixed(2)}</span>
-                                )}
+                            
+                            {/* Shimmer Specs pills */}
+                            <div className="flex flex-wrap gap-1.5 pt-2">
+                              <div className="h-5 bg-slate-200 rounded-lg w-16"></div>
+                              <div className="h-5 bg-slate-200 rounded-lg w-12"></div>
+                              <div className="h-5 bg-slate-200 rounded-lg w-20"></div>
+                            </div>
+                            
+                            {/* Shimmer Bottom footer */}
+                            <div className="mt-auto pt-4 border-t border-slate-200/60 flex justify-between items-center">
+                              <div className="space-y-1">
+                                <div className="h-3 bg-slate-200 rounded w-8"></div>
+                                <div className="h-5 bg-slate-200 rounded w-16"></div>
                               </div>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (isSelected) {
-                                    removeFromBuilder(category.id);
-                                  } else {
-                                    addToBuilder(category.id, p);
-                                    setActiveCategory(categories.find((_, i) => categories[i].id === category.id && i < categories.length - 1 ? categories[i+1].id : null)?.id ?? null);
-                                  }
-                                }}
-                                className={`text-xs px-3 py-1.5 rounded-lg flex items-center space-x-1 font-bold transition-colors ${isSelected ? 'bg-rose-100 text-rose-700 hover:bg-rose-200' : 'bg-indigo-600 text-white hover:bg-indigo-500'}`}
-                              >
-                                {isSelected ? <span>Remove</span> : <span>Select</span>}
-                              </button>
+                              <div className="h-8 bg-slate-200 rounded-lg w-16"></div>
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
-                    {products.filter(p => p.categoryId === category.id).length === 0 && (
-                      <div className="col-span-full py-8 text-center text-slate-500 bg-white rounded-xl border border-slate-200">
-                        No products found in this category.
-                      </div>
+                      ))
+                    ) : (
+                      <>
+                        {products.filter(p => p.categoryId === category.id).map(p => {
+                          const isSelected = selected?.id === p.id;
+                          return (
+                            <div 
+                              key={p.id} 
+                              className={`product-card-container relative bg-white rounded-xl border-2 flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer ${isSelected ? 'border-indigo-600 shadow-md ring-2 ring-indigo-600/20' : 'border-slate-200 hover:border-indigo-300'}`}
+                              onClick={() => {
+                                if (isSelected) {
+                                  removeFromBuilder(category.id);
+                                } else {
+                                  addToBuilder(category.id, p);
+                                  setActiveCategory(categories.find((_, i) => categories[i].id === category.id && i < categories.length - 1 ? categories[i+1].id : null)?.id ?? null);
+                                }
+                              }}
+                            >
+                              {isSelected && (
+                                <div className="absolute top-3 left-3 z-10 bg-indigo-600 text-white rounded-full p-1.5 shadow-sm">
+                                  <Check className="w-4 h-4" />
+                                </div>
+                              )}
+                              <div className="p-4 flex justify-center h-36 relative bg-white rounded-t-xl group border-b border-slate-100">
+                                <img src={p.imageUrl} className="max-w-full h-full object-contain mix-blend-multiply transition-transform group-hover:scale-105 duration-300" alt={p.title} />
+                              </div>
+                              <div className="p-4 flex-1 flex flex-col bg-slate-50/50 rounded-b-xl">
+                                <h4 className="font-medium text-slate-900 text-sm line-clamp-2 mb-2" title={p.title}>{p.title}</h4>
+                                <div className="text-[10px] text-slate-500 mb-3 flex flex-wrap gap-1.5 line-clamp-2">
+                                   {Object.entries(p.specs || {}).slice(0, 3).map(([k, v]) => (
+                                     <span key={k} className="bg-white border border-slate-200 px-1.5 py-0.5 rounded shadow-sm">{k}: {v as string}</span>
+                                   ))}
+                                   {p.socket && <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded shadow-sm">Socket: {p.socket}</span>}
+                                </div>
+                                <div className="mt-auto pt-3 border-t border-slate-200 flex justify-between items-center gap-2 grow-0 shrink-0">
+                                  <div className="flex flex-col items-start whitespace-nowrap">
+                                    {p.discountPrice ? (
+                                      <>
+                                        <span className="text-[10px] text-slate-500 line-through">৳{Number(p.price || 0).toFixed(2)}</span>
+                                        <span className="font-bold text-rose-600 text-sm">৳{Number(p.discountPrice || 0).toFixed(2)}</span>
+                                      </>
+                                    ) : (
+                                      <span className="font-bold text-slate-900 text-sm">৳{Number(p.price || 0).toFixed(2)}</span>
+                                    )}
+                                  </div>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (isSelected) {
+                                        removeFromBuilder(category.id);
+                                      } else {
+                                        addToBuilder(category.id, p);
+                                        setActiveCategory(categories.find((_, i) => categories[i].id === category.id && i < categories.length - 1 ? categories[i+1].id : null)?.id ?? null);
+                                      }
+                                    }}
+                                    className={`text-xs px-3 py-1.5 rounded-lg flex items-center space-x-1 font-bold transition-colors ${isSelected ? 'bg-rose-100 text-rose-700 hover:bg-rose-200' : 'bg-indigo-600 text-white hover:bg-indigo-500'}`}
+                                  >
+                                    {isSelected ? <span>Remove</span> : <span>Select</span>}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {products.filter(p => p.categoryId === category.id).length === 0 && (
+                          <div className="col-span-full py-8 text-center text-slate-500 bg-white rounded-xl border border-slate-200">
+                            No products found in this category.
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}

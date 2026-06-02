@@ -169,10 +169,10 @@ export default function Profile() {
           <div class="section">
             <h2>Delivery Details</h2>
             <div class="details">
-              <strong>Receiver:</strong> ${order.deliveryDetails.fullName}<br>
-              <strong>Phone:</strong> ${order.deliveryDetails.phone}<br>
-              <strong>Address:</strong> ${order.deliveryDetails.address}<br>
-              ${order.deliveryDetails.instructions ? `<strong>Instructions:</strong> ${order.deliveryDetails.instructions}<br>` : ''}
+              <strong>Receiver:</strong> ${order.deliveryDetails?.fullName || 'N/A'}<br>
+              <strong>Phone:</strong> ${order.deliveryDetails?.phone || 'N/A'}<br>
+              <strong>Address:</strong> ${order.deliveryDetails?.address || 'N/A'}<br>
+              ${order.deliveryDetails?.instructions ? `<strong>Instructions:</strong> ${order.deliveryDetails.instructions}<br>` : ''}
               <strong>Payment Method:</strong> ${order.paymentMethod || 'Cash on Delivery'}
             </div>
           </div>
@@ -471,10 +471,10 @@ export default function Profile() {
                             <div>
                               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Delivery Details</h3>
                               <div className="text-sm text-slate-600 bg-slate-50 p-4 rounded border border-slate-100 space-y-2">
-                                <p><span className="font-medium text-slate-800">Receiver:</span> {order.deliveryDetails.fullName}</p>
-                                <p><span className="font-medium text-slate-800">Phone:</span> {order.deliveryDetails.phone}</p>
-                                <p><span className="font-medium text-slate-800">Address:</span> {order.deliveryDetails.address}</p>
-                                {order.deliveryDetails.instructions && (
+                                <p><span className="font-medium text-slate-800">Receiver:</span> {order.deliveryDetails?.fullName || 'N/A'}</p>
+                                <p><span className="font-medium text-slate-800">Phone:</span> {order.deliveryDetails?.phone || 'N/A'}</p>
+                                <p><span className="font-medium text-slate-800">Address:</span> {order.deliveryDetails?.address || 'N/A'}</p>
+                                {order.deliveryDetails?.instructions && (
                                   <div className="border-t border-slate-200/60 pt-2 mt-2">
                                     <p><span className="font-medium text-slate-800">Instructions:</span> {order.deliveryDetails.instructions}</p>
                                   </div>

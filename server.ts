@@ -201,7 +201,7 @@ app.post("/api/users/me/saved-products", async (req, res) => {
   const { productId } = req.body;
   if (!user.savedProductIds.includes(productId)) {
     user.savedProductIds.push(productId);
-    if (db) await updateDoc(doc(db, "users", user.id), { savedProductIds: user.savedProductIds }).catch(console.error);
+    if (db) await setDoc(doc(db, "users", user.id), { savedProductIds: user.savedProductIds }, { merge: true }).catch(console.error);
   }
   const { password, ...userWithoutPassword } = user;
   res.json(userWithoutPassword);
@@ -214,7 +214,7 @@ app.delete("/api/users/me/saved-products/:productId", async (req, res) => {
   
   if (user.savedProductIds) {
     user.savedProductIds = user.savedProductIds.filter(id => id !== req.params.productId);
-    if (db) await updateDoc(doc(db, "users", user.id), { savedProductIds: user.savedProductIds }).catch(console.error);
+    if (db) await setDoc(doc(db, "users", user.id), { savedProductIds: user.savedProductIds }, { merge: true }).catch(console.error);
   }
   const { password, ...userWithoutPassword } = user;
   res.json(userWithoutPassword);
@@ -372,7 +372,7 @@ app.put("/api/users/me/notifications/:id/read", async (req, res) => {
   const notif = (user.notifications || []).find((n) => n.id === req.params.id);
   if (notif) {
     notif.read = true;
-    if (db) await updateDoc(doc(db, "users", user.id), { notifications: user.notifications }).catch(console.error);
+    if (db) await setDoc(doc(db, "users", user.id), { notifications: user.notifications }, { merge: true }).catch(console.error);
   }
   res.json({ success: true });
 });
@@ -538,7 +538,7 @@ app.put("/api/products/:id", async (req, res) => {
               read: false,
               createdAt: new Date().toISOString()
             });
-            if (db) await updateDoc(doc(db, "users", users[uIdx].id), { notifications: users[uIdx].notifications }).catch(console.error);
+            if (db) await setDoc(doc(db, "users", users[uIdx].id), { notifications: users[uIdx].notifications }, { merge: true }).catch(console.error);
           }
           restockRequests[i] = { ...r, status: 'fulfilled' };
           if (db) await updateDoc(doc(db, "restocks", r.id), { status: 'fulfilled' }).catch(console.error);
@@ -669,6 +669,25 @@ app.post("/api/orders", async (req, res) => {
     createdAt: new Date().toISOString()
   };
   
+  // Decrease product stock and save back to database
+  if (req.body.items && Array.isArray(req.body.items)) {
+    for (const item of req.body.items) {
+      const pIdx = products.findIndex(p => p.id === item.productId);
+      if (pIdx > -1) {
+        const prod = products[pIdx];
+        if (prod.inventoryCount !== undefined) {
+          prod.inventoryCount = Math.max(0, prod.inventoryCount - (item.quantity || 1));
+          if (prod.inventoryCount === 0) {
+            prod.stockStatus = 'Out of Stock';
+          }
+        }
+        if (db) {
+          await setDoc(doc(db, "products", prod.id), JSON.parse(JSON.stringify(prod))).catch(console.error);
+        }
+      }
+    }
+  }
+
   // Remove undefined fields to prevent Firestore errors
   const safeOrder = JSON.parse(JSON.stringify(order));
   
