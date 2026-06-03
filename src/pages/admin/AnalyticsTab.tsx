@@ -17,10 +17,90 @@ const STATUS_COLORS: Record<string, string> = {
   Delivered: '#10b981'  // emerald
 };
 
+const getLocalDateString = (dateInput: Date | string) => {
+  const dateObj = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function AnalyticsTab() {
   const { token, analytics, setAnalytics, products } = useStore();
   const [loading, setLoading] = useState(!analytics);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [timeSegment, setTimeSegment] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
+
+  const weeklyData = useMemo(() => {
+    const validOrders = orders.filter(o => o.status !== 'Cancelled');
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    return Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const targetDateStr = getLocalDateString(d);
+      
+      const dailyRevenue = validOrders
+        .filter(o => getLocalDateString(o.createdAt) === targetDateStr)
+        .reduce((sum, o) => sum + o.totalAmount, 0);
+        
+      return {
+        name: dayNames[d.getDay()],
+        date: `${d.getMonth() + 1}/${d.getDate()}`,
+        revenue: dailyRevenue
+      };
+    }).reverse();
+  }, [orders]);
+
+  const monthlyData = useMemo(() => {
+    const validOrders = orders.filter(o => o.status !== 'Cancelled');
+    
+    return Array.from({ length: 30 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const targetDateStr = getLocalDateString(d);
+      
+      const dailyRevenue = validOrders
+        .filter(o => getLocalDateString(o.createdAt) === targetDateStr)
+        .reduce((sum, o) => sum + o.totalAmount, 0);
+        
+      return {
+        name: `${d.getMonth() + 1}/${d.getDate()}`,
+        revenue: dailyRevenue
+      };
+    }).reverse();
+  }, [orders]);
+
+  const yearlyData = useMemo(() => {
+    const validOrders = orders.filter(o => o.status !== 'Cancelled');
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    return Array.from({ length: 12 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(1); // prevent month overflow
+      d.setMonth(d.getMonth() - i);
+      const year = d.getFullYear();
+      const monthIdx = d.getMonth();
+      
+      const monthlyRevenue = validOrders
+        .filter(o => {
+          const oDate = new Date(o.createdAt);
+          return oDate.getFullYear() === year && oDate.getMonth() === monthIdx;
+        })
+        .reduce((sum, o) => sum + o.totalAmount, 0);
+        
+      return {
+        name: `${monthNames[monthIdx]} '${String(year).slice(-2)}`,
+        revenue: monthlyRevenue
+      };
+    }).reverse();
+  }, [orders]);
+
+  const chartData = useMemo(() => {
+    if (timeSegment === 'weekly') return weeklyData;
+    if (timeSegment === 'monthly') return monthlyData;
+    return yearlyData;
+  }, [timeSegment, weeklyData, monthlyData, yearlyData]);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -171,6 +251,37 @@ export default function AnalyticsTab() {
     return null;
   };
 
+  const RevenueTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-slate-900 border border-slate-700/80 p-3 shadow-xl rounded-xl text-xs font-sans text-slate-200 z-50 select-none">
+          <p className="font-bold text-slate-400 mb-1 tracking-wider uppercase">{label}</p>
+          <p className="font-mono text-sm font-bold text-indigo-400 flex items-center gap-1.5 mt-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse"></span>
+            Revenue: ৳{Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const OrderBreakdownTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      return (
+        <div className="bg-white border border-slate-200 p-3 shadow-xl rounded-xl text-xs font-sans text-slate-800 z-50 select-none">
+          <p className="font-bold text-slate-500 mb-1 tracking-wider uppercase text-[10px]">{data.name}</p>
+          <p className="font-mono text-sm font-bold text-indigo-600 flex items-center gap-1.5 mt-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+            {data.value} {Number(data.value) === 1 ? 'Order' : 'Orders'}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   const handleDownloadCSV = () => {
     if (inventoryData.length === 0) return;
     
@@ -235,23 +346,42 @@ export default function AnalyticsTab() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Sales Chart */}
         <div className="lg:col-span-2 bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-sm min-h-[350px] flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-bold text-white flex items-center">
-              <TrendingUp className="w-5 h-5 mr-3 text-indigo-500" />
-              Revenue Over Time (Last 7 Days)
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+            <h3 className="font-bold text-white flex items-center pr-2">
+              <TrendingUp className="w-5 h-5 mr-3 text-indigo-500 shrink-0" />
+              <span>
+                {timeSegment === 'weekly' && "Revenue Over Time (Weekly)"}
+                {timeSegment === 'monthly' && "Revenue Over Time (Monthly - 30 Days)"}
+                {timeSegment === 'yearly' && "Revenue Over Time (Yearly - 12 Months)"}
+              </span>
             </h3>
+            
+            {/* Segment Controller */}
+            <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700 self-start sm:self-auto shrink-0 select-none">
+              {(['weekly', 'monthly', 'yearly'] as const).map((segment) => (
+                <button
+                  key={segment}
+                  type="button"
+                  onClick={() => setTimeSegment(segment)}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all capitalize cursor-pointer ${
+                    timeSegment === segment
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                  }`}
+                >
+                  {segment}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="flex-1 w-full relative">
             <div className="absolute inset-0">
               <ResponsiveContainer width="99%" height="100%" minWidth={100} minHeight={100}>
-                <LineChart data={analytics.salesData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `৳${v}`} width={60} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px', color: '#fff' }}
-                    itemStyle={{ color: '#818cf8', fontWeight: 'bold' }}
-                  />
+                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `৳${v}`} width={60} />
+                  <Tooltip content={<RevenueTooltip />} />
                   <Line type="monotone" dataKey="revenue" stroke="#4f46e5" strokeWidth={4} dot={{ r: 4, fill: '#4f46e5', strokeWidth: 2, stroke: '#1e293b' }} activeDot={{ r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -280,9 +410,7 @@ export default function AnalyticsTab() {
                         <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name] || '#94a3b8'} />
                       ))}
                     </Pie>
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    />
+                    <Tooltip content={<OrderBreakdownTooltip />} />
                     <Legend verticalAlign="bottom" height={36} iconType="circle" />
                   </PieChart>
                 </ResponsiveContainer>

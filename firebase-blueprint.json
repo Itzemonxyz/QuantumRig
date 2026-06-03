@@ -164,6 +164,19 @@
         "icon": { "type": "string" }
       },
       "required": ["id", "name", "url"]
+    },
+    "Mail": {
+      "title": "Mail",
+      "description": "Triggered emails/money receipts for orders",
+      "type": "object",
+      "properties": {
+        "to": { "type": "string" },
+        "message": { "type": "object" },
+        "userId": { "type": "string" },
+        "toEmail": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["to", "message", "userId", "toEmail", "createdAt"]
     }
   },
   "firestore": {
@@ -214,6 +227,10 @@
     "social_links": {
       "schema": "SocialLink",
       "description": "Social media links"
+    },
+    "mail": {
+      "schema": "Mail",
+      "description": "Triggered email receipts"
     }
   }
 }

@@ -113,11 +113,7 @@ export default function ProductsTab() {
   const handleClone = (p: Product) => {
     const { id, code, ...rest } = p;
     let newCode = code || '';
-    if (!newCode.startsWith('PRD')) {
-      newCode = `PRD-${newCode}`;
-    }
-    if (newCode === 'PRD-') newCode = ''; // if original was empty
-    else newCode = `${newCode}-CLONE`;
+    if (newCode) newCode = `${newCode}-CLONE`;
     
     setForm({ ...rest, title: `${rest.title} (Clone)`, code: newCode });
     setSpecsText(Object.entries(p.specs || {}).map(([k, v]) => `${k}:${v}`).join('\n'));
@@ -215,8 +211,8 @@ export default function ProductsTab() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Product Code (SKU)</label>
-              <input type="text" value={form.code || ''} onChange={e => setForm({...form, code: e.target.value})} className="w-full sm:w-2/3 border rounded p-2 text-sm font-mono" placeholder="Leave empty to auto-generate (e.g. PRD-INT-CAT-1234)" />
+              <label className="block text-sm font-medium mb-1">Product Code</label>
+              <input type="text" value={form.code || ''} onChange={e => setForm({...form, code: e.target.value})} className="w-full sm:w-2/3 border rounded p-2 text-sm font-mono" placeholder="Leave empty to auto-generate (e.g. 39614)" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Title</label>
@@ -414,7 +410,7 @@ export default function ProductsTab() {
                   <img src={p.imageUrl} alt="" className="w-10 h-10 object-contain bg-white border border-slate-100 rounded mr-3" />
                   <div>
                     <span className="font-medium text-slate-900 line-clamp-1">{p.title}</span>
-                    <span className="text-xs text-slate-500 block mt-0.5">{p.code || 'No Code'}</span>
+                    <span className="text-xs text-slate-500 block mt-0.5">Product Code: <strong className="font-semibold text-slate-700">{p.code || 'N/A'}</strong></span>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-slate-500">{categories.find(c => c.id === p.categoryId)?.name}</td>

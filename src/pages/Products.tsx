@@ -46,7 +46,8 @@ export default function Products() {
     filteredProducts = filteredProducts.filter(p => 
       (p.title || '').toLowerCase().includes(q) || 
       (p.description || '').toLowerCase().includes(q) || 
-      (p.brand || '').toLowerCase().includes(q)
+      (p.brand || '').toLowerCase().includes(q) ||
+      (p.code || '').toLowerCase().includes(q)
     );
   }
 
@@ -214,58 +215,137 @@ export default function Products() {
           />
         </div>
         
-        <div className="flex flex-col gap-4">
-           <div>
-             <div className="flex justify-between items-center text-xs text-slate-500 mb-1">
-               <span>Min Price: ৳{localPriceRange.min || minPriceLimit}</span>
-             </div>
+        <div className="flex flex-col gap-1 bg-slate-50 border border-slate-100 p-4 rounded-xl shadow-sm">
+           <style>{`
+             .dual-range-inputs {
+               position: absolute;
+               width: 100%;
+               background: none;
+               pointer-events: none;
+               -webkit-appearance: none;
+               appearance: none;
+               z-index: 20;
+             }
+             .dual-range-inputs::-webkit-slider-thumb {
+               pointer-events: auto;
+               position: relative;
+               z-index: 30;
+               width: 16px;
+               height: 16px;
+               border-radius: 50%;
+               background: #4f46e5;
+               border: 2px solid #ffffff;
+               cursor: grab;
+               -webkit-appearance: none;
+               appearance: none;
+               box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+               transition: transform 0.1s, background-color 0.1s;
+             }
+             .dual-range-inputs::-webkit-slider-thumb:hover {
+               background: #6366f1;
+               transform: scale(1.1);
+             }
+             .dual-range-inputs::-webkit-slider-thumb:active {
+               cursor: grabbing;
+               transform: scale(1.15);
+             }
+             .dual-range-inputs::-moz-range-thumb {
+               pointer-events: auto;
+               position: relative;
+               z-index: 30;
+               width: 16px;
+               height: 16px;
+               border-radius: 50%;
+               background: #4f46e5;
+               border: 2px solid #ffffff;
+               cursor: grab;
+               box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+               transition: transform 0.1s, background-color 0.1s;
+             }
+             .dual-range-inputs::-moz-range-thumb:hover {
+               background: #6366f1;
+               transform: scale(1.1);
+             }
+             .dual-range-inputs::-moz-range-thumb:active {
+               cursor: grabbing;
+               transform: scale(1.15);
+             }
+           `}</style>
+           
+           <div className="flex justify-between items-center text-xs text-slate-500 mb-1">
+             <span className="flex flex-col">
+               <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Min Price</span>
+               <span className="font-mono text-indigo-600 font-bold text-sm">৳{localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min)}</span>
+             </span>
+             <span className="flex flex-col items-end">
+               <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Max Price</span>
+               <span className="font-mono text-indigo-600 font-bold text-sm">৳{localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max)}</span>
+             </span>
+           </div>
+
+           <div className="relative w-full h-6 mt-1 flex items-center">
+             {/* Background Track */}
+             <div className="absolute w-full h-1.5 bg-slate-200 rounded-lg pointer-events-none" />
+             
+             {/* Highlighted Active Range */}
+             <div 
+               className="absolute h-1.5 bg-indigo-600 rounded-lg pointer-events-none" 
+               style={{ 
+                 left: `${(( (localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min)) - minPriceLimit) / (maxPriceLimit - minPriceLimit || 1)) * 100}%`, 
+                 width: `${(((localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max)) - (localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min))) / (maxPriceLimit - minPriceLimit || 1)) * 100}%` 
+               }} 
+             />
+
+             {/* Slider Handles */}
              <input 
                type="range"
                min={minPriceLimit}
                max={maxPriceLimit}
                step={10}
-               value={localPriceRange.min || minPriceLimit}
+               value={localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min)}
                onChange={(e) => {
-                 const val = e.target.value;
-                 setLocalPriceRange(prev => ({ ...prev, min: val }));
+                 const currentMaxVal = localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max);
+                 const val = Math.min(Number(e.target.value), currentMaxVal - 10);
+                 setLocalPriceRange(prev => ({ ...prev, min: String(val) }));
                }}
                onMouseUp={(e) => {
-                 const val = e.currentTarget.value;
-                 setPriceRange(prev => ({ ...prev, min: val }));
+                 const currentMaxVal = localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max);
+                 const val = Math.min(Number(e.currentTarget.value), currentMaxVal - 10);
+                 setPriceRange(prev => ({ ...prev, min: String(val) }));
                }}
                onTouchEnd={(e) => {
-                 const val = e.currentTarget.value;
-                 setPriceRange(prev => ({ ...prev, min: val }));
+                 const currentMaxVal = localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max);
+                 const val = Math.min(Number(e.currentTarget.value), currentMaxVal - 10);
+                 setPriceRange(prev => ({ ...prev, min: String(val) }));
                }}
-               className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 mb-1"
+               className="dual-range-inputs left-0 h-1"
              />
-           </div>
-           <div>
-             <div className="flex justify-between items-center text-xs text-slate-500 mb-1">
-               <span>Max Price: ৳{localPriceRange.max || maxPriceLimit}</span>
-             </div>
+
              <input 
                type="range"
                min={minPriceLimit}
                max={maxPriceLimit}
                step={10}
-               value={localPriceRange.max || maxPriceLimit}
+               value={localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max)}
                onChange={(e) => {
-                 const val = e.target.value;
-                 setLocalPriceRange(prev => ({ ...prev, max: val }));
+                 const currentMinVal = localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min);
+                 const val = Math.max(Number(e.target.value), currentMinVal + 10);
+                 setLocalPriceRange(prev => ({ ...prev, max: String(val) }));
                }}
                onMouseUp={(e) => {
-                 const val = e.currentTarget.value;
-                 setPriceRange(prev => ({ ...prev, max: val }));
+                 const currentMinVal = localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min);
+                 const val = Math.max(Number(e.currentTarget.value), currentMinVal + 10);
+                 setPriceRange(prev => ({ ...prev, max: String(val) }));
                }}
                onTouchEnd={(e) => {
-                 const val = e.currentTarget.value;
-                 setPriceRange(prev => ({ ...prev, max: val }));
+                 const currentMinVal = localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min);
+                 const val = Math.max(Number(e.currentTarget.value), currentMinVal + 10);
+                 setPriceRange(prev => ({ ...prev, max: String(val) }));
                }}
-               className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+               className="dual-range-inputs left-0 h-1"
              />
            </div>
-        </div>
+         </div>
       </div>
 
       {allBrands.length > 0 && (
@@ -437,7 +517,7 @@ export default function Products() {
                   <div className="flex items-center gap-1.5 line-clamp-1">
                     {p.discountPrice ? (
                       <>
-                        <p className="text-[10px] text-slate-500 line-through">৳{Number(p.price).toFixed(0)}</p>
+                        <p className="text-xs text-slate-400 line-through">৳{Number(p.price).toFixed(0)}</p>
                         <p className="text-xs font-bold text-rose-600">৳{Number(p.discountPrice).toFixed(0)}</p>
                       </>
                     ) : (
@@ -586,6 +666,28 @@ export default function Products() {
 
                 if (chartData.length === 0) return null;
 
+                const CompareTooltip = ({ active, payload, label }: any) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="bg-white border border-slate-200 p-3 shadow-xl rounded-xl text-xs font-sans text-slate-800 z-50 min-w-[220px] select-none">
+                        <p className="font-bold text-slate-500 mb-2 tracking-wider uppercase text-[10px]">{label}</p>
+                        <div className="space-y-1.5">
+                          {payload.map((p: any, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between gap-4">
+                              <span className="flex items-center gap-1.5 text-slate-600 font-medium">
+                                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.fill || p.color }} />
+                                {p.name}:
+                              </span>
+                              <span className="font-mono font-bold text-slate-900">{p.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                };
+
                 return (
                   <div className="mt-12 border-t border-slate-200 pt-8">
                     <h3 className="text-lg font-bold text-slate-900 mb-6 text-center">Hardware Metrics Comparison</h3>
@@ -600,7 +702,7 @@ export default function Products() {
                           <YAxis tick={{fill: '#64748b', fontSize: 12}} tickLine={false} axisLine={false} />
                           <Tooltip 
                             cursor={{fill: '#f1f5f9'}}
-                            contentStyle={{borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                            content={<CompareTooltip />}
                           />
                           <Legend wrapperStyle={{paddingTop: '20px'}} />
                           <Bar dataKey="Product 1" name={comparedProducts[0].title} fill="#4f46e5" radius={[4, 4, 0, 0]} />

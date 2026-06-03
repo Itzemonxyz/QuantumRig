@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import { api } from '../lib/api';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Shield, ArrowLeft, Eye, EyeOff } from 'lucide-react';
-import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
@@ -106,6 +106,12 @@ export default function Login() {
         login(res.user, res.token);
         navigate('/');
       } else if (mode === 'forgot-password') {
+        try {
+          await sendPasswordResetEmail(auth, email);
+        } catch (firebaseErr: any) {
+          console.warn('Firebase reset password failed, doing fallback:', firebaseErr);
+          // Let it proceed to api fallback or throw a more descriptive error if relevant
+        }
         await api.post('/auth/forgot-password', { email });
         setMessage('Password reset email sent. Please check your inbox.');
       } else if (mode === 'google-details') {

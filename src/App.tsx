@@ -20,6 +20,7 @@ import ProductDetails from './pages/ProductDetails';
 import Builder from './pages/Builder';
 import LaptopFinder from './pages/LaptopFinder';
 import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
 import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin';
 import Profile from './pages/Profile';
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="builder" element={<Builder />} />
           <Route path="laptop-finder" element={<LaptopFinder />} />
           <Route path="cart" element={<Cart />} />
+          <Route path="checkout" element={<Checkout />} />
           <Route path="login" element={<Login />} />
           <Route path="admin-login" element={<AdminLogin />} />
           <Route path="profile" element={<Profile />} />

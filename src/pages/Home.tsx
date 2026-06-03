@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
+import ProductSkeleton from '../components/ProductSkeleton';
+import { api } from '../lib/api';
 import { 
   Cpu, 
   CircuitBoard, 
@@ -14,15 +16,61 @@ import {
   Monitor, 
   Headphones, 
   LayoutGrid,
-  Search
+  Search,
+  LifeBuoy,
+  ArrowRight
 } from 'lucide-react';
 
 export default function Home() {
-  const { categories, products } = useStore();
+  const { categories, products, isLoading, user, addToast } = useStore();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // Complaints states
+  const [isComplaintOpen, setIsComplaintOpen] = useState(false);
+  const [complaintName, setComplaintName] = useState('');
+  const [complaintEmail, setComplaintEmail] = useState('');
+  const [complaintOrderId, setComplaintOrderId] = useState('');
+  const [complaintCategory, setComplaintCategory] = useState('Delivery Issue');
+  const [complaintDescription, setComplaintDescription] = useState('');
+  const [isSubmittingComplaint, setIsSubmittingComplaint] = useState(false);
+
+  // Pre-fill complainant details when modal opens
+  useEffect(() => {
+    if (isComplaintOpen && user) {
+      setComplaintName(user.name || '');
+      setComplaintEmail(user.email || '');
+    }
+  }, [isComplaintOpen, user]);
+
+  const handleComplaintSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!complaintName.trim() || !complaintEmail.trim() || !complaintDescription.trim()) {
+      addToast('Please fill in all required fields.', 'error');
+      return;
+    }
+    setIsSubmittingComplaint(true);
+    try {
+      await api.post('/complaints', {
+        name: complaintName,
+        email: complaintEmail,
+        orderId: complaintOrderId,
+        category: complaintCategory,
+        description: complaintDescription
+      });
+      addToast('Your complaint has been submitted successfully to the admin team.', 'success');
+      setComplaintDescription('');
+      setComplaintOrderId('');
+      setIsComplaintOpen(false);
+    } catch (err: any) {
+      console.error(err);
+      addToast(err.message || 'Failed to submit complaint', 'error');
+    } finally {
+      setIsSubmittingComplaint(false);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -37,7 +85,8 @@ export default function Home() {
   const searchResults = searchQuery.trim() 
     ? products.filter(p => 
         (p.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-        (p.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+        (p.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.code || '').toLowerCase().includes(searchQuery.toLowerCase())
       ).slice(0, 5) // limit to 5 results
     : [];
 
@@ -134,7 +183,7 @@ export default function Home() {
                         {product.discountPrice ? (
                           <>
                             <span className="text-rose-600">৳{Number(product.discountPrice || 0).toFixed(2)}</span>
-                            <span className="text-[10px] text-slate-400 line-through">৳{Number(product.price || 0).toFixed(2)}</span>
+                            <span className="text-xs text-slate-400 line-through">৳{Number(product.price || 0).toFixed(2)}</span>
                           </>
                         ) : (
                           <span className="text-indigo-600">৳{Number(product.price || 0).toFixed(2)}</span>
@@ -152,6 +201,237 @@ export default function Home() {
           )}
         </form>
       </div>
+
+      {/* Portals Section - Relocated with beautiful graphic cards */}
+      <div className="px-8 mt-4 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          
+          {/* PC Builder Card */}
+          <Link 
+            to="/builder" 
+            id="portal-pc-builder"
+            className="group relative overflow-hidden flex flex-col justify-between bg-slate-50 hover:bg-white border border-slate-100 hover:border-indigo-200 p-8 rounded-3xl transition-all duration-300 min-h-[220px]"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-100/50 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            
+            <div className="flex flex-col gap-5 z-10">
+              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform duration-300">
+                <CircuitBoard className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mb-2">PC Builder</h3>
+                <p className="text-sm text-slate-500 leading-relaxed max-w-[240px]">
+                  Assemble your computer component by component with interactive reliability detection.
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-8 text-xs font-bold text-indigo-600 flex items-center gap-2 group-hover:gap-3 transition-all z-10">
+              Start Assembling <ArrowRight className="w-4 h-4" />
+            </div>
+          </Link>
+
+          {/* Laptop Finder Card */}
+          <Link 
+            to="/laptop-finder" 
+            id="portal-laptop-finder"
+            className="group relative overflow-hidden flex flex-col justify-between bg-slate-50 hover:bg-white border border-slate-100 hover:border-blue-200 p-8 rounded-3xl transition-all duration-300 min-h-[220px]"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-100/50 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            
+            <div className="flex flex-col gap-5 z-10">
+              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform duration-300">
+                <Monitor className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors mb-2">Laptop Finder</h3>
+                <p className="text-sm text-slate-500 leading-relaxed max-w-[240px]">
+                  Filter and recommendation assistant for custom gamer, office and creator notebooks.
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-8 text-xs font-bold text-blue-600 flex items-center gap-2 group-hover:gap-3 transition-all z-10">
+              Find Laptop <ArrowRight className="w-4 h-4" />
+            </div>
+          </Link>
+
+          {/* Track Order Card */}
+          <Link 
+            to="/track-order" 
+            id="portal-track-order"
+            className="group relative overflow-hidden flex flex-col justify-between bg-slate-50 hover:bg-white border border-slate-100 hover:border-slate-300 p-8 rounded-3xl transition-all duration-300 min-h-[220px]"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-slate-200/50 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            
+            <div className="flex flex-col gap-5 z-10">
+              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-700 group-hover:scale-110 transition-transform duration-300">
+                <Box className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 transition-colors mb-2">Track Order</h3>
+                <p className="text-sm text-slate-500 leading-relaxed max-w-[240px]">
+                  Determine parcel transit status, receipt invoices, and courier progress updates.
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-8 text-xs font-bold text-slate-700 flex items-center gap-2 group-hover:gap-3 transition-all z-10">
+              Track Progress <ArrowRight className="w-4 h-4" />
+            </div>
+          </Link>
+
+          {/* Raise a Complaint Card */}
+          <button 
+            type="button"
+            onClick={() => setIsComplaintOpen(true)}
+            id="portal-raise-complaint"
+            className="group relative overflow-hidden flex flex-col justify-between bg-slate-50 hover:bg-white border border-slate-100 hover:border-indigo-200 p-8 rounded-3xl transition-all duration-300 text-left min-h-[220px]"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-100/50 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            
+            <div className="flex flex-col gap-5 z-10">
+              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform duration-300">
+                <LifeBuoy className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mb-2">Raise a Complaint</h3>
+                <p className="text-sm text-slate-500 leading-relaxed max-w-[240px]">
+                  Share your experience, file official issues, or request rapid support.
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-8 text-xs font-bold text-indigo-600 flex items-center gap-2 group-hover:gap-3 transition-all z-10">
+              File Complaint <ArrowRight className="w-4 h-4" />
+            </div>
+          </button>
+
+        </div>
+      </div>
+
+      {/* Complaint Submission Modal */}
+      <AnimatePresence>
+        {isComplaintOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsComplaintOpen(false)}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm cursor-pointer"
+            />
+            
+            {/* Modal Box */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.18 }}
+              className="relative w-full max-w-xl bg-white shadow-2xl rounded-2xl border border-slate-200 pointer-events-auto overflow-hidden text-left z-10 flex flex-col max-h-[90vh]"
+            >
+              <div className="bg-slate-900 px-6 py-6 text-white relative shrink-0">
+                <h3 className="text-xl font-extrabold tracking-tight flex items-center gap-2">
+                  <LifeBuoy className="w-5 h-5 text-indigo-400 animate-pulse" />
+                  File Official Complaint
+                </h3>
+                <p className="text-xs text-slate-400 mt-1 font-medium">We appreciate your feedback. Please submit details of the issue so we can inspect and resolve it.</p>
+                <button 
+                  type="button"
+                  onClick={() => setIsComplaintOpen(false)}
+                  className="absolute top-5 right-5 text-white/85 hover:text-white bg-white/10 hover:bg-white/20 p-1 rounded-full transition-colors font-bold w-6 h-6 flex items-center justify-center text-xs cursor-pointer z-20"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <form onSubmit={handleComplaintSubmit} className="p-6 space-y-4 overflow-y-auto">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Your Name *</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={complaintName}
+                    onChange={(e) => setComplaintName(e.target.value)}
+                    placeholder="e.g. John Doe"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Email Address *</label>
+                  <input 
+                    type="email" 
+                    required
+                    value={complaintEmail}
+                    onChange={(e) => setComplaintEmail(e.target.value)}
+                    placeholder="e.g. user@example.com"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Order ID (Optional)</label>
+                    <input 
+                      type="text" 
+                      value={complaintOrderId}
+                      onChange={(e) => setComplaintOrderId(e.target.value)}
+                      placeholder="e.g. QRG-123456"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Category *</label>
+                    <select 
+                      value={complaintCategory}
+                      onChange={(e) => setComplaintCategory(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none font-medium text-slate-800"
+                    >
+                      <option value="Delivery Issue">Delivery Issue</option>
+                      <option value="Replacement / Return">Replacement / Return</option>
+                      <option value="Defective Hardware">Defective Hardware</option>
+                      <option value="Billing / Promo Code">Billing / Promo Code</option>
+                      <option value="Customer Support">Customer Support</option>
+                      <option value="Other feedback">Other feedback</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Complaint Details *</label>
+                  <textarea 
+                    required
+                    rows={4}
+                    value={complaintDescription}
+                    onChange={(e) => setComplaintDescription(e.target.value)}
+                    placeholder="Detail what occurred. We will inspect the logged data and reply in 24 hours..."
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none resize-none h-28 text-slate-800"
+                  ></textarea>
+                </div>
+
+                <div className="pt-2 flex justify-end gap-3 border-t border-slate-100">
+                  <button 
+                    type="button"
+                    onClick={() => setIsComplaintOpen(false)}
+                    className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors text-xs cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={isSubmittingComplaint}
+                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-all hover:shadow-lg text-xs disabled:opacity-50 cursor-pointer"
+                  >
+                    {isSubmittingComplaint ? 'Submitting...' : 'Submit Complaint'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* App Categories Grid */}
       <div className="px-8 mt-6">
@@ -196,21 +476,27 @@ export default function Home() {
           <Link to="/products" className="text-indigo-600 text-sm font-medium hover:text-indigo-500">View All &rarr;</Link>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {products.filter(p => p.stockStatus !== 'Out of Stock').slice(0, 4).map((p) => (
-            <div key={p.id} onClick={() => navigate(`/products/${p.id}`)} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer group flex flex-col h-full">
-              <div className="aspect-square bg-slate-50 rounded-xl mb-4 p-4 flex items-center justify-center overflow-hidden">
-                <img src={p.imageUrl} alt={p.title} className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300 mix-blend-multiply" />
-              </div>
-              <div className="flex-1">
-                <div className="text-xs font-medium text-indigo-600 mb-1">{p.brand || 'Premium'}</div>
-                <h3 className="font-bold text-slate-900 leading-tight mb-2 line-clamp-2">{p.title}</h3>
-                <div className="flex items-baseline gap-2">
-                  <span className="font-bold text-lg text-slate-900">৳{p.discountPrice ? Number(p.discountPrice || 0).toFixed(2) : Number(p.price || 0).toFixed(2)}</span>
-                  {p.discountPrice && <span className="text-xs text-slate-400 line-through">৳{Number(p.price || 0).toFixed(2)}</span>}
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, idx) => (
+              <ProductSkeleton key={`trending-skeleton-${idx}`} />
+            ))
+          ) : (
+            products.filter(p => p.stockStatus !== 'Out of Stock').slice(0, 4).map((p) => (
+              <div key={p.id} onClick={() => navigate(`/products/${p.id}`)} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer group flex flex-col h-full">
+                <div className="aspect-square bg-slate-50 rounded-xl mb-4 p-4 flex items-center justify-center overflow-hidden">
+                  <img src={p.imageUrl} alt={p.title} className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300 mix-blend-multiply" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs font-medium text-indigo-600 mb-1">{p.brand || 'Premium'}</div>
+                  <h3 className="font-bold text-slate-900 leading-tight mb-2 line-clamp-2">{p.title}</h3>
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-bold text-lg text-slate-900">৳{p.discountPrice ? Number(p.discountPrice || 0).toFixed(2) : Number(p.price || 0).toFixed(2)}</span>
+                    {p.discountPrice && <span className="text-xs text-slate-400 line-through">৳{Number(p.price || 0).toFixed(2)}</span>}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 

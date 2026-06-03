@@ -2,14 +2,15 @@ import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../store';
 import { Product } from '../types';
 import { Check, AlertTriangle, Plus, ShoppingBag, Copy, CheckCircle2 } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import ScrollToTopButton from '../components/ScrollToTopButton';
 
 export default function Builder() {
-  const { categories, products, builderCart, addToBuilder, removeFromBuilder, addToCart, isLoading } = useStore();
+  const { categories, products, builderCart, addToBuilder, removeFromBuilder, addToCart, isLoading, token } = useStore();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [loadingCategory, setLoadingCategory] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [copiedLink, setCopiedLink] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
@@ -80,6 +81,10 @@ export default function Builder() {
   const totalCost = Object.values(builderCart).reduce((acc, p) => acc + (p.discountPrice || p.price), 0);
 
   const addAllToCart = () => {
+    if (!token) {
+      navigate('/login', { state: { from: location } });
+      return;
+    }
     setIsAdded(true);
     Object.values(builderCart).forEach(p => addToCart(p));
     setTimeout(() => {
@@ -169,7 +174,7 @@ export default function Builder() {
                       <div className="flex flex-col items-end">
                         {selected.discountPrice ? (
                           <>
-                            <span className="text-[10px] sm:text-xs text-slate-500 line-through">৳{Number(selected.price || 0).toFixed(2)}</span>
+                            <span className="text-xs text-slate-400 line-through">৳{Number(selected.price || 0).toFixed(2)}</span>
                             <span className="font-bold text-rose-600">৳{Number(selected.discountPrice || 0).toFixed(2)}</span>
                           </>
                         ) : (
@@ -253,7 +258,7 @@ export default function Builder() {
                               </div>
                               <div className="p-4 flex-1 flex flex-col bg-slate-50/50 rounded-b-xl">
                                 <h4 className="font-medium text-slate-900 text-sm line-clamp-2 mb-2" title={p.title}>{p.title}</h4>
-                                <div className="text-[10px] text-slate-500 mb-3 flex flex-wrap gap-1.5 line-clamp-2">
+                                <div className="text-xs text-slate-500 mb-3 flex flex-wrap gap-1.5 line-clamp-2 font-mono">
                                    {Object.entries(p.specs || {}).slice(0, 3).map(([k, v]) => (
                                      <span key={k} className="bg-white border border-slate-200 px-1.5 py-0.5 rounded shadow-sm">{k}: {v as string}</span>
                                    ))}
@@ -263,7 +268,7 @@ export default function Builder() {
                                   <div className="flex flex-col items-start whitespace-nowrap">
                                     {p.discountPrice ? (
                                       <>
-                                        <span className="text-[10px] text-slate-500 line-through">৳{Number(p.price || 0).toFixed(2)}</span>
+                                        <span className="text-xs text-slate-400 line-through">৳{Number(p.price || 0).toFixed(2)}</span>
                                         <span className="font-bold text-rose-600 text-sm">৳{Number(p.discountPrice || 0).toFixed(2)}</span>
                                       </>
                                     ) : (

@@ -1,5 +1,17 @@
 import { create } from 'zustand';
-import { User, Category, Brand, Product, Order, Settings, Offer, Analytics, UserNotification, SocialLink } from './types';
+import { User, Category, Brand, Product, Order, Settings, Offer, Analytics, UserNotification, SocialLink, ToastMessage } from './types';
+import { api } from './lib/api';
+
+const syncCartToServer = async (cart: { product: Product; quantity: number }[], token: string | null) => {
+  if (!token) return;
+  try {
+    await api.post('/users/me/cart', {
+      cart: cart.map(item => ({ productId: item.product.id, quantity: item.quantity }))
+    }, token);
+  } catch (error) {
+    console.warn("Cart synchronization failed:", error);
+  }
+};
 
 interface StoreState {
   user: User | null;
@@ -15,6 +27,7 @@ interface StoreState {
   cart: { product: Product; quantity: number }[];
   builderCart: { [categoryId: string]: Product };
   isLoading: boolean;
+  toasts: ToastMessage[];
 
   // Actions
   setIsLoading: (loading: boolean) => void;
@@ -31,6 +44,10 @@ interface StoreState {
   setNotifications: (notifications: UserNotification[]) => void;
   markNotificationRead: (id: string) => void;
   
+  // Toast
+  addToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+  removeToast: (id: string) => void;
+
   // Cart
   addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: string) => void;
@@ -62,16 +79,36 @@ export const useStore = create<StoreState>((set) => ({
   cart: [],
   builderCart: {},
   compareIds: [],
+  toasts: [],
   isLoading: true,
 
   setIsLoading: (loading) => set({ isLoading: loading }),
   login: (user, token) => {
     localStorage.setItem('token', token);
-    set({ user, token });
+    set((state) => {
+      let mergedCart = [...state.cart];
+      if (user.cart && user.cart.length > 0) {
+        user.cart.forEach((dbItem: any) => {
+          const product = state.products.find(p => p.id === dbItem.productId);
+          if (product) {
+            const existing = mergedCart.find(item => item.product.id === product.id);
+            if (existing) {
+              existing.quantity = Math.max(existing.quantity, dbItem.quantity);
+            } else {
+              mergedCart.push({ product, quantity: dbItem.quantity });
+            }
+          }
+        });
+        syncCartToServer(mergedCart, token);
+      } else if (state.cart.length > 0) {
+        syncCartToServer(state.cart, token);
+      }
+      return { user, token, cart: mergedCart };
+    });
   },
   logout: () => {
     localStorage.removeItem('token');
-    set({ user: null, token: null, notifications: [] });
+    set({ user: null, token: null, notifications: [], cart: [] });
   },
   updateUser: (user) => set({ user }),
   setCategories: (categories) => set({ categories }),
@@ -86,22 +123,71 @@ export const useStore = create<StoreState>((set) => ({
     notifications: state.notifications.map(n => n.id === id ? { ...n, read: true } : n) 
   })),
 
+  addToast: (message, type = 'success') => set((state) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setTimeout(() => {
+      useStore.getState().removeToast(id);
+    }, 3000);
+    return { toasts: [...state.toasts, { id, message, type }] };
+  }),
+  removeToast: (id) => set((state) => ({
+    toasts: state.toasts.filter((t) => t.id !== id)
+  })),
+
   addToCart: (product, quantity = 1) => set((state) => {
     const existing = state.cart.find((item) => item.product.id === product.id);
+    let newCart;
     if (existing) {
-      return {
-        cart: state.cart.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item),
-      };
+      newCart = state.cart.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item);
+    } else {
+      newCart = [...state.cart, { product, quantity }];
     }
-    return { cart: [...state.cart, { product, quantity }] };
+    syncCartToServer(newCart, state.token);
+
+    const toastId = Math.random().toString(36).substring(2, 9);
+    setTimeout(() => {
+      useStore.getState().removeToast(toastId);
+    }, 3000);
+
+    return { 
+      cart: newCart,
+      toasts: [...state.toasts, { id: toastId, message: `Added "${product.title}" to cart!`, type: 'success' }]
+    };
   }),
-  removeFromCart: (productId) => set((state) => ({
-    cart: state.cart.filter((item) => item.product.id !== productId)
-  })),
-  updateQuantity: (productId, quantity) => set((state) => ({
-    cart: state.cart.map((item) => item.product.id === productId ? { ...item, quantity } : item)
-  })),
-  clearCart: () => set({ cart: [] }),
+  removeFromCart: (productId) => set((state) => {
+    const newCart = state.cart.filter((item) => item.product.id !== productId);
+    syncCartToServer(newCart, state.token);
+    
+    const prod = state.cart.find(item => item.product.id === productId)?.product;
+    const title = prod ? prod.title : 'Item';
+    const toastId = Math.random().toString(36).substring(2, 9);
+    setTimeout(() => {
+      useStore.getState().removeToast(toastId);
+    }, 3000);
+
+    return { 
+      cart: newCart,
+      toasts: [...state.toasts, { id: toastId, message: `Removed "${title}" from cart.`, type: 'info' }]
+    };
+  }),
+  updateQuantity: (productId, quantity) => set((state) => {
+    const newCart = state.cart.map((item) => item.product.id === productId ? { ...item, quantity } : item);
+    syncCartToServer(newCart, state.token);
+    return { cart: newCart };
+  }),
+  clearCart: () => set((state) => {
+    syncCartToServer([], state.token);
+    
+    const toastId = Math.random().toString(36).substring(2, 9);
+    setTimeout(() => {
+      useStore.getState().removeToast(toastId);
+    }, 3000);
+
+    return { 
+      cart: [],
+      toasts: [...state.toasts, { id: toastId, message: 'Shopping cart has been emptied.', type: 'info' }]
+    };
+  }),
 
   addToBuilder: (categoryId, product) => set((state) => ({
     builderCart: { ...state.builderCart, [categoryId]: product }

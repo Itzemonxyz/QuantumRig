@@ -1,13 +1,25 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-mono: "Outfit", ui-sans-serif, system-ui, sans-serif;
 }
 
 html, body {
   font-family: var(--font-sans);
+}
+
+/* Custom font overrides to enforce complete consistency and minimal vibe */
+svg text, 
+.recharts-text, 
+.recharts-tooltip-wrapper, 
+.recharts-default-tooltip,
+input,
+select,
+textarea,
+button {
+  font-family: "Outfit", ui-sans-serif, system-ui, sans-serif !important;
 }
 
 @keyframes marquee {

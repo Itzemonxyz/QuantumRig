@@ -1,18 +1,20 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Product } from '../types';
 import { useStore } from '../store';
-import { ArrowLeftRight, Check, Eye, X, ShoppingCart, Share2, TrendingDown, TrendingUp } from 'lucide-react';
+import { ArrowLeftRight, Check, Eye, X, ShoppingCart, Share2, TrendingDown, TrendingUp, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ProductCardProps {
   product: Product;
   key?: React.Key;
+  onRemove?: () => void;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, onRemove }: ProductCardProps) {
   const navigate = useNavigate();
-  const { compareIds, toggleCompare, addToCart } = useStore();
+  const location = useLocation();
+  const { compareIds, toggleCompare, addToCart, token } = useStore();
   const [toastMessage, setToastMessage] = React.useState('');
   const [showQuickView, setShowQuickView] = React.useState(false);
   const [isAdded, setIsAdded] = React.useState(false);
@@ -63,14 +65,14 @@ export default function ProductCard({ product }: ProductCardProps) {
       className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden flex flex-col group cursor-pointer relative transition-all md:hover:border-indigo-500/50 md:hover:shadow-md"
     >
       {saveAmount > 0 && (
-         <div className="absolute top-0 left-0 bg-rose-600 text-white text-[10px] sm:text-xs px-3 py-1 rounded-br-2xl font-medium z-10">
+         <div className="absolute top-0 left-0 bg-rose-600 text-white text-[11px] sm:text-xs px-3 py-1 rounded-br-2xl font-medium z-10">
             Save: {Number(saveAmount || 0).toFixed(0)}৳
          </div>
       )}
 
       {/* Badges mapped to top left, just under the save badge if it exists, or left normally */}
       {(isOutOfStock || stockTrend !== 'unknown') && (
-        <div className={`absolute left-0 z-10 ${saveAmount > 0 ? 'top-7 rounded-none rounded-br-2xl' : 'top-0 rounded-br-2xl'} text-white text-[10px] sm:text-xs px-2 py-1 font-bold flex items-center gap-1 ${isOutOfStock ? 'bg-rose-600' : (stockTrend === 'depleting' ? 'bg-amber-500' : 'bg-emerald-500')}`}>
+        <div className={`absolute left-0 z-10 ${saveAmount > 0 ? 'top-7 rounded-none rounded-br-2xl' : 'top-0 rounded-br-2xl'} text-white text-[11px] sm:text-xs px-2.5 py-1 font-bold flex items-center gap-1 ${isOutOfStock ? 'bg-rose-600' : (stockTrend === 'depleting' ? 'bg-amber-500' : 'bg-emerald-500')}`}>
           {isOutOfStock ? 'Out of Stock' : stockTrend === 'depleting' ? (
             <><TrendingDown className="w-3 h-3" /> Low Stock</>
           ) : (
@@ -94,6 +96,18 @@ export default function ProductCard({ product }: ProductCardProps) {
         >
           <Share2 className="w-4 h-4" />
         </button>
+        {onRemove && (
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            title="Remove from Saved"
+            className="p-1.5 sm:p-2 rounded-full transition-all shadow-sm hover:scale-105 bg-white text-rose-500 border border-slate-200 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 opacity-100 md:opacity-0 md:group-hover:opacity-100"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {toastMessage && (
@@ -118,9 +132,15 @@ export default function ProductCard({ product }: ProductCardProps) {
       <div className="p-3 sm:p-4 flex-1 flex flex-col bg-slate-50/50 relative overflow-hidden">
         <h3 className="font-bold text-slate-900 text-sm mb-2 line-clamp-2 md:hover:text-indigo-600 transition-all duration-300" title={product.title}>{product.title}</h3>
         
+        {product.code && (
+          <div className="text-xs text-slate-500 mb-2 font-sans select-none">
+            Product Code: <strong className="font-semibold text-slate-700">{product.code}</strong>
+          </div>
+        )}
+        
         {/* Fake Bullet Points based on specs */}
         {product.specs && Object.keys(product.specs).length > 0 && (
-           <ul className="text-[10px] sm:text-xs text-slate-500 mb-3 space-y-1 list-disc pl-4 line-clamp-3">
+           <ul className="text-xs text-slate-500 mb-3 space-y-1 list-disc pl-4 line-clamp-3">
               {Object.entries(product.specs).slice(0, 3).map(([key, val]) => (
                 <li key={key}>{key.replace(/([A-Z])/g, ' $1').trim().replace(/^./, str => str.toUpperCase())}: {val as string}</li>
               ))}
@@ -131,7 +151,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="flex flex-col">
              {hasDiscount ? (
                <>
-                 <span className="text-[10px] sm:text-xs text-slate-500 line-through">৳{Number(product.price).toFixed(0)}</span>
+                 <span className="text-xs text-slate-400 line-through">৳{Number(product.price).toFixed(0)}</span>
                  <span className="text-sm sm:text-lg font-bold text-rose-600">৳{Number(displayPrice).toFixed(0)}</span>
                </>
              ) : (
@@ -170,7 +190,14 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
             
             <div className="w-full md:w-1/2 p-8 flex flex-col">
-              <div className="text-sm font-bold tracking-widest text-indigo-600 uppercase mb-2">{product.brand || 'Premium'}</div>
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <div className="text-sm font-bold tracking-widest text-indigo-600 uppercase">{product.brand || 'Premium'}</div>
+                {product.code && (
+                  <span className="text-xs text-slate-500 bg-slate-100 border border-slate-200/50 rounded-full px-2.5 py-0.5 inline-block font-sans select-none">
+                    Product Code: <strong className="font-bold text-slate-800">{product.code}</strong>
+                  </span>
+                )}
+              </div>
               <h2 className="text-2xl font-bold text-slate-900 mb-4 leading-tight">{product.title}</h2>
               
               <div className="flex items-end gap-3 mb-6">
@@ -185,6 +212,11 @@ export default function ProductCard({ product }: ProductCardProps) {
               <div className="mt-auto space-y-3">
                 <button
                   onClick={() => {
+                    if (!token) {
+                      setShowQuickView(false);
+                      navigate('/login', { state: { from: location } });
+                      return;
+                    }
                     setIsAdded(true);
                     addToCart(product, 1);
                     setTimeout(() => {

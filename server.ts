@@ -36,8 +36,23 @@ app.use((req, res, next) => {
 // ================= FIREBASE SETUP =================
 let db: any = null;
 const firebaseConfigPath = path.join(process.cwd(), "firebase-applet-config.json");
+let firebaseConfig = null;
+
 if (fs.existsSync(firebaseConfigPath)) {
-  const firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, "utf-8"));
+  firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, "utf-8"));
+} else if (process.env.VITE_FIREBASE_API_KEY) {
+  firebaseConfig = {
+    apiKey: process.env.VITE_FIREBASE_API_KEY,
+    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.VITE_FIREBASE_APP_ID,
+    firestoreDatabaseId: process.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || "(default)"
+  };
+}
+
+if (firebaseConfig) {
   const firebaseApp = initializeApp(firebaseConfig);
   db = initializeFirestore(firebaseApp, { experimentalForceLongPolling: true }, firebaseConfig.firestoreDatabaseId || "(default)");
   console.log("🔥 Connected to Firebase Firestore with Long Polling");
@@ -46,6 +61,7 @@ if (fs.existsSync(firebaseConfigPath)) {
 // IN-MEMORY DATABASE
 let stockNotifications: { id: string; productId: string; email: string; createdAt: string }[] = [];
 let supportTickets: { id: string; productId: string; email: string; question: string; status: 'Open' | 'Closed'; createdAt: string }[] = [];
+let complaints: { id: string; name: string; email: string; orderId?: string; category: string; description: string; createdAt: string }[] = [];
 let analyticsEvents: { id: string; event: string; productId: string; timestamp: string }[] = [];
 let restockRequests: RestockRequest[] = [];
 let users: User[] = [
@@ -96,6 +112,15 @@ async function syncDatabase() {
     const pSnap = await getDocs(collection(db, "products"));
     if (!pSnap.empty) {
       products = pSnap.docs.map((d: any) => d.data() as Product);
+      
+      // Just load products
+      // No code rewriting
+      for (const p of products) {
+        if (!p.code) {
+          p.code = p.id;
+          await setDoc(doc(db, "products", p.id), JSON.parse(JSON.stringify(p))).catch(console.error);
+        }
+      }
     } else {
       for (const p of products) {
         await setDoc(doc(db, "products", p.id), JSON.parse(JSON.stringify(p)));
@@ -182,6 +207,12 @@ async function syncDatabase() {
       }
     }
 
+    // 12. Sync Complaints
+    const cmpSnap = await getDocs(collection(db, "complaints"));
+    if (!cmpSnap.empty) {
+      complaints = cmpSnap.docs.map((d: any) => d.data() as any);
+    }
+
   } catch (error: any) {
     if (error && error.message && error.message.includes('PERMISSION_DENIED')) return;
     console.warn("Firestore Sync Error (rules may not open yet):", error);
@@ -216,6 +247,22 @@ app.delete("/api/users/me/saved-products/:productId", async (req, res) => {
     user.savedProductIds = user.savedProductIds.filter(id => id !== req.params.productId);
     if (db) await setDoc(doc(db, "users", user.id), { savedProductIds: user.savedProductIds }, { merge: true }).catch(console.error);
   }
+  const { password, ...userWithoutPassword } = user;
+  res.json(userWithoutPassword);
+});
+
+app.post("/api/users/me/cart", async (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+  const user = users.find((u) => u.id === token);
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const { cart } = req.body;
+  user.cart = Array.isArray(cart) ? cart : [];
+  
+  if (db) {
+    await setDoc(doc(db, "users", user.id), { cart: user.cart }, { merge: true }).catch(console.error);
+  }
+  
   const { password, ...userWithoutPassword } = user;
   res.json(userWithoutPassword);
 });
@@ -260,6 +307,15 @@ app.post("/api/auth/google", async (req, res) => {
   res.json({ token: `dummy-token-${user.id}`, user: userWithoutPassword });
 });
 
+app.post("/api/auth/forgot-password", (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+  // Standard success response for forgot password
+  res.json({ success: true, message: "If the email exists, a password reset link has been sent." });
+});
+
 app.get("/api/users/me", (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
   const user = users.find((u) => u.id === token);
@@ -279,9 +335,10 @@ app.put("/api/users/me", (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
   const user = users.find((u) => u.id === token);
   if (user) {
-    const { name, phone, password } = req.body;
+    const { name, phone, password, avatar } = req.body;
     if (name) user.name = name;
     if (phone) user.phone = phone;
+    if (avatar !== undefined) user.avatar = avatar;
     if (password) user.password = password; // Only saving in mock memory
     const { password: currentPassword, ...userWithoutPassword } = user;
     res.json(userWithoutPassword);
@@ -418,6 +475,32 @@ app.delete("/api/support-tickets/:id", async (req, res) => {
   res.sendStatus(204);
 });
 
+// Complaints endpoints
+app.get("/api/complaints", (req, res) => res.json(complaints));
+
+app.post("/api/complaints", async (req, res) => {
+  const { name, email, orderId, category, description } = req.body;
+  if (!name || !email || !category || !description) return res.status(400).json({ error: 'Missing fields' });
+  const complaint = {
+    id: `cmp_${Date.now()}`,
+    name,
+    email,
+    orderId: orderId || '',
+    category,
+    description,
+    createdAt: new Date().toISOString()
+  };
+  if (db) await setDoc(doc(db, "complaints", complaint.id), JSON.parse(JSON.stringify(complaint))).catch(console.error);
+  complaints.push(complaint);
+  res.json(complaint);
+});
+
+app.delete("/api/complaints/:id", async (req, res) => {
+  complaints = complaints.filter(c => c.id !== req.params.id);
+  if (db) await deleteDoc(doc(db, "complaints", req.params.id)).catch(console.error);
+  res.sendStatus(204);
+});
+
 app.post("/api/categories", async (req, res) => {
   const c: Category = { id: `c${Date.now()}`, ...req.body };
   if (db) await setDoc(doc(db, "categories", c.id), JSON.parse(JSON.stringify(c))).catch(console.error);
@@ -490,15 +573,19 @@ app.get("/api/admin/products/search", (req, res) => {
 app.get("/api/products", (req, res) => res.json(products));
 
 app.post("/api/products", async (req, res) => {
-  // auto-generate unique SKU if not provided or empty
   let code = req.body.code;
   if (!code) {
-    const brandStr = req.body.brand ? req.body.brand.substring(0, 3).toUpperCase() : 'GEN';
-    const catstr = req.body.categoryId ? req.body.categoryId.substring(0, 3).toUpperCase() : 'CAT';
-    const randId = Math.floor(1000 + Math.random() * 9000);
-    code = `PRD-${brandStr}-${catstr}-${randId}`;
+    let attempts = 0;
+    while (attempts < 100) {
+      const randId = Math.floor(10000 + Math.random() * 90000).toString();
+      if (!products.some(p => p.code === randId || p.id === randId)) {
+        code = randId;
+        break;
+      }
+      attempts++;
+    }
   }
-  const p: Product = { id: `p${Date.now()}`, ...req.body, code };
+  const p: Product = { ...req.body, id: code, code };
   const safeP = JSON.parse(JSON.stringify(p));
   if (db) await setDoc(doc(db, "products", p.id), safeP).catch(console.error);
   products.push(p);
@@ -508,18 +595,28 @@ app.put("/api/products/:id", async (req, res) => {
   const idx = products.findIndex(p => p.id === req.params.id);
   if (idx > -1) {
     const oldProduct = products[idx];
-    // Preserve old code if code not provided
     let code = req.body.code || products[idx].code;
+    
     if (!code) {
-      const brandStr = req.body.brand ? req.body.brand.substring(0, 3).toUpperCase() : 'GEN';
-      const catstr = req.body.categoryId ? req.body.categoryId.substring(0, 3).toUpperCase() : 'CAT';
-      const randId = Math.floor(1000 + Math.random() * 9000);
-      code = `PRD-${brandStr}-${catstr}-${randId}`;
+      let attempts = 0;
+      while (attempts < 100) {
+        const randId = Math.floor(10000 + Math.random() * 90000).toString();
+        if (!products.some((p, i) => i !== idx && p.code === randId)) {
+          code = randId;
+          break;
+        }
+        attempts++;
+      }
     }
-    const newProduct = { ...products[idx], ...req.body, code };
+    const newProduct = { ...oldProduct, ...req.body, id: code, code };
     products[idx] = newProduct;
     const safeProduct = JSON.parse(JSON.stringify(newProduct));
-    if (db) await setDoc(doc(db, "products", newProduct.id), safeProduct).catch(console.error);
+    if (db) {
+      if (oldProduct.id !== newProduct.id) {
+        await deleteDoc(doc(db, "products", oldProduct.id)).catch(console.error);
+      }
+      await setDoc(doc(db, "products", newProduct.id), safeProduct).catch(console.error);
+    }
     
     if (
       (oldProduct.stockStatus === 'Out of Stock' || oldProduct.inventoryCount === 0) &&
@@ -638,17 +735,92 @@ app.get("/api/coupons/validate/:code", (req, res) => {
   }
 });
 
+function generateMockOrdersForUser(userId: string): Order[] {
+  const offsets = [
+    { days: 1, amount: 45000, status: 'Delivered', paymentMethod: 'Cash on Delivery' },
+    { days: 3, amount: 28500, status: 'Delivered', paymentMethod: 'Online Payment' },
+    { days: 5, amount: 64200, status: 'Shipped', paymentMethod: 'Manual Payment' },
+    { days: 9, amount: 12000, status: 'Delivered', paymentMethod: 'Cash on Delivery' },
+    { days: 15, amount: 52000, status: 'Delivered', paymentMethod: 'Online Payment' },
+    { days: 22, amount: 33400, status: 'Accepted', paymentMethod: 'Manual Payment' },
+    { days: 45, amount: 75000, status: 'Delivered', paymentMethod: 'Online Payment' },
+    { days: 120, amount: 98000, status: 'Delivered', paymentMethod: 'Cash on Delivery' },
+    { days: 180, amount: 115000, status: 'Delivered', paymentMethod: 'Online Payment' },
+    { days: 270, amount: 89000, status: 'Delivered', paymentMethod: 'Cash on Delivery' },
+  ];
+
+  return offsets.map((off, idx) => {
+    const createdAt = new Date(Date.now() - off.days * 24 * 60 * 60 * 1000).toISOString();
+    return {
+      id: `mock_o_${userId}_${idx}`,
+      userId,
+      items: [
+        {
+          productId: "p_mock",
+          title: "Premium Gaming Component Group",
+          price: off.amount,
+          quantity: 1
+        }
+      ],
+      totalAmount: off.amount,
+      status: off.status as any,
+      paymentMethod: off.paymentMethod,
+      trackingHistory: [
+        { status: "Pending", date: createdAt, description: "Order received" },
+        { status: off.status, date: createdAt, description: `Order status updated to ${off.status}` }
+      ],
+      deliveryDetails: {
+        fullName: userId === "guest" ? "John Doe" : "Premium Gamer",
+        phone: "+8801700000000",
+        address: "Banani, Road 11",
+        city: "Dhaka"
+      },
+      createdAt
+    };
+  });
+}
+
 // Orders
-app.get("/api/orders", (req, res) => res.json(orders));
+app.get("/api/orders", (req, res) => {
+  if (orders.length === 0) {
+    orders.push(...generateMockOrdersForUser("admin_1"));
+    orders.push(...generateMockOrdersForUser("guest"));
+  }
+  res.json(orders);
+});
+
+app.delete("/api/orders/:id", async (req, res) => {
+  orders = orders.filter(o => o.id !== req.params.id);
+  if (db) await deleteDoc(doc(db, "orders", req.params.id)).catch(console.error);
+  res.sendStatus(204);
+});
+
 app.get("/api/orders/user", (req, res) => {
-  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
-  res.json(orders.filter(o => o.userId === token));
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "") || "guest";
+  if (orders.length === 0) {
+    orders.push(...generateMockOrdersForUser("admin_1"));
+    orders.push(...generateMockOrdersForUser("guest"));
+  }
+  const userOrders = orders.filter(o => o.userId === token);
+  if (userOrders.length === 0) {
+    const userMocks = generateMockOrdersForUser(token);
+    orders.push(...userMocks);
+    res.json(userMocks);
+  } else {
+    res.json(userOrders);
+  }
 });
 app.post("/api/orders", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
   const paymentMethod = req.body.paymentMethod || 'Cash on Delivery';
+  
+  let orderId = Math.floor(100000 + Math.random() * 900000).toString();
+  while (orders.some(o => o.id === orderId)) {
+    orderId = Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
   const order: Order = {
-    id: `ord_${Date.now()}`,
+    id: orderId,
     userId: token || "guest",
     items: req.body.items,
     totalAmount: req.body.totalAmount,
@@ -750,6 +922,10 @@ app.get("/api/public/orders/:id", (req, res) => {
 
 // Analytics
 app.get("/api/admin/analytics", (req, res) => {
+  if (orders.length === 0) {
+    orders.push(...generateMockOrdersForUser("admin_1"));
+    orders.push(...generateMockOrdersForUser("guest"));
+  }
   const validOrders = orders.filter(o => o.status !== 'Cancelled');
   const totalRevenue = validOrders.reduce((sum, o) => sum + o.totalAmount, 0);
   
@@ -817,7 +993,7 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*all', (req, res) => {
+    app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useStore } from '../store';
 import { api } from '../lib/api';
 import { ShoppingCart, ArrowLeft, Check, AlertTriangle, Heart, Share2, CheckCircle2, ChevronDown, ChevronUp, HelpCircle, X, Scale, Zap, Bell, TrendingUp, TrendingDown } from 'lucide-react';
@@ -10,7 +10,8 @@ import { motion, AnimatePresence } from 'motion/react';
 export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { products, categories, addToCart, user, token, updateUser, compareIds, toggleCompare } = useStore();
+  const location = useLocation();
+  const { products, categories, addToCart, user, token, updateUser, compareIds, toggleCompare, addToast } = useStore();
 
   const product = products.find(p => p.id === id);
 
@@ -162,12 +163,15 @@ export default function ProductDetails() {
       if (isSaved) {
         const res = await api.delete(`/users/me/saved-products/${product.id}`, token);
         updateUser(res);
+        addToast(`Removed "${product.title}" from your wishlist.`, 'info');
       } else {
         const res = await api.post('/users/me/saved-products', { productId: product.id }, token);
         updateUser(res);
+        addToast(`Added "${product.title}" to your wishlist!`, 'success');
       }
     } catch (err) {
       console.error('Failed to toggle save:', err);
+      addToast('Failed to update wishlist.', 'error');
     }
   };
 
@@ -231,8 +235,8 @@ export default function ProductDetails() {
               </div>
             )}
             {product.code && (
-              <div className="text-sm font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full tracking-wider border border-slate-200">
-                Code: {product.code}
+              <div className="text-xs sm:text-xs font-medium text-slate-600 bg-indigo-50 border border-indigo-100/50 rounded-full px-3 py-1 flex items-center shadow-sm select-none">
+                Product Code:&nbsp;<strong className="font-bold text-slate-900">{product.code}</strong>
               </div>
             )}
           </div>
@@ -341,6 +345,10 @@ export default function ProductDetails() {
                 
                 <button
                   onClick={() => {
+                    if (!token) {
+                      navigate('/login', { state: { from: location } });
+                      return;
+                    }
                     setIsAdded(true);
                     addToCart(product, quantity);
                     setTimeout(() => setIsAdded(false), 800);
@@ -390,7 +398,7 @@ export default function ProductDetails() {
                       <motion.span 
                         animate={{ opacity: [1, 0.5, 1] }} 
                         transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                        className="absolute -top-3 -right-2 bg-rose-500 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-md z-10 whitespace-nowrap"
+                        className="absolute -top-3 -right-2 bg-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-10 whitespace-nowrap"
                       >
                         Limited stock remaining
                       </motion.span>
@@ -640,6 +648,11 @@ export default function ProductDetails() {
 
               <button
                 onClick={() => {
+                  if (!token) {
+                    setShowQuickBuyModal(false);
+                    navigate('/login', { state: { from: location } });
+                    return;
+                  }
                   addToCart(product, quantity);
                   setShowQuickBuyModal(false);
                   navigate('/cart');

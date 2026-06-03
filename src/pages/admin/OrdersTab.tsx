@@ -2,14 +2,15 @@ import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { Order } from '../../types';
 import { useStore } from '../../store';
-import { Check, X, Clock, Download, FileText } from 'lucide-react';
+import { Check, X, Clock, Download, FileText, Search, Activity, CheckCircle2, AlertTriangle, Package, Calendar, Trash2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 export default function OrdersTab() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [sortOption, setSortOption] = useState<string>('oldest_first');
-  const [statusFilters, setStatusFilters] = useState<string[]>(['Pending', 'Accepted', 'Shipped', 'Delivered', 'Cancelled']);
+  const [statusFilters, setStatusFilters] = useState<string[]>(['Pending']);
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const { token } = useStore();
 
   useEffect(() => {
@@ -54,7 +55,18 @@ export default function OrdersTab() {
     setOrders(data);
   };
 
-  const filteredOrders = orders.filter(o => statusFilters.length === 0 || statusFilters.includes(o.status));
+  const filteredOrders = orders.filter(o => {
+    const matchesStatus = statusFilters.length === 0 || statusFilters.includes(o.status);
+    if (!matchesStatus) return false;
+
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+    const matchesId = (o.id || '').toLowerCase().includes(term);
+    const matchesPhone = (o.deliveryDetails?.phone || '').toLowerCase().includes(term);
+    const matchesName = (o.deliveryDetails?.fullName || '').toLowerCase().includes(term);
+
+    return matchesId || matchesPhone || matchesName;
+  });
   const sortedOrders = getSortedOrders(filteredOrders, sortOption);
 
   const updateStatus = async (id: string, status: string) => {
@@ -72,6 +84,18 @@ export default function OrdersTab() {
       fetchOrders();
     } catch (e) {
       alert("Failed to update payment status");
+    }
+  };
+
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const executeDeleteOrder = async (id: string) => {
+    try {
+      await api.delete(`/orders/${id}`, token);
+      fetchOrders();
+      setDeleteConfirmId(null);
+    } catch (e) {
+      console.error("Failed to delete order", e);
     }
   };
 
@@ -140,15 +164,25 @@ export default function OrdersTab() {
     doc.save(`orders_invoice_summary_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
+  const statPending = orders.filter(o => o.status === 'Pending').length;
+  const statAccepted = orders.filter(o => o.status === 'Accepted').length;
+  const statShipped = orders.filter(o => o.status === 'Shipped').length;
+  const statDelivered = orders.filter(o => o.status === 'Delivered').length;
+  const statCancelled = orders.filter(o => o.status === 'Cancelled').length;
+  const statTotal = orders.length;
+
   return (
     <div className="p-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-        <h2 className="text-2xl font-bold text-slate-800">Manage Orders</h2>
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">Manage Orders</h2>
+          <p className="text-xs text-slate-500 mt-1">Track payments, update shipping, and download general lists</p>
+        </div>
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={exportToCSV}
             disabled={sortedOrders.length === 0}
-            className="flex items-center px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+            className="flex items-center px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm shadow-sm"
           >
             <Download className="w-4 h-4 mr-2" />
             Export to CSV
@@ -156,12 +190,12 @@ export default function OrdersTab() {
           <button
             onClick={exportToPDF}
             disabled={sortedOrders.length === 0}
-            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm shadow-sm"
           >
             <FileText className="w-4 h-4 mr-2" />
             Export to PDF
           </button>
-          <div className="flex items-center space-x-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+          <div className="flex items-center space-x-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200 shadow-sm">
             <label htmlFor="sort-orders" className="text-sm font-medium text-slate-600 px-2">Sort by:</label>
             <select
               id="sort-orders"
@@ -178,6 +212,119 @@ export default function OrdersTab() {
             </select>
           </div>
         </div>
+      </div>
+
+      {/* Quick View Stats segment */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <button 
+          onClick={() => setStatusFilters(['Pending', 'Accepted', 'Shipped', 'Delivered', 'Cancelled'])}
+          className={`p-4 rounded-2xl border text-left cursor-pointer transition-all h-full flex flex-col justify-between ${
+            statusFilters.length === 5 
+              ? 'bg-slate-900 border-slate-900 text-white shadow-lg shadow-slate-900/10' 
+              : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <div className="w-full">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider font-mono opacity-90">Total Orders</span>
+              <Activity className="w-4 h-4 text-slate-400" />
+            </div>
+            <div className="text-2xl font-black font-mono leading-none">{statTotal}</div>
+            <div className="text-xs mt-1 opacity-80 font-medium whitespace-nowrap overflow-hidden text-ellipsis">All recorded orders</div>
+          </div>
+        </button>
+
+        <button 
+          onClick={() => setStatusFilters(['Pending'])}
+          className={`p-4 rounded-2xl border text-left cursor-pointer transition-all h-full flex flex-col justify-between ${
+            statusFilters.length === 1 && statusFilters[0] === 'Pending'
+              ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/15' 
+              : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <div className="w-full">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider font-mono opacity-90">Pending</span>
+              <Clock className={`w-4 h-4 ${statusFilters.length === 1 && statusFilters[0] === 'Pending' ? 'text-white' : 'text-amber-550'}`} />
+            </div>
+            <div className="text-2xl font-black font-mono leading-none">{statPending}</div>
+            <div className="text-xs mt-1 opacity-80 font-medium font-sans whitespace-nowrap overflow-hidden text-ellipsis">Awaiting trigger</div>
+          </div>
+        </button>
+
+        <button 
+          onClick={() => setStatusFilters(['Accepted'])}
+          className={`p-4 rounded-2xl border text-left cursor-pointer transition-all h-full flex flex-col justify-between ${
+            statusFilters.length === 1 && statusFilters[0] === 'Accepted'
+              ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/15' 
+              : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <div className="w-full">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider font-mono opacity-90">Accepted</span>
+              <CheckCircle2 className={`w-4 h-4 ${statusFilters.length === 1 && statusFilters[0] === 'Accepted' ? 'text-white' : 'text-blue-500'}`} />
+            </div>
+            <div className="text-2xl font-black font-mono leading-none">{statAccepted}</div>
+            <div className="text-xs mt-1 opacity-80 font-medium whitespace-nowrap overflow-hidden text-ellipsis">Prepping and ready</div>
+          </div>
+        </button>
+
+        <button 
+          onClick={() => setStatusFilters(['Shipped'])}
+          className={`p-4 rounded-2xl border text-left cursor-pointer transition-all h-full flex flex-col justify-between ${
+            statusFilters.length === 1 && statusFilters[0] === 'Shipped'
+              ? 'bg-violet-600 border-violet-600 text-white shadow-lg shadow-violet-600/15' 
+              : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <div className="w-full">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider font-mono opacity-90">Shipped</span>
+              <Package className={`w-4 h-4 ${statusFilters.length === 1 && statusFilters[0] === 'Shipped' ? 'text-white' : 'text-violet-550'}`} />
+            </div>
+            <div className="text-2xl font-black font-mono leading-none">{statShipped}</div>
+            <div className="text-xs mt-1 opacity-80 font-medium whitespace-nowrap overflow-hidden text-ellipsis">In package/transit</div>
+          </div>
+        </button>
+
+        <button 
+          onClick={() => setStatusFilters(['Delivered'])}
+          className={`p-4 rounded-2xl border text-left cursor-pointer transition-all h-full flex flex-col justify-between ${
+            statusFilters.length === 1 && statusFilters[0] === 'Delivered'
+              ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/15' 
+              : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <div className="w-full">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider font-mono opacity-90">Delivered</span>
+              <Check className={`w-4 h-4 ${statusFilters.length === 1 && statusFilters[0] === 'Delivered' ? 'text-white' : 'text-emerald-555'}`} />
+            </div>
+            <div className="text-2xl font-black font-mono leading-none">{statDelivered}</div>
+            <div className="text-xs mt-1 opacity-80 font-medium whitespace-nowrap overflow-hidden text-ellipsis">Receipt complete</div>
+          </div>
+        </button>
+      </div>
+
+      {/* Dynamic Search Bar Component */}
+      <div className="mb-6 relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+        <input
+          type="text"
+          placeholder="Search orders by Order ID, Phone number, or Customer name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 hover:border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition-all text-sm font-medium text-slate-800"
+        />
+        {searchTerm && (
+          <button 
+            onClick={() => setSearchTerm('')} 
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded"
+          >
+            Clear
+          </button>
+        )}
       </div>
       
       <div className="flex flex-wrap items-center gap-2 mb-6 p-4 bg-slate-50 border border-slate-200 rounded-xl">
@@ -231,7 +378,13 @@ export default function OrdersTab() {
               <div className="flex flex-col md:flex-row justify-between mb-4 border-b border-slate-100 pb-4">
                 <div>
                   <h3 className="font-bold text-lg text-slate-900">Order #{order.id}</h3>
-                  <p className="text-sm text-slate-500">{new Date(order.createdAt).toLocaleString()}</p>
+                  <div className="mt-1.5 text-xs text-slate-500 font-medium flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-full border border-slate-200/50 w-max">
+                    <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                    <span>{new Date(order.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                    <span className="text-slate-300">|</span>
+                    <Clock className="w-3.5 h-3.5 text-slate-500" />
+                    <span>{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
                 </div>
                 <div className="mt-4 md:mt-0 flex flex-wrap items-center gap-4">
                   <span className="font-bold text-xl text-indigo-600">৳{Number(order.totalAmount || 0).toFixed(2)}</span>
@@ -253,6 +406,30 @@ export default function OrdersTab() {
                     <option value="Delivered">Delivered</option>
                     <option value="Cancelled">Cancelled</option>
                   </select>
+                  {deleteConfirmId === order.id ? (
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => executeDeleteOrder(order.id)}
+                        className="p-1.5 text-white bg-rose-500 hover:bg-rose-600 rounded-lg transition-colors font-bold text-xs px-3 shadow-sm"
+                      >
+                        Confirm Delete
+                      </button>
+                      <button 
+                        onClick={() => setDeleteConfirmId(null)}
+                        className="p-1.5 text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors font-semibold text-xs px-3 shadow-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => setDeleteConfirmId(order.id)}
+                      className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200 shadow-sm hover:shadow-md"
+                      title="Delete Order"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
               </div>
               

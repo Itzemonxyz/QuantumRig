@@ -6,6 +6,11 @@ export interface UserNotification {
   createdAt: string;
 }
 
+export interface UserCartItem {
+  productId: string;
+  quantity: number;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -17,6 +22,7 @@ export interface User {
   savedProductIds?: string[];
   loyaltyPoints?: number;
   notifications?: UserNotification[];
+  cart?: UserCartItem[];
 }
 
 export interface RestockRequest {
@@ -85,6 +91,7 @@ export interface OrderItem {
   title: string;
   price: number;
   quantity: number;
+  imageUrl?: string;
 }
 
 export interface TrackingStep {
@@ -154,4 +161,10 @@ export interface SupportTicket {
   question: string;
   status: 'Open' | 'Closed';
   createdAt: string;
+}
+
+export interface ToastMessage {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
 }

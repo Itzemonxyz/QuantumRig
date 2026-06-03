@@ -1,10 +1,11 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store';
-import { Monitor, ShoppingCart, User as UserIcon, LogOut, Package, Shield, Search, Bell } from 'lucide-react';
+import { Monitor, ShoppingCart, User as UserIcon, LogOut, Package, Shield, Search, Bell, Tag } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import BottomNav from './BottomNav';
 import { api } from '../lib/api';
+import ToastContainer from './ToastContainer';
 
 export default function Layout() {
   const { user, cart, settings, socialLinks, logout, products, categories, token, notifications, setNotifications, markNotificationRead } = useStore();
@@ -99,7 +100,8 @@ export default function Layout() {
     ? products.filter(p => 
         (p.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
         (p.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.brand || '').toLowerCase().includes(searchQuery.toLowerCase())
+        (p.brand || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.code || '').toLowerCase().includes(searchQuery.toLowerCase())
       ).slice(0, 5)
     : [];
 
@@ -259,14 +261,12 @@ export default function Layout() {
               </AnimatePresence>
             </div>
 
-            <nav className="hidden md:flex space-x-6 lg:space-x-8">
-              <Link to="/products" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">Products</Link>
-              <Link to="/builder" className="text-indigo-600 hover:text-indigo-500 font-bold transition-colors">PC Builder</Link>
-              <Link to="/laptop-finder" className="text-blue-600 hover:text-blue-500 font-bold transition-colors">Laptop Finder</Link>
-              <Link to="/track-order" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">Track Order</Link>
-            </nav>
-
             <div className="hidden md:flex items-center space-x-6">
+              <Link to="/offers" className="flex items-center space-x-1 text-slate-600 hover:text-indigo-600 font-medium transition-colors">
+                <Tag className="w-5 h-5" />
+                <span>Offers</span>
+              </Link>
+              
               <Link to="/cart" className="relative text-slate-600 hover:text-indigo-600 transition-colors">
                 <motion.div animate={isShaking ? { rotate: [0, -15, 15, -15, 15, 0], scale: [1, 1.2, 1] } : {}} transition={{ duration: 0.4 }}>
                   <ShoppingCart className="w-6 h-6" />
@@ -279,7 +279,7 @@ export default function Layout() {
                       animate={{ scale: 1, y: 0, opacity: 1 }}
                       exit={{ scale: 0, opacity: 0 }}
                       transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                      className="absolute -top-2 -right-2 bg-rose-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      className="absolute -top-2 -right-2 bg-rose-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center font-mono">
                       {cartItemsCount}
                     </motion.span>
                   )}
@@ -291,7 +291,7 @@ export default function Layout() {
                   <button onClick={() => setShowNotifications(!showNotifications)} className="relative text-slate-600 hover:text-indigo-600 transition-colors">
                     <Bell className="w-6 h-6" />
                     {unreadCount > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white">
+                      <span className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white font-mono">
                         {unreadCount}
                       </span>
                     )}
@@ -309,7 +309,7 @@ export default function Layout() {
                           {unreadCount > 0 && <span className="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded-full">{unreadCount} New</span>}
                         </div>
                         <div className="max-h-80 overflow-y-auto">
-                          {(!notifications || notifications.length === 0) ? (
+                           {(!notifications || notifications.length === 0) ? (
                             <div className="p-6 text-center text-slate-500 text-sm">You have no notifications</div>
                           ) : (
                             notifications.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((n) => (
@@ -332,20 +332,24 @@ export default function Layout() {
               
               {user ? (
                 <div className="flex items-center space-x-4">
-                  {user.role === 'admin' ? (
-                    <Link to="/admin" className="flex items-center space-x-1 text-slate-600 hover:text-indigo-600 transition-colors">
-                      <Shield className="w-5 h-5" />
-                      <span className="text-sm font-medium hidden sm:block">Admin</span>
-                    </Link>
-                  ) : (
-                    <Link to="/profile" className="flex items-center space-x-1 text-slate-600 hover:text-indigo-600 transition-colors">
-                      <UserIcon className="w-5 h-5" />
-                      <span className="text-sm font-medium hidden sm:block">Profile</span>
+                  {user.role === 'admin' && (
+                    <Link to="/admin" className="flex items-center space-x-1 text-slate-600 hover:text-indigo-600 transition-colors mr-1">
+                      <Shield className="w-5 h-5 animate-pulse" />
+                      <span className="text-xs font-bold bg-slate-100 text-slate-700 px-2 py-1 rounded-md hidden sm:block">Admin</span>
                     </Link>
                   )}
-                  <button onClick={handleLogout} className="text-slate-400 hover:text-rose-500 transition-colors">
-                    <LogOut className="w-5 h-5" />
-                  </button>
+                  
+                  <Link to="/profile" className="flex items-center transition-transform hover:scale-105" title="User Profile">
+                    {user.avatar ? (
+                      <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-indigo-600 shadow-sm relative shrink-0">
+                        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm tracking-tight border-2 border-indigo-200 shadow-sm shrink-0">
+                        {user.name ? user.name.slice(0, 2).toUpperCase() : 'UR'}
+                      </div>
+                    )}
+                  </Link>
                 </div>
               ) : (
                 <Link to="/login" className="flex items-center space-x-1 text-slate-600 hover:text-indigo-600 font-medium transition-colors">
@@ -404,6 +408,7 @@ export default function Layout() {
         </div>
       </footer>
       <BottomNav />
+      <ToastContainer />
     </div>
   );
 }

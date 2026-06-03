@@ -37,12 +37,12 @@ export default function BottomNav() {
     >
       <Link to="/products" className={`flex flex-col items-center justify-center p-2 w-16 ${location.pathname.startsWith('/products') ? 'text-indigo-600' : 'text-slate-500 hover:text-indigo-600'}`}>
         <LayoutGrid className="w-5 h-5 mb-1" />
-        <span className="text-[10px] font-medium">Products</span>
+        <span className="text-[11px] font-semibold">Products</span>
       </Link>
       
       <Link to="/offers" className={`flex flex-col items-center justify-center p-2 w-16 ${isActive('/offers') ? 'text-indigo-600' : 'text-slate-500 hover:text-indigo-600'}`}>
         <Zap className="w-5 h-5 mb-1" />
-        <span className="text-[10px] font-medium">Offers</span>
+        <span className="text-[11px] font-semibold">Offers</span>
       </Link>
 
       <div className="relative w-16 h-full flex justify-center">
@@ -67,18 +67,18 @@ export default function BottomNav() {
                 animate={{ scale: 1, y: 0, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                className="absolute -top-1 -right-2 bg-rose-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center border border-white shadow-sm">
+                className="absolute -top-1 -right-2 bg-rose-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border border-white shadow-sm">
                 {cartItemsCount}
               </motion.span>
             )}
           </AnimatePresence>
         </div>
-        <span className="text-[10px] font-medium">Cart</span>
+        <span className="text-[11px] font-semibold">Cart</span>
       </Link>
       
       <Link to={dest} className={`flex flex-col items-center justify-center p-2 w-16 ${isMenu ? 'text-indigo-600' : 'text-slate-500 hover:text-indigo-600'}`}>
         <User className="w-5 h-5 mb-1" />
-        <span className="text-[10px] font-medium">Menu</span>
+        <span className="text-[11px] font-semibold">Menu</span>
       </Link>
     </motion.div>
   );

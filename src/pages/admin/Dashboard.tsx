@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useStore } from '../../store';
 import { useNavigate, Routes, Route, Link, Outlet, useLocation } from 'react-router-dom';
 import { Package, FolderTree, ShoppingCart, Settings as SettingsIcon, Ticket, AlertTriangle, Zap, LogOut, AreaChart, HelpCircle, ArrowLeft, BarChart3, Search, RefreshCw, Link as LinkIcon } from 'lucide-react';
+import { api } from '../../lib/api';
 import AnalyticsTab from './AnalyticsTab';
 import ProductsTab from './ProductsTab';
 import CategoriesTab from './CategoriesTab';
@@ -14,8 +15,6 @@ import SupportTab from './SupportTab';
 import SocialLinksTab from './SocialLinksTab';
 
 import RestockRequestsTab from './RestockRequestsTab';
-
-import { SeedButton } from './SeedButton';
 
 const boardOptions = [
   { to: '/admin/analytics', icon: <AreaChart className="w-8 h-8 text-indigo-500 mb-4" />, label: 'Analytics', desc: 'View store performance and analytics' },
@@ -43,21 +42,21 @@ function AdminBoard() {
   return (
     <div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {boardOptions.map((opt) => (
-           <Link 
-             key={opt.to} 
-             to={opt.to}
-             className="bg-white border text-center border-slate-200 p-8 rounded-2xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all flex flex-col items-center group cursor-pointer"
-           >
+        {boardOptions.map((opt) => {
+          return (
+            <Link 
+              key={opt.to} 
+              to={opt.to}
+              className="bg-white border border-slate-200 text-center p-8 rounded-2xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all flex flex-col items-center group cursor-pointer"
+            >
               <div className="group-hover:scale-110 transition-transform">
                  {opt.icon}
               </div>
               <h3 className="text-xl font-bold text-slate-800 mb-2">{opt.label}</h3>
               <p className="text-slate-500 text-sm">{opt.desc}</p>
-           </Link>
-        ))}
-        
-        <SeedButton />
+            </Link>
+          );
+        })}
         
         <button 
            onClick={handleLogout}
@@ -75,16 +74,43 @@ function AdminBoard() {
 }
 
 export default function AdminDashboard() {
-  const { user, products } = useStore();
+  const { user, products, token } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [globalSearch, setGlobalSearch] = useState('');
+  
+  const [counts, setCounts] = useState({
+    orders: 0,
+    coupons: 0,
+    restock: 0,
+    support: 0
+  });
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
       navigate('/admin-login');
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    if (user && user.role === 'admin' && token) {
+      Promise.all([
+        api.get('/orders', token),
+        api.get('/coupons', token),
+        api.get('/admin/restock-requests', token),
+        api.get('/support-tickets', token)
+      ])
+      .then(([orders, coupons, restock, support]) => {
+        setCounts({
+          orders: Array.isArray(orders) ? orders.length : 0,
+          coupons: Array.isArray(coupons) ? coupons.length : 0,
+          restock: Array.isArray(restock) ? restock.length : 0,
+          support: Array.isArray(support) ? support.length : 0
+        });
+      })
+      .catch(console.error);
+    }
+  }, [user, token, location.pathname]);
 
   if (!user || user.role !== 'admin') return null;
 
@@ -139,8 +165,82 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Persistent Quick Navigation */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 border-b border-slate-100 scrollbar-none">
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider pr-2 font-mono shrink-0">Quick Access:</span>
+        <Link 
+          to="/admin/orders" 
+          className={`px-4 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 shrink-0 ${
+            location.pathname.startsWith('/admin/orders')
+              ? 'bg-indigo-600 text-white shadow-sm font-bold'
+              : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold border border-indigo-200'
+          }`}
+        >
+          Orders <span className="opacity-80 ml-0.5 font-mono">({counts.orders})</span>
+        </Link>
+        <Link 
+          to="/admin/products" 
+          className={`px-4 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 shrink-0 ${
+            location.pathname.includes('/products')
+              ? 'bg-blue-600 text-white shadow-sm font-bold'
+              : 'bg-blue-50 hover:bg-blue-100 text-blue-700 font-extrabold border border-blue-200'
+          }`}
+        >
+          Products <span className="opacity-80 ml-0.5 font-mono">({products.length})</span>
+        </Link>
+        <Link 
+          to="/admin/analytics" 
+          className={`px-4 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 shrink-0 ${
+            location.pathname.includes('/analytics')
+              ? 'bg-emerald-600 text-white shadow-sm font-bold'
+              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-extrabold border border-emerald-200'
+          }`}
+        >
+          Analytics
+        </Link>
+        <Link 
+          to="/admin/coupons" 
+          className={`px-4 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 shrink-0 ${
+            location.pathname.includes('/coupons')
+              ? 'bg-fuchsia-600 text-white shadow-sm font-bold'
+              : 'bg-fuchsia-50 hover:bg-fuchsia-100 text-fuchsia-700 font-extrabold border border-fuchsia-200'
+          }`}
+        >
+          Coupons <span className="opacity-80 ml-0.5 font-mono">({counts.coupons})</span>
+        </Link>
+        <Link 
+          to="/admin/restock" 
+          className={`px-4 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 shrink-0 ${
+            location.pathname.includes('/restock')
+              ? 'bg-cyan-600 text-white shadow-sm font-bold'
+              : 'bg-cyan-50 hover:bg-cyan-100 text-cyan-700 font-extrabold border border-cyan-200'
+          }`}
+        >
+          Restock <span className="opacity-80 ml-0.5 font-mono">({counts.restock})</span>
+        </Link>
+        <Link 
+          to="/admin/support" 
+          className={`px-4 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 shrink-0 ${
+            location.pathname.includes('/support')
+              ? 'bg-violet-600 text-white shadow-sm font-bold'
+              : 'bg-violet-50 hover:bg-violet-100 text-violet-700 font-extrabold border border-violet-200'
+          }`}
+        >
+          Support <span className="opacity-80 ml-0.5 font-mono">({counts.support})</span>
+        </Link>
+        
+        {!isRoot && (
+          <Link 
+            to="/admin" 
+            className="px-3 py-1.5 rounded-full text-xs font-bold bg-slate-250 hover:bg-slate-300 text-slate-800 ml-auto flex items-center gap-1 shrink-0 transition-colors"
+          >
+            ← Main Board
+          </Link>
+        )}
+      </div>
+
       <div className="w-full">
-        {!isRoot && <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden min-h-[600px] mb-8">
+        {!isRoot && <div className="bg-white border border-slate-200 rounded-xl shadow-sm min-h-[600px] mb-8">
             <Routes>
               <Route path="analytics" element={<AnalyticsTab />} />
               <Route path="products" element={<ProductsTab />} />
