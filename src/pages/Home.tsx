@@ -210,23 +210,18 @@ export default function Home() {
           <Link 
             to="/builder" 
             id="portal-pc-builder"
-            className="group relative overflow-hidden flex flex-col justify-between bg-slate-50 hover:bg-white border border-slate-100 hover:border-indigo-200 p-8 rounded-3xl transition-all duration-300 min-h-[220px]"
+            className="group relative overflow-hidden flex flex-col justify-between bg-white hover:bg-indigo-50/50 border border-slate-200 hover:border-indigo-300 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300 min-h-[180px]"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-100/50 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
             
-            <div className="flex flex-col gap-5 z-10">
-              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform duration-300">
+            <div className="flex flex-col gap-4 z-10">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 shadow-sm border border-slate-100 group-hover:bg-indigo-100 group-hover:border-indigo-200 flex items-center justify-center text-indigo-600 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <CircuitBoard className="w-6 h-6" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mb-2">PC Builder</h3>
-                <p className="text-sm text-slate-500 leading-relaxed max-w-[240px]">
-                  Assemble your computer component by component with interactive reliability detection.
-                </p>
-              </div>
+              <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">PC Builder</h3>
             </div>
             
-            <div className="mt-8 text-xs font-bold text-indigo-600 flex items-center gap-2 group-hover:gap-3 transition-all z-10">
+            <div className="mt-6 text-xs font-bold text-indigo-600 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 z-10 opacity-70 group-hover:opacity-100">
               Start Assembling <ArrowRight className="w-4 h-4" />
             </div>
           </Link>
@@ -235,23 +230,18 @@ export default function Home() {
           <Link 
             to="/laptop-finder" 
             id="portal-laptop-finder"
-            className="group relative overflow-hidden flex flex-col justify-between bg-slate-50 hover:bg-white border border-slate-100 hover:border-blue-200 p-8 rounded-3xl transition-all duration-300 min-h-[220px]"
+            className="group relative overflow-hidden flex flex-col justify-between bg-white hover:bg-blue-50/50 border border-slate-200 hover:border-blue-300 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300 min-h-[180px]"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-100/50 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
             
-            <div className="flex flex-col gap-5 z-10">
-              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform duration-300">
+            <div className="flex flex-col gap-4 z-10">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 shadow-sm border border-slate-100 group-hover:bg-blue-100 group-hover:border-blue-200 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <Monitor className="w-6 h-6" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors mb-2">Laptop Finder</h3>
-                <p className="text-sm text-slate-500 leading-relaxed max-w-[240px]">
-                  Filter and recommendation assistant for custom gamer, office and creator notebooks.
-                </p>
-              </div>
+              <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Laptop Finder</h3>
             </div>
             
-            <div className="mt-8 text-xs font-bold text-blue-600 flex items-center gap-2 group-hover:gap-3 transition-all z-10">
+            <div className="mt-6 text-xs font-bold text-blue-600 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 z-10 opacity-70 group-hover:opacity-100">
               Find Laptop <ArrowRight className="w-4 h-4" />
             </div>
           </Link>
@@ -260,23 +250,18 @@ export default function Home() {
           <Link 
             to="/track-order" 
             id="portal-track-order"
-            className="group relative overflow-hidden flex flex-col justify-between bg-slate-50 hover:bg-white border border-slate-100 hover:border-slate-300 p-8 rounded-3xl transition-all duration-300 min-h-[220px]"
+            className="group relative overflow-hidden flex flex-col justify-between bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-slate-500/10 hover:-translate-y-1 transition-all duration-300 min-h-[180px]"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-slate-200/50 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
             
-            <div className="flex flex-col gap-5 z-10">
-              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-700 group-hover:scale-110 transition-transform duration-300">
+            <div className="flex flex-col gap-4 z-10">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 shadow-sm border border-slate-100 group-hover:bg-slate-200 group-hover:border-slate-300 flex items-center justify-center text-slate-700 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <Box className="w-6 h-6" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 transition-colors mb-2">Track Order</h3>
-                <p className="text-sm text-slate-500 leading-relaxed max-w-[240px]">
-                  Determine parcel transit status, receipt invoices, and courier progress updates.
-                </p>
-              </div>
+              <h3 className="text-lg font-bold text-slate-900 transition-colors">Track Order</h3>
             </div>
             
-            <div className="mt-8 text-xs font-bold text-slate-700 flex items-center gap-2 group-hover:gap-3 transition-all z-10">
+            <div className="mt-6 text-xs font-bold text-slate-700 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 z-10 opacity-70 group-hover:opacity-100">
               Track Progress <ArrowRight className="w-4 h-4" />
             </div>
           </Link>
@@ -286,23 +271,18 @@ export default function Home() {
             type="button"
             onClick={() => setIsComplaintOpen(true)}
             id="portal-raise-complaint"
-            className="group relative overflow-hidden flex flex-col justify-between bg-slate-50 hover:bg-white border border-slate-100 hover:border-indigo-200 p-8 rounded-3xl transition-all duration-300 text-left min-h-[220px]"
+            className="group relative overflow-hidden flex flex-col justify-between bg-white hover:bg-rose-50/50 border border-slate-200 hover:border-rose-300 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-rose-500/10 hover:-translate-y-1 transition-all duration-300 text-left min-h-[180px]"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-100/50 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-rose-100/50 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
             
-            <div className="flex flex-col gap-5 z-10">
-              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform duration-300">
+            <div className="flex flex-col gap-4 z-10">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 shadow-sm border border-slate-100 group-hover:bg-rose-100 group-hover:border-rose-200 flex items-center justify-center text-rose-600 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <LifeBuoy className="w-6 h-6" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mb-2">Raise a Complaint</h3>
-                <p className="text-sm text-slate-500 leading-relaxed max-w-[240px]">
-                  Share your experience, file official issues, or request rapid support.
-                </p>
-              </div>
+              <h3 className="text-lg font-bold text-slate-900 group-hover:text-rose-700 transition-colors">Raise a Complaint</h3>
             </div>
             
-            <div className="mt-8 text-xs font-bold text-indigo-600 flex items-center gap-2 group-hover:gap-3 transition-all z-10">
+            <div className="mt-6 text-xs font-bold text-rose-600 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 z-10 opacity-70 group-hover:opacity-100">
               File Complaint <ArrowRight className="w-4 h-4" />
             </div>
           </button>

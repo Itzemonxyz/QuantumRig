@@ -49,7 +49,7 @@ interface StoreState {
   removeToast: (id: string) => void;
 
   // Cart
-  addToCart: (product: Product, quantity?: number) => void;
+  addToCart: (product: Product, quantity?: number, silent?: boolean) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -61,6 +61,8 @@ interface StoreState {
 
   // Compare
   compareIds: string[];
+  showCompareModal: boolean;
+  setShowCompareModal: (show: boolean) => void;
   toggleCompare: (productId: string) => void;
   clearCompare: () => void;
 }
@@ -79,10 +81,12 @@ export const useStore = create<StoreState>((set) => ({
   cart: [],
   builderCart: {},
   compareIds: [],
+  showCompareModal: false,
   toasts: [],
   isLoading: true,
 
   setIsLoading: (loading) => set({ isLoading: loading }),
+  setShowCompareModal: (show: boolean) => set({ showCompareModal: show }),
   login: (user, token) => {
     localStorage.setItem('token', token);
     set((state) => {
@@ -134,7 +138,7 @@ export const useStore = create<StoreState>((set) => ({
     toasts: state.toasts.filter((t) => t.id !== id)
   })),
 
-  addToCart: (product, quantity = 1) => set((state) => {
+  addToCart: (product, quantity = 1, silent = false) => set((state) => {
     const existing = state.cart.find((item) => item.product.id === product.id);
     let newCart;
     if (existing) {
@@ -143,6 +147,10 @@ export const useStore = create<StoreState>((set) => ({
       newCart = [...state.cart, { product, quantity }];
     }
     syncCartToServer(newCart, state.token);
+
+    if (silent) {
+      return { cart: newCart };
+    }
 
     const toastId = Math.random().toString(36).substring(2, 9);
     setTimeout(() => {
@@ -203,7 +211,7 @@ export const useStore = create<StoreState>((set) => ({
     if (state.compareIds.includes(productId)) {
       return { compareIds: state.compareIds.filter(id => id !== productId) };
     }
-    if (state.compareIds.length >= 2) {
+    if (state.compareIds.length >= 4) {
       return state;
     }
     return { compareIds: [...state.compareIds, productId] };

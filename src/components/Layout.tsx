@@ -4,6 +4,7 @@ import { Monitor, ShoppingCart, User as UserIcon, LogOut, Package, Shield, Searc
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import BottomNav from './BottomNav';
+import CompareWidget from './CompareWidget';
 import { api } from '../lib/api';
 import ToastContainer from './ToastContainer';
 
@@ -112,13 +113,13 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-900">
       {location.pathname === '/' && (
-        <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-700 text-white text-xs py-2 overflow-hidden w-full relative border-b border-indigo-800 shadow-sm whitespace-nowrap">
+        <div className="hidden sm:block bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-700 text-white text-xs py-2 overflow-hidden w-full relative border-b border-indigo-800 shadow-sm whitespace-nowrap">
           <div className="animate-marquee font-medium tracking-widest uppercase items-center">
             <span className="mx-4">🌟</span> Welcome to QuantumRig Tech — The Ultimate Destination for PC Components and Custom Builds <span className="mx-4">🌟</span> Use code <span className="font-bold text-cyan-300 mx-2">QUANTUM24</span> for 10% off!
           </div>
         </div>
       )}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+      <header className="hidden sm:block bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-24">
             <Link to="/" className="flex items-center space-x-2 text-indigo-600 shrink-0">
@@ -408,6 +409,7 @@ export default function Layout() {
         </div>
       </footer>
       <BottomNav />
+      <CompareWidget />
       <ToastContainer />
     </div>
   );

@@ -159,18 +159,28 @@ export default function ProductDetails() {
       navigate('/login');
       return;
     }
+    
+    // Optimistic update
+    const previousSavedIds = user.savedProductIds || [];
+    const isCurrentlySaved = previousSavedIds.includes(product.id);
+    const newSavedIds = isCurrentlySaved 
+      ? previousSavedIds.filter(id => id !== product.id)
+      : [...previousSavedIds, product.id];
+      
+    updateUser({ ...user, savedProductIds: newSavedIds });
+
     try {
-      if (isSaved) {
-        const res = await api.delete(`/users/me/saved-products/${product.id}`, token);
-        updateUser(res);
-        addToast(`Removed "${product.title}" from your wishlist.`, 'info');
+      if (isCurrentlySaved) {
+        await api.delete(`/users/me/saved-products/${product.id}`, token);
+        addToast("Removed.", 'info');
       } else {
-        const res = await api.post('/users/me/saved-products', { productId: product.id }, token);
-        updateUser(res);
-        addToast(`Added "${product.title}" to your wishlist!`, 'success');
+        await api.post('/users/me/saved-products', { productId: product.id }, token);
+        addToast("Added to save product successfully", 'success');
       }
     } catch (err) {
       console.error('Failed to toggle save:', err);
+      // Revert optimistic update on failure
+      updateUser({ ...user, savedProductIds: previousSavedIds });
       addToast('Failed to update wishlist.', 'error');
     }
   };
@@ -245,24 +255,37 @@ export default function ProductDetails() {
           </h1>
 
           <div className="flex flex-wrap items-center gap-3 mb-6">
-            <button 
+            <motion.button 
+              whileTap={{ scale: 0.9 }}
               onClick={handleSave} 
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-                isSaved ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-slate-600 hover:text-indigo-600 hover:border-indigo-200 border-slate-200'
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all duration-300 shadow-sm ${
+                isSaved ? 'bg-rose-50 text-rose-600 border-rose-200 shadow-rose-100' : 'bg-white text-slate-600 hover:text-rose-600 hover:border-rose-200 hover:shadow-rose-100/50 hover:bg-rose-50/50 border-slate-200'
               }`}
             >
-              <Heart className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} />
-              {isSaved ? "Saved" : "Save"}
-            </button>
+              <motion.div
+                animate={isSaved ? { scale: [1, 1.4, 0.9, 1.1, 1] } : { scale: 1 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+              >
+                <Heart className="w-5 h-5" fill={isSaved ? "currentColor" : "none"} />
+              </motion.div>
+              <span className="tracking-tight">{isSaved ? "Saved" : "Save"}</span>
+            </motion.button>
             
             <button 
-              onClick={() => toggleCompare(product.id)} 
+              onClick={() => {
+                const isComparing = compareIds?.includes(product.id);
+                if (!isComparing && compareIds?.length >= 4) {
+                  addToast("Comparison limit reached (Max 4)");
+                  return;
+                }
+                toggleCompare(product.id);
+              }} 
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
                 compareIds?.includes(product.id) ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-slate-600 hover:text-indigo-600 hover:border-indigo-200 border-slate-200'
               }`}
             >
               <Scale className="w-4 h-4" />
-              {compareIds?.includes(product.id) ? "Comparing" : "Compare"}
+              {compareIds?.includes(product.id) ? "Added to Compare" : "Add to Compare"}
             </button>
 
             <button 

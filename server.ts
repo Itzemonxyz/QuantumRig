@@ -162,6 +162,15 @@ async function syncDatabase() {
     const oSnap = await getDocs(collection(db, "orders"));
     if (!oSnap.empty) {
       orders = oSnap.docs.map((d: any) => d.data() as Order);
+      
+      // Clean up any stray mock orders from the DB
+      const mockOrdersToDelete = orders.filter(o => o.id && o.id.startsWith("mock_"));
+      if (mockOrdersToDelete.length > 0) {
+        for (const mo of mockOrdersToDelete) {
+          await deleteDoc(doc(db, "orders", mo.id)).catch(console.error);
+        }
+        orders = orders.filter(o => !o.id || !o.id.startsWith("mock_"));
+      }
     } // if empty, do not seed mock orders to avoid bloat
 
     // 6. Sync Settings
@@ -735,57 +744,8 @@ app.get("/api/coupons/validate/:code", (req, res) => {
   }
 });
 
-function generateMockOrdersForUser(userId: string): Order[] {
-  const offsets = [
-    { days: 1, amount: 45000, status: 'Delivered', paymentMethod: 'Cash on Delivery' },
-    { days: 3, amount: 28500, status: 'Delivered', paymentMethod: 'Online Payment' },
-    { days: 5, amount: 64200, status: 'Shipped', paymentMethod: 'Manual Payment' },
-    { days: 9, amount: 12000, status: 'Delivered', paymentMethod: 'Cash on Delivery' },
-    { days: 15, amount: 52000, status: 'Delivered', paymentMethod: 'Online Payment' },
-    { days: 22, amount: 33400, status: 'Accepted', paymentMethod: 'Manual Payment' },
-    { days: 45, amount: 75000, status: 'Delivered', paymentMethod: 'Online Payment' },
-    { days: 120, amount: 98000, status: 'Delivered', paymentMethod: 'Cash on Delivery' },
-    { days: 180, amount: 115000, status: 'Delivered', paymentMethod: 'Online Payment' },
-    { days: 270, amount: 89000, status: 'Delivered', paymentMethod: 'Cash on Delivery' },
-  ];
-
-  return offsets.map((off, idx) => {
-    const createdAt = new Date(Date.now() - off.days * 24 * 60 * 60 * 1000).toISOString();
-    return {
-      id: `mock_o_${userId}_${idx}`,
-      userId,
-      items: [
-        {
-          productId: "p_mock",
-          title: "Premium Gaming Component Group",
-          price: off.amount,
-          quantity: 1
-        }
-      ],
-      totalAmount: off.amount,
-      status: off.status as any,
-      paymentMethod: off.paymentMethod,
-      trackingHistory: [
-        { status: "Pending", date: createdAt, description: "Order received" },
-        { status: off.status, date: createdAt, description: `Order status updated to ${off.status}` }
-      ],
-      deliveryDetails: {
-        fullName: userId === "guest" ? "John Doe" : "Premium Gamer",
-        phone: "+8801700000000",
-        address: "Banani, Road 11",
-        city: "Dhaka"
-      },
-      createdAt
-    };
-  });
-}
-
 // Orders
 app.get("/api/orders", (req, res) => {
-  if (orders.length === 0) {
-    orders.push(...generateMockOrdersForUser("admin_1"));
-    orders.push(...generateMockOrdersForUser("guest"));
-  }
   res.json(orders);
 });
 
@@ -797,18 +757,8 @@ app.delete("/api/orders/:id", async (req, res) => {
 
 app.get("/api/orders/user", (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "") || "guest";
-  if (orders.length === 0) {
-    orders.push(...generateMockOrdersForUser("admin_1"));
-    orders.push(...generateMockOrdersForUser("guest"));
-  }
   const userOrders = orders.filter(o => o.userId === token);
-  if (userOrders.length === 0) {
-    const userMocks = generateMockOrdersForUser(token);
-    orders.push(...userMocks);
-    res.json(userMocks);
-  } else {
-    res.json(userOrders);
-  }
+  res.json(userOrders);
 });
 app.post("/api/orders", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
@@ -922,10 +872,6 @@ app.get("/api/public/orders/:id", (req, res) => {
 
 // Analytics
 app.get("/api/admin/analytics", (req, res) => {
-  if (orders.length === 0) {
-    orders.push(...generateMockOrdersForUser("admin_1"));
-    orders.push(...generateMockOrdersForUser("guest"));
-  }
   const validOrders = orders.filter(o => o.status !== 'Cancelled');
   const totalRevenue = validOrders.reduce((sum, o) => sum + o.totalAmount, 0);
   

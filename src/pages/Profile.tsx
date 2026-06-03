@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useStore } from '../store';
 import { api } from '../lib/api';
 import { Order } from '../types';
-import { Package, MapPin, ChevronDown, ChevronUp, CheckCircle2, Heart, Printer, Star, Gift, Search, Settings, LogOut, TrendingUp, BarChart3, Clock, Calendar, PieChart as PieIcon, AlertTriangle, ShieldAlert, DollarSign, ArrowRight, CalendarRange, X } from 'lucide-react';
+import { Package, MapPin, ChevronDown, ChevronUp, CheckCircle2, Heart, Printer, Star, Gift, Search, Settings, LogOut, TrendingUp, BarChart3, Clock, Calendar, PieChart as PieIcon, AlertTriangle, ShieldAlert, ArrowRight, CalendarRange, X } from 'lucide-react';
+import TakaIcon from '../components/TakaIcon';
 import { useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { auth, db } from '../lib/firebase';
@@ -1007,7 +1008,7 @@ export default function Profile() {
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <DollarSign className="w-5 h-5 text-indigo-600" />
+                        <TakaIcon className="w-5 h-5 text-indigo-600" />
                         <h3 className="font-bold text-slate-900 text-sm">Monthly Spend Budget</h3>
                       </div>
                       <div className="flex items-center space-x-1.5">

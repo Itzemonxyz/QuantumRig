@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Product } from '../types';
 import { useStore } from '../store';
 import { ArrowLeftRight, Check, Eye, X, ShoppingCart, Share2, TrendingDown, TrendingUp, Trash2 } from 'lucide-react';
@@ -14,7 +14,9 @@ interface ProductCardProps {
 export default function ProductCard({ product, onRemove }: ProductCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { compareIds, toggleCompare, addToCart, token } = useStore();
+  const [searchParams] = useSearchParams();
+  const isBuilderMode = searchParams.get('builder') === 'true';
+  const { compareIds, toggleCompare, addToCart, addToBuilder, token } = useStore();
   const [toastMessage, setToastMessage] = React.useState('');
   const [showQuickView, setShowQuickView] = React.useState(false);
   const [isAdded, setIsAdded] = React.useState(false);
@@ -22,8 +24,8 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
   const isComparing = compareIds.includes(product.id);
   const handleCompareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isComparing && compareIds.length >= 2) {
-      setToastMessage('Limit reached (Max 2)');
+    if (!isComparing && compareIds.length >= 4) {
+      setToastMessage('Limit reached (Max 4)');
       setTimeout(() => setToastMessage(''), 2000);
       return;
     }
@@ -158,6 +160,18 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
                <span className="text-sm sm:text-lg font-bold text-indigo-600 mt-auto">৳{Number(displayPrice).toFixed(0)}</span>
              )}
           </div>
+          {isBuilderMode && (
+            <button
+               onClick={(e) => {
+                 e.stopPropagation();
+                 addToBuilder(product.categoryId, product);
+                 navigate('/builder');
+               }}
+               className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors"
+            >
+               Select
+            </button>
+          )}
         </div>
       </div>
     </motion.div>

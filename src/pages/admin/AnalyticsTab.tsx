@@ -2,7 +2,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { api } from '../../lib/api';
 import { useStore } from '../../store';
 import { Order } from '../../types';
-import { DollarSign, ShoppingCart, Users, Package, TrendingUp, TrendingDown, Minus, Download } from 'lucide-react';
+import { ShoppingCart, Users, Package, TrendingUp, TrendingDown, Minus, Download } from 'lucide-react';
+import TakaIcon from '../../components/TakaIcon';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, Legend, BarChart, Bar 
@@ -322,7 +323,7 @@ export default function AnalyticsTab() {
       {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
-          icon={<DollarSign className="w-8 h-8 text-indigo-600" />} 
+          icon={<TakaIcon className="w-8 h-8 text-indigo-600" />} 
           title="Total Revenue" 
           value={`৳${analytics.totalRevenue.toLocaleString()}`} 
         />
