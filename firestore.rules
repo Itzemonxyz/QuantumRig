@@ -76,6 +76,11 @@ service cloud.firestore {
       allow read: if !isSignedIn() || (isSignedIn() && (resource == null || resource.data.email == request.auth.token.email));
       allow write: if !isSignedIn() || (isSignedIn() && request.auth.token.email == request.resource.data.email);
     }
+    
+    match /complaints/{complaintId} {
+      allow read: if true;
+      allow write: if true;
+    }
 
     // 6. Triggered Mail/Order Receipts
     match /mail/{mailId} {

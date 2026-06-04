@@ -152,11 +152,11 @@ export default function CompareWidget() {
                        <div className="mb-4 flex flex-wrap items-center gap-2">
                          {p.discountPrice ? (
                            <>
-                             <span className="text-xl font-bold text-rose-600">৳{Number(p.discountPrice).toFixed(0)}</span>
-                             <span className="text-xs font-medium text-slate-400 line-through">৳{Number(p.price).toFixed(0)}</span>
+                             <span className="text-xl font-bold text-slate-600">৳{Number(p.discountPrice).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+                             <span className="text-xs font-medium text-slate-400 line-through">৳{Number(p.price).toLocaleString("en-BD", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
                            </>
                          ) : (
-                           <span className="text-xl font-bold text-indigo-600">৳{Number(p.price).toFixed(0)}</span>
+                           <span className="text-xl font-bold text-slate-700">৳{Number(p.price).toLocaleString("en-BD", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
                          )}
                        </div>
                        

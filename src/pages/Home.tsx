@@ -3,22 +3,27 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
 import { motion, AnimatePresence } from 'motion/react';
 import ProductSkeleton from '../components/ProductSkeleton';
+import ProductCard from '../components/ProductCard';
 import { api } from '../lib/api';
 import { 
   Cpu, 
   CircuitBoard, 
   MemoryStick, 
   HardDrive, 
-  MonitorPlay, 
-  Zap, 
-  Box, 
+  Gpu, 
+  PlugZap, 
+  PcCase, 
   Fan, 
   Monitor, 
-  Headphones, 
+  Gamepad2, 
+  Box,
   LayoutGrid,
   Search,
   LifeBuoy,
-  ArrowRight
+  ArrowRight,
+  Zap,
+  Headphones,
+  Laptop
 } from 'lucide-react';
 
 export default function Home() {
@@ -26,7 +31,21 @@ export default function Home() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showMoreMobileCats, setShowMoreMobileCats] = useState(false);
+  const [mobileHeroIndex, setMobileHeroIndex] = useState(0);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  const mobileBanners = [
+    "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?auto=format&fit=crop&w=800&q=80"
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setMobileHeroIndex(pr => (pr + 1) % mobileBanners.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [mobileBanners?.length]);
 
   // Complaints states
   const [isComplaintOpen, setIsComplaintOpen] = useState(false);
@@ -90,20 +109,24 @@ export default function Home() {
       ).slice(0, 5) // limit to 5 results
     : [];
 
-  const getCategoryIcon = (slug: string) => {
-    switch (slug) {
-      case 'processors': return <Cpu className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
-      case 'motherboards': return <CircuitBoard className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
-      case 'ram': return <MemoryStick className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
-      case 'storage': return <HardDrive className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
-      case 'graphics-cards': return <MonitorPlay className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
-      case 'power-supplies': return <Zap className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
-      case 'casings': return <Box className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
-      case 'coolers': return <Fan className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
-      case 'monitors': return <Monitor className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
-      case 'accessories': return <Headphones className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
-      default: return <Box className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
-    }
+  const getCategoryIcon = (category: any) => {
+    const slug = (category?.slug || '').toLowerCase();
+    const id = (category?.id || '').toLowerCase();
+    const name = (category?.name || '').toLowerCase();
+    
+    if (slug.includes('processor') || id === 'c1' || name.includes('processor') || name.includes('cpu')) return <Cpu className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
+    if (slug.includes('motherboard') || id === 'c2' || name.includes('motherboard')) return <CircuitBoard className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
+    if (slug.includes('ram') || id === 'c3' || name.includes('ram') || name.includes('memory')) return <MemoryStick className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
+    if (slug.includes('storage') || id === 'c4' || name.includes('storage') || name.includes('ssd') || name.includes('hdd')) return <HardDrive className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
+    if (slug.includes('graphic') || slug.includes('gpu') || id === 'c5' || name.includes('gpu') || name.includes('graphic')) return <Gpu className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
+    if (slug.includes('power') || slug.includes('psu') || id === 'c6' || name.includes('power') || name.includes('psu')) return <PlugZap className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
+    if (slug.includes('case') || slug.includes('casing') || id === 'c7' || name.includes('case') || name.includes('chassis')) return <PcCase className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
+    if (slug.includes('cooler') || id === 'c8' || name.includes('cooler')) return <Fan className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
+    if (slug.includes('monitor') || id === 'c9' || name.includes('monitor') || name.includes('display')) return <Monitor className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
+    if (slug.includes('laptop') || id === 'c11' || name.includes('laptop')) return <Laptop className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
+    if (slug.includes('accessor') || id === 'c10' || name.includes('accessor') || name.includes('mouse') || name.includes('keyboard')) return <Gamepad2 className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
+    
+    return <Box className="w-5 h-5 text-indigo-600" strokeWidth={1.5} />;
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -117,8 +140,99 @@ export default function Home() {
   return (
     <div className="bg-slate-50 min-h-[calc(100vh-200px)] text-slate-900 w-full shadow-2xl relative pb-8">
       
-      {/* Hero Section */}
-      <div className="relative w-full h-[400px] overflow-hidden bg-slate-900 flex items-center justify-center">
+      {/* Mobile-Only Blocks */}
+      <div className="md:hidden flex flex-col w-full">
+        {/* Quick Access Circular Icon Grid */}
+        <div className="bg-white py-4 px-4 shadow-sm relative z-10 mb-2">
+          <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+            {[
+              { slug: 'processors', name: 'CPU', icon: <Cpu className="w-6 h-6 text-indigo-600" /> },
+              { slug: 'laptops', name: 'Laptop', icon: <Laptop className="w-6 h-6 text-indigo-600" /> },
+              { slug: 'motherboards', name: 'MBoard', icon: <CircuitBoard className="w-6 h-6 text-indigo-600" /> },
+              { slug: 'monitors', name: 'Monitor', icon: <Monitor className="w-6 h-6 text-indigo-600" /> },
+              { slug: 'accessories', name: 'Gadgets', icon: <Gamepad2 className="w-6 h-6 text-indigo-600" /> },
+              { slug: 'casings', name: 'Casing', icon: <PcCase className="w-6 h-6 text-indigo-600" /> },
+              { slug: 'graphics-cards', name: 'GPU', icon: <Gpu className="w-6 h-6 text-indigo-600" /> },
+              { slug: 'ram', name: 'RAM', icon: <MemoryStick className="w-6 h-6 text-indigo-600" /> },
+              { slug: 'storage', name: 'Drive', icon: <HardDrive className="w-6 h-6 text-indigo-600" /> },
+              { slug: 'coolers', name: 'Cooler', icon: <Fan className="w-6 h-6 text-indigo-600" /> }
+            ].slice(0, showMoreMobileCats ? 10 : 4).map((cat, idx) => {
+              const actualCat = categories.find(c => 
+                c.slug.toLowerCase().includes(cat.slug.replace(/s$/, '')) || 
+                c.name.toLowerCase().includes(cat.name.toLowerCase()) ||
+                cat.name.toLowerCase().includes(c.name.toLowerCase())
+              );
+              const fallbackMap: Record<string, string> = {
+                'processors': 'c1', 'laptops': 'c11', 'motherboards': 'c2', 'monitors': 'c9',
+                'accessories': 'c10', 'casings': 'c7', 'graphics-cards': 'c5', 'ram': 'c3', 
+                'storage': 'c4', 'coolers': 'c8'
+              };
+              const targetId = actualCat ? actualCat.id : fallbackMap[cat.slug];
+              return (
+                <div key={idx} className="flex flex-col items-center justify-center cursor-pointer" onClick={() => targetId && navigate(`/products?category=${targetId}`)}>
+                  <div className="w-14 h-14 bg-indigo-50 border border-indigo-100 rounded-full flex items-center justify-center mb-1.5 shadow-sm">
+                    {cat.icon}
+                  </div>
+                  <span className="text-[10px] font-semibold text-slate-600 text-center tracking-tight">{cat.name}</span>
+                </div>
+              );
+            })}
+          </div>
+          <button 
+            onClick={() => setShowMoreMobileCats(p => !p)} 
+            className="w-full mt-3 py-1.5 text-xs font-bold text-indigo-600 flex items-center justify-center hover:bg-slate-50 rounded-lg transition-colors border border-transparent hover:border-slate-200"
+          >
+            {showMoreMobileCats ? 'Show Less' : 'Show More Categories'}
+          </button>
+        </div>
+
+        {/* Hero Carousel */}
+        <div className="relative w-full h-[220px] overflow-hidden bg-slate-900 border-y border-slate-200">
+          <AnimatePresence mode="popLayout">
+            <motion.img 
+              key={mobileHeroIndex}
+              src={mobileBanners[mobileHeroIndex]}
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 0.6, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.8 }}
+              className="absolute w-full h-full object-cover mix-blend-overlay"
+              alt="Banner"
+            />
+          </AnimatePresence>
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent flex flex-col justify-end p-4">
+             <h2 className="text-2xl font-extrabold text-white mb-1">QuantumRig Tech</h2>
+             <p className="text-xs text-indigo-200 uppercase tracking-widest font-semibold mb-2">Build Your Dream Setup</p>
+          </div>
+          <div className="absolute bottom-4 right-4 flex space-x-1">
+            {mobileBanners.map((_, i) => (
+              <div key={i} className={`h-1.5 rounded-full ${i === mobileHeroIndex ? 'w-4 bg-indigo-500' : 'w-1.5 bg-slate-400'} transition-all`} />
+            ))}
+          </div>
+        </div>
+
+        {/* Marquee */}
+        <div className="bg-indigo-600 text-white text-[10px] py-1.5 overflow-hidden w-full whitespace-nowrap shadow-sm border-b border-indigo-700">
+          <div className="animate-marquee font-medium tracking-wider uppercase flex items-center">
+            <span className="mx-2">🔥</span> 10% OFF with code QUANTUM24 <span className="mx-2">🔥</span> Next-day delivery available! <span className="mx-2">🔥</span> 10% OFF with code QUANTUM24
+          </div>
+        </div>
+
+        {/* Primary Action Buttons */}
+        <div className="flex gap-3 px-4 py-4 mb-2 bg-white border-b border-slate-200 shadow-sm">
+          <button onClick={() => navigate('/builder')} className="flex-1 bg-slate-900 hover:bg-slate-800 text-white rounded-xl py-3 px-2 flex flex-col items-center justify-center shadow-lg shadow-slate-900/10 transition-transform active:scale-95 border border-slate-800">
+            <CircuitBoard className="w-6 h-6 mb-1 text-indigo-400" />
+            <span className="font-bold text-xs">PC Builder</span>
+          </button>
+          <button onClick={() => navigate('/laptop-finder')} className="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl py-3 px-2 flex flex-col items-center justify-center shadow-sm transition-transform active:scale-95 border border-indigo-200">
+            <Laptop className="w-6 h-6 mb-1 text-indigo-600" />
+            <span className="font-bold text-xs">Laptop Finder</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Hero Section (Desktop) */}
+      <div className="hidden md:flex relative w-full h-[400px] overflow-hidden bg-slate-900 items-center justify-center">
         <div className="absolute inset-0 w-full h-full">
           <img 
             src="https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=2000&q=80" 
@@ -182,11 +296,11 @@ export default function Home() {
                       <div className="text-sm font-bold flex flex-col items-end">
                         {product.discountPrice ? (
                           <>
-                            <span className="text-rose-600">৳{Number(product.discountPrice || 0).toFixed(2)}</span>
-                            <span className="text-xs text-slate-400 line-through">৳{Number(product.price || 0).toFixed(2)}</span>
+                            <span className="text-slate-600">৳{Number(product.discountPrice || 0).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span className="text-xs text-slate-400 line-through">৳{Number(product.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                           </>
                         ) : (
-                          <span className="text-indigo-600">৳{Number(product.price || 0).toFixed(2)}</span>
+                          <span className="text-slate-700">৳{Number(product.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                         )}
                       </div>
                     </div>
@@ -203,7 +317,7 @@ export default function Home() {
       </div>
 
       {/* Portals Section - Relocated with beautiful graphic cards */}
-      <div className="px-8 mt-4 mb-12">
+      <div className="hidden md:block px-8 mt-4 mb-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           
           {/* PC Builder Card */}
@@ -236,7 +350,7 @@ export default function Home() {
             
             <div className="flex flex-col gap-4 z-10">
               <div className="w-12 h-12 rounded-xl bg-slate-50 shadow-sm border border-slate-100 group-hover:bg-blue-100 group-hover:border-blue-200 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                <Monitor className="w-6 h-6" />
+                <Laptop className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Laptop Finder</h3>
             </div>
@@ -413,8 +527,8 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* App Categories Grid */}
-      <div className="px-8 mt-6">
+      {/* App Categories Grid (Desktop) */}
+      <div className="hidden md:block px-8 mt-6">
         <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-y-10 gap-x-6">
           {categories.map((c) => (
             <motion.button 
@@ -426,7 +540,7 @@ export default function Home() {
                className="flex flex-col items-center justify-start group"
             >
                <div className="w-16 h-16 rounded-full border border-slate-200 bg-white flex items-center justify-center mb-3 group-hover:border-indigo-500 group-hover:shadow-[0_0_15px_rgba(79,70,229,0.2)] transition-all">
-                  {getCategoryIcon(c.slug)}
+                  {getCategoryIcon(c)}
                </div>
                <span className="text-xs text-slate-600 text-center leading-tight font-medium group-hover:text-indigo-600 transition-colors px-1">{c.name}</span>
             </motion.button>
@@ -447,7 +561,7 @@ export default function Home() {
       </div>
 
       {/* Trending Products */}
-      <div className="px-8 mt-20 mb-20">
+      <div className="px-4 md:px-8 mt-8 md:mt-20 mb-12 md:mb-20">
         <div className="flex justify-between items-end mb-8">
           <div>
             <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Trending Now</h2>
@@ -455,26 +569,14 @@ export default function Home() {
           </div>
           <Link to="/products" className="text-indigo-600 text-sm font-medium hover:text-indigo-500">View All &rarr;</Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {isLoading ? (
             Array.from({ length: 4 }).map((_, idx) => (
               <ProductSkeleton key={`trending-skeleton-${idx}`} />
             ))
           ) : (
             products.filter(p => p.stockStatus !== 'Out of Stock').slice(0, 4).map((p) => (
-              <div key={p.id} onClick={() => navigate(`/products/${p.id}`)} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer group flex flex-col h-full">
-                <div className="aspect-square bg-slate-50 rounded-xl mb-4 p-4 flex items-center justify-center overflow-hidden">
-                  <img src={p.imageUrl} alt={p.title} className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300 mix-blend-multiply" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-xs font-medium text-indigo-600 mb-1">{p.brand || 'Premium'}</div>
-                  <h3 className="font-bold text-slate-900 leading-tight mb-2 line-clamp-2">{p.title}</h3>
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-bold text-lg text-slate-900">৳{p.discountPrice ? Number(p.discountPrice || 0).toFixed(2) : Number(p.price || 0).toFixed(2)}</span>
-                    {p.discountPrice && <span className="text-xs text-slate-400 line-through">৳{Number(p.price || 0).toFixed(2)}</span>}
-                  </div>
-                </div>
-              </div>
+              <ProductCard key={p.id} product={p} />
             ))
           )}
         </div>

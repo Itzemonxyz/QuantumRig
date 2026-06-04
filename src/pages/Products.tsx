@@ -15,6 +15,7 @@ export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCategory = searchParams.get('category');
   const searchQuery = searchParams.get('search');
+  const isBuilderMode = searchParams.get('builder') === 'true';
 
   const [sortBy, setSortBy] = useState('newest');
   
@@ -25,30 +26,40 @@ export default function Products() {
   const [stockFilter, setStockFilter] = useState('all'); // all, in-stock, out-of-stock
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [localPriceRange, setLocalPriceRange] = useState({ min: '', max: '' });
+  const [isFiltering, setIsFiltering] = useState(false);
+
+  React.useEffect(() => {
+    setIsFiltering(true);
+    const timer = setTimeout(() => setIsFiltering(false), 300);
+    return () => clearTimeout(timer);
+  }, [activeCategory, searchQuery, sortBy, selectedBrands, stockFilter, priceRange]);
 
   React.useEffect(() => {
     setLocalPriceRange(priceRange);
   }, [priceRange]);
 
-  let filteredProducts = products;
-  
-  const allBrands = useMemo(() => {
-    return Array.from(new Set(products.map(p => p.brand).filter(Boolean) as string[])).sort();
-  }, [products]);
+  let baseFilteredProducts = products;
   
   if (activeCategory) {
-    filteredProducts = filteredProducts.filter(p => p.categoryId === activeCategory);
+    baseFilteredProducts = baseFilteredProducts.filter(p => p.categoryId === activeCategory);
   }
   
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
-    filteredProducts = filteredProducts.filter(p => 
+    baseFilteredProducts = baseFilteredProducts.filter(p => 
       (p.title || '').toLowerCase().includes(q) || 
       (p.description || '').toLowerCase().includes(q) || 
       (p.brand || '').toLowerCase().includes(q) ||
       (p.code || '').toLowerCase().includes(q)
     );
   }
+
+  const allBrands = useMemo(() => {
+    const availableProducts = baseFilteredProducts.filter(p => p.stockStatus !== 'Out of Stock' && p.inventoryCount !== 0);
+    return Array.from(new Set(availableProducts.map(p => p.brand).filter(Boolean) as string[])).sort();
+  }, [baseFilteredProducts]);
+  
+  let filteredProducts = baseFilteredProducts;
 
   if (stockFilter === 'in-stock') {
     filteredProducts = filteredProducts.filter(p => p.stockStatus === 'In Stock');
@@ -267,11 +278,11 @@ export default function Products() {
            <div className="flex justify-between items-center text-xs text-slate-500 mb-1">
              <span className="flex flex-col">
                <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Min Price</span>
-               <span className="font-mono text-indigo-600 font-bold text-sm">৳{localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min)}</span>
+               <span className="font-mono text-slate-700 font-bold text-sm">৳{localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min)}</span>
              </span>
              <span className="flex flex-col items-end">
                <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Max Price</span>
-               <span className="font-mono text-indigo-600 font-bold text-sm">৳{localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max)}</span>
+               <span className="font-mono text-slate-700 font-bold text-sm">৳{localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max)}</span>
              </span>
            </div>
 
@@ -419,19 +430,24 @@ export default function Products() {
           {filterSidebarContent}
         </div>
         
-        {/* Mobile Filters Drawer */}
+        {/* Mobile Filters Bottom Sheet */}
         <AnimatePresence>
           {showMobileFilters && (
             <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-slate-900/50 flex md:hidden"
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex md:hidden items-end"
             >
               <motion.div 
-                initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
-                className="w-4/5 max-w-sm bg-white h-full shadow-2xl flex flex-col"
+                initial={{ y: '100%' }} 
+                animate={{ y: 0 }} 
+                exit={{ y: '100%' }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="w-full bg-white h-[85vh] max-h-[85vh] rounded-t-3xl shadow-2xl flex flex-col overflow-hidden"
               >
-                <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 sticky top-0 z-10">
-                  <h2 className="font-bold text-lg">Filters</h2>
+                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10 shrink-0">
+                  <h2 className="font-bold text-lg text-slate-900">Filters</h2>
                   <div className="flex items-center space-x-4">
                     <button 
                       onClick={() => {
@@ -445,10 +461,15 @@ export default function Products() {
                     >
                       Clear Filters
                     </button>
-                    <button onClick={() => setShowMobileFilters(false)} className="p-1"><X className="w-6 h-6 text-slate-500" /></button>
+                    <button 
+                      onClick={() => setShowMobileFilters(false)}
+                      className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
-                <div className="p-4 overflow-y-auto flex-1">
+                <div className="p-5 overflow-y-auto flex-1 bg-slate-50/50">
                   {filterSidebarContent}
                 </div>
                 <div className="p-4 border-t border-slate-200 bg-white sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
@@ -467,7 +488,7 @@ export default function Products() {
 
         {/* Products Grid */}
         <div className="col-span-1 md:col-span-3 pb-24">
-          {isLoading ? (
+          {isLoading || isFiltering ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {Array.from({ length: 8 }).map((_, index) => (
                 <ProductSkeleton key={`skeleton-${index}`} />
@@ -490,7 +511,7 @@ export default function Products() {
                   transition={{ duration: 0.3, delay: index * 0.05 }}
                   className="h-full"
                 >
-                  <ProductCard product={p} />
+                  <ProductCard product={p} isBuilderMode={isBuilderMode} />
                 </motion.div>
               ))}
             </div>

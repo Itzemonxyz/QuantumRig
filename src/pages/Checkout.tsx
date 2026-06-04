@@ -327,7 +327,7 @@ export default function Checkout() {
                 disabled={loading}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-bold text-sm tracking-wide transition-all disabled:opacity-75 shadow-md shadow-indigo-600/20 cursor-pointer"
               >
-                {loading ? 'Processing Order Placements...' : `Complete Order & Place Receipt (৳${Number(total || 0).toFixed(2)})`}
+                {loading ? 'Processing Order Placements...' : `Complete Order & Place Receipt (৳${Number(total || 0).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})})`}
               </button>
             </form>
           </div>
@@ -348,9 +348,9 @@ export default function Checkout() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-slate-800 truncate text-xs">{item.product.title}</p>
-                        <p className="text-slate-500 text-xs font-medium">Qty: {item.quantity} × ৳{Number(item.product.discountPrice || item.product.price).toFixed(2)}</p>
+                        <p className="text-slate-500 text-xs font-medium">Qty: {item.quantity} × ৳{Number(item.product.discountPrice || item.product.price).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                       </div>
-                      <span className="font-semibold text-slate-800 text-xs">৳{Number((item.product.discountPrice || item.product.price) * item.quantity).toFixed(2)}</span>
+                      <span className="font-semibold text-slate-800 text-xs">৳{Number((item.product.discountPrice || item.product.price) * item.quantity).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                   ))}
                 </div>
@@ -360,21 +360,21 @@ export default function Checkout() {
               <div className="space-y-3 border-t border-slate-100 pt-4 text-sm font-medium">
                 <div className="flex justify-between text-slate-600">
                   <span>Items subtotal</span>
-                  <span>৳{Number(subtotal || 0).toFixed(2)}</span>
+                  <span>৳{Number(subtotal || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-emerald-600 font-bold">
                     <span>Discount ({appliedCoupon?.code})</span>
-                    <span>-৳{Number(discountAmount || 0).toFixed(2)}</span>
+                    <span>-৳{Number(discountAmount || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-slate-600">
                   <span>Shipping delivery</span>
-                  <span>{shipping === 0 ? <span className="text-emerald-650 font-bold">FREE</span> : `৳${Number(shipping || 0).toFixed(2)}`}</span>
+                  <span>{shipping === 0 ? <span className="text-emerald-650 font-bold">FREE</span> : `৳${Number(shipping || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}</span>
                 </div>
                 <div className="border-t border-slate-100 pt-3 flex justify-between font-bold text-lg text-slate-900">
                   <span>Invoice Total</span>
-                  <span>৳{Number(total || 0).toFixed(2)}</span>
+                  <span>৳{Number(total || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
               </div>
             </div>

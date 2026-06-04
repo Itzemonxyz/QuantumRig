@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useStore } from '../store';
 import { api } from '../lib/api';
-import { ShoppingCart, ArrowLeft, Check, AlertTriangle, Heart, Share2, CheckCircle2, ChevronDown, ChevronUp, HelpCircle, X, Scale, Zap, Bell, TrendingUp, TrendingDown } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, Check, AlertTriangle, Heart, Share2, CheckCircle2, ChevronDown, ChevronUp, HelpCircle, X, Scale, Zap, Bell, TrendingUp, TrendingDown, Copy } from 'lucide-react';
 import Breadcrumbs from '../components/Breadcrumbs';
 import ScrollToTopButton from '../components/ScrollToTopButton';
 import { motion, AnimatePresence } from 'motion/react';
@@ -10,9 +10,8 @@ import { motion, AnimatePresence } from 'motion/react';
 export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { products, categories, addToCart, user, token, updateUser, compareIds, toggleCompare, addToast } = useStore();
-
+  const { products } = useStore();
+  
   const product = products.find(p => p.id === id);
 
   if (!product) {
@@ -26,6 +25,15 @@ export default function ProductDetails() {
     );
   }
 
+  return <ProductDetailsInner product={product} />;
+}
+
+function ProductDetailsInner({ product }: { product: any }) {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { products, categories, addToCart, user, token, updateUser, compareIds, toggleCompare, addToast } = useStore();
+
   const category = categories.find(c => c.id === product.categoryId);
   const isOutOfStock = product.stockStatus === 'Out of Stock' || product.inventoryCount === 0;
   const isLowStock = !isOutOfStock && product.inventoryCount !== undefined && product.inventoryCount < 5;
@@ -33,11 +41,14 @@ export default function ProductDetails() {
 
   const isSaved = user?.savedProductIds?.includes(product.id) || false;
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedTitle, setCopiedTitle] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
   const [showAllSpecs, setShowAllSpecs] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [showQuickBuyModal, setShowQuickBuyModal] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [showSupportToast, setShowSupportToast] = useState(false);
+  const [priceDropSubscribed, setPriceDropSubscribed] = useState(false);
   const [supportEmail, setSupportEmail] = useState('');
   const [supportQuestion, setSupportQuestion] = useState('');
   const [supportErrors, setSupportErrors] = useState<{ email?: string; question?: string }>({});
@@ -154,6 +165,27 @@ export default function ProductDetails() {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const handlePriceDropSubscribe = async () => {
+    if (!user || !token) {
+      navigate('/login');
+      return;
+    }
+    
+    if (priceDropSubscribed) {
+      setPriceDropSubscribed(false);
+      addToast("Unsubscribed from price drop alerts.", 'info');
+    } else {
+      setPriceDropSubscribed(true);
+      addToast("Subscribed to price drop alerts!", 'success');
+      try {
+        // Mock API endpoint for the price alerts
+        await api.post('/users/me/price-alerts', { productId: product.id }, token);
+      } catch (err) {
+        console.error("Error subscribing to price alerts", err);
+      }
+    }
+  };
+
   const handleSave = async () => {
     if (!user || !token) {
       navigate('/login');
@@ -245,13 +277,35 @@ export default function ProductDetails() {
               </div>
             )}
             {product.code && (
-              <div className="text-xs sm:text-xs font-medium text-slate-600 bg-indigo-50 border border-indigo-100/50 rounded-full px-3 py-1 flex items-center shadow-sm select-none">
-                Product Code:&nbsp;<strong className="font-bold text-slate-900">{product.code}</strong>
+              <div className="text-xs sm:text-xs font-medium text-slate-600 bg-indigo-50 border border-indigo-100/50 rounded-full px-3 py-1 flex items-center gap-2 shadow-sm select-none">
+                <span>Product Code:&nbsp;<strong className="font-bold text-slate-900">{product.code}</strong></span>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(product.code || '');
+                    setCopiedCode(true);
+                    setTimeout(() => setCopiedCode(false), 2000);
+                  }}
+                  className="text-slate-400 hover:text-indigo-600 transition-colors bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 p-1 rounded-md"
+                  title="Copy Product Code"
+                >
+                  {copiedCode ? <CheckCircle2 className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                </button>
               </div>
             )}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight mb-4">
-            {product.title}
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight mb-4 flex items-center gap-3">
+            <span>{product.title}</span>
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText(product.title);
+                setCopiedTitle(true);
+                setTimeout(() => setCopiedTitle(false), 2000);
+              }}
+              className="mt-1 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors bg-white hover:bg-slate-50 border border-slate-200 hover:border-indigo-200 p-1.5 rounded-lg opacity-60 hover:opacity-100 shadow-sm"
+              title="Copy Title"
+            >
+              {copiedTitle ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+            </button>
           </h1>
 
           <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -295,16 +349,26 @@ export default function ProductDetails() {
               {copiedLink ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
               {copiedLink ? "Copied!" : "Share"}
             </button>
+
+            <button
+              onClick={handlePriceDropSubscribe}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+                priceDropSubscribed ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-white text-slate-600 hover:text-emerald-600 hover:border-emerald-200 border-slate-200'
+              }`}
+            >
+              <Bell className="w-4 h-4" fill={priceDropSubscribed ? "currentColor" : "none"} />
+              {priceDropSubscribed ? "Alert Set" : "Price Drop Alert"}
+            </button>
           </div>
           
           <div className="flex flex-wrap items-center gap-4 mb-6">
             {product.discountPrice ? (
               <div className="flex items-center gap-3">
-                <span className="text-3xl font-bold text-rose-600">৳{Number(product.discountPrice || 0).toFixed(0)}</span>
-                <span className="text-xl font-medium text-slate-400 line-through">৳{Number(product.price || 0).toFixed(0)}</span>
+                <span className="text-3xl font-medium text-slate-800">৳{Number(product.discountPrice || 0).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+                <span className="text-xl font-medium text-slate-400 line-through">৳{Number(product.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
               </div>
             ) : (
-              <span className="text-3xl font-bold text-indigo-600">৳{Number(product.price || 0).toFixed(0)}</span>
+              <span className="text-3xl font-medium text-slate-800">৳{Number(product.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
             )}
             {isOutOfStock ? (
               <span className="px-3 py-1 bg-rose-50 text-rose-500 rounded-full text-sm font-bold flex items-center border border-rose-200">
@@ -539,8 +603,8 @@ export default function ProductDetails() {
                 <div className="text-xs font-medium text-indigo-600 mb-1">{p.brand || 'Premium'}</div>
                 <h3 className="font-bold text-slate-900 leading-tight mb-2 line-clamp-2">{p.title}</h3>
                 <div className="flex items-baseline gap-2">
-                  <span className="font-bold text-lg text-slate-900">৳{p.discountPrice ? Number(p.discountPrice || 0).toFixed(2) : Number(p.price || 0).toFixed(2)}</span>
-                  {p.discountPrice && <span className="text-xs text-slate-400 line-through">৳{Number(p.price || 0).toFixed(2)}</span>}
+                  <span className="font-bold text-lg text-slate-900">৳{p.discountPrice ? Number(p.discountPrice || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2}) : Number(p.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                  {p.discountPrice && <span className="text-xs text-slate-400 line-through">৳{Number(p.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>}
                 </div>
               </div>
             </div>
@@ -657,7 +721,7 @@ export default function ProductDetails() {
               <div className="space-y-3 mb-8">
                 <div className="flex justify-between text-slate-600">
                   <span>Subtotal</span>
-                  <span className="font-medium">৳{Number(((product.discountPrice || product.price) * quantity) || 0).toFixed(2)}</span>
+                  <span className="font-medium">৳{Number(((product.discountPrice || product.price) * quantity) || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
                   <span>Shipping</span>
@@ -665,7 +729,7 @@ export default function ProductDetails() {
                 </div>
                 <div className="flex justify-between text-xl font-bold text-slate-900 pt-3 border-t border-slate-200">
                   <span>Total</span>
-                  <span>৳{Number(((product.discountPrice || product.price) * quantity) || 0).toFixed(2)}</span>
+                  <span>৳{Number(((product.discountPrice || product.price) * quantity) || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
               </div>
 

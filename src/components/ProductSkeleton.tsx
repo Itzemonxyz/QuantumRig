@@ -2,37 +2,20 @@ import React from 'react';
 
 export default function ProductSkeleton() {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col group hover:shadow-md transition-all cursor-pointer relative animate-pulse">
+    <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col group relative animate-pulse">
       {/* Image Skeleton */}
-      <div className="aspect-video relative overflow-hidden bg-slate-200 p-6 flex items-center justify-center h-48 w-full">
-      </div>
+      <div className="aspect-square bg-slate-100 rounded-xl mb-4 w-full"></div>
       
       {/* Content Skeleton */}
-      <div className="p-6 flex flex-col flex-1">
-        <div className="flex justify-between items-start mb-2">
-          {/* Title and Category */}
-          <div className="space-y-2 flex-1">
-            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-            <div className="h-3 bg-slate-200 rounded w-1/4"></div>
-          </div>
-          {/* Price */}
-          <div className="h-6 bg-slate-300 rounded w-16 ml-2"></div>
+      <div className="flex flex-col flex-1 gap-3">
+        <div className="space-y-2">
+          <div className="h-4 bg-slate-100 rounded w-2/3"></div>
+          <div className="h-3 bg-slate-100 rounded w-1/3"></div>
         </div>
         
-        {/* Description lines */}
-        <div className="space-y-2 mt-4 mb-4">
-          <div className="h-3 bg-slate-200 rounded w-full"></div>
-          <div className="h-3 bg-slate-200 rounded w-5/6"></div>
-          <div className="h-3 bg-slate-200 rounded w-4/6"></div>
-        </div>
-
-        <div className="mt-auto space-y-4">
-          <div className="flex flex-wrap gap-2">
-            <div className="h-5 bg-slate-200 rounded w-12"></div>
-            <div className="h-5 bg-slate-200 rounded w-16"></div>
-            <div className="h-5 bg-slate-200 rounded w-10"></div>
-          </div>
-          <div className="w-full bg-slate-200 h-10 rounded-lg"></div>
+        <div className="mt-auto pt-3 border-t border-slate-100 flex justify-between items-end">
+           <div className="h-5 bg-slate-200 rounded w-20"></div>
+           <div className="h-8 bg-slate-50 rounded-lg w-8"></div>
         </div>
       </div>
     </div>

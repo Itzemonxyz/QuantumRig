@@ -69,7 +69,19 @@ let users: User[] = [
   { id: "admin_2", name: "Administrator", email: "admin@quantumrig.tech", password: "admin6207", role: "admin", savedProductIds: [] }
 ];
 
-let categories: Category[] = [];
+let categories: Category[] = [
+  { id: "c1", name: "Processors", slug: "processors" },
+  { id: "c2", name: "Motherboards", slug: "motherboards" },
+  { id: "c3", name: "RAM", slug: "ram" },
+  { id: "c4", name: "Storage", slug: "storage" },
+  { id: "c5", name: "Graphics Cards", slug: "graphics-cards" },
+  { id: "c6", name: "Power Supplies", slug: "power-supplies" },
+  { id: "c7", name: "Casings", slug: "casings" },
+  { id: "c8", name: "Coolers", slug: "coolers" },
+  { id: "c9", name: "Monitors", slug: "monitors" },
+  { id: "c10", name: "Accessories", slug: "accessories" },
+  { id: "c11", name: "Laptops", slug: "laptops" }
+];
 let brands: Brand[] = [
   { id: "b1", name: "Intel", slug: "intel" },
   { id: "b2", name: "AMD", slug: "amd" },
@@ -422,6 +434,18 @@ app.delete("/api/restock-requests/:id", async (req, res) => {
   restockRequests = restockRequests.filter(r => r.id !== req.params.id);
   if (db) await deleteDoc(doc(db, "restocks", req.params.id)).catch(console.error);
   res.sendStatus(204);
+});
+
+app.post("/api/users/me/price-alerts", async (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+  const user = users.find((u) => u.id === token);
+  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+  const { productId } = req.body;
+  if (!productId) return res.status(400).json({ error: 'Missing productId' });
+
+  // In a real app we'd save this to a database, but for now we just return ok
+  res.json({ success: true, productId });
 });
 
 app.get("/api/users/me/notifications", (req, res) => {

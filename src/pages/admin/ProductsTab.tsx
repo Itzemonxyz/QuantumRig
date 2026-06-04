@@ -286,7 +286,7 @@ export default function ProductsTab() {
     const headers = ['Title', 'Price', 'Stock Count'];
     const csvContent = [
       headers.join(','),
-      ...products.map(p => `"${p.title.replace(/"/g, '""')}",${Number(p.price || 0).toFixed(2)},${p.inventoryCount || 0}`)
+      ...products.map(p => `"${p.title.replace(/"/g, '""')}",${Number(p.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})},${p.inventoryCount || 0}`)
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -416,10 +416,10 @@ export default function ProductsTab() {
                 <td className="px-6 py-4 text-slate-500">{categories.find(c => c.id === p.categoryId)?.name}</td>
                 <td className="px-6 py-4">
                   <div className="flex flex-col">
-                    <span className="font-bold text-slate-900">${Number(p.price || 0).toFixed(2)}</span>
+                    <span className="font-bold text-slate-900">${Number(p.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     {p.discountPrice && (
                       <span className={`text-xs mt-0.5 ${p.discountPrice > p.price ? 'text-rose-600 font-bold flex items-center gap-1' : 'text-emerald-600 font-medium'}`} title={p.discountPrice > p.price ? "Offer price is higher than regular price!" : ""}>
-                        ${Number(p.discountPrice || 0).toFixed(2)} (Offer)
+                        ${Number(p.discountPrice || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})} (Offer)
                         {p.discountPrice > p.price && <AlertCircle className="w-3.5 h-3.5" />}
                       </span>
                     )}

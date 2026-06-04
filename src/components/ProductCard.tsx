@@ -68,7 +68,7 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
     >
       {saveAmount > 0 && (
          <div className="absolute top-0 left-0 bg-rose-600 text-white text-[11px] sm:text-xs px-3 py-1 rounded-br-2xl font-medium z-10">
-            Save: {Number(saveAmount || 0).toFixed(0)}৳
+            Save: {Number(saveAmount || 0).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}৳
          </div>
       )}
 
@@ -149,29 +149,74 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
            </ul>
         )}
         
-        <div className="mt-auto pt-3 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 grow-0 shrink-0">
-          <div className="flex flex-col">
-             {hasDiscount ? (
-               <>
-                 <span className="text-xs text-slate-400 line-through">৳{Number(product.price).toFixed(0)}</span>
-                 <span className="text-sm sm:text-lg font-bold text-rose-600">৳{Number(displayPrice).toFixed(0)}</span>
-               </>
+        <div className="mt-auto pt-3 border-t border-slate-200 flex flex-col justify-between gap-3 grow-0 shrink-0">
+          <div className="flex flex-row items-center justify-between">
+             <div className="flex flex-col">
+                {hasDiscount ? (
+                  <>
+                    <span className="text-xs text-slate-400 line-through">৳{Number(product.price).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+                    <span className="text-sm sm:text-lg font-normal text-indigo-700 bg-indigo-50/70 px-2 py-0.5 rounded-md">৳{Number(displayPrice).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+                  </>
+                ) : (
+                  <span className="text-sm sm:text-lg font-normal text-indigo-700 bg-indigo-50/70 px-2 py-0.5 rounded-md mt-auto w-fit">৳{Number(displayPrice).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+                )}
+             </div>
+             
+             {isBuilderMode ? (
+               <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addToBuilder(product.categoryId, product);
+                    navigate('/builder');
+                  }}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors"
+               >
+                  Select
+               </button>
              ) : (
-               <span className="text-sm sm:text-lg font-bold text-indigo-600 mt-auto">৳{Number(displayPrice).toFixed(0)}</span>
+                <div className="flex items-center gap-1.5 z-10">
+                   <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isOutOfStock) {
+                           setToastMessage('Out of stock');
+                           setTimeout(() => setToastMessage(''), 2000);
+                           return;
+                        }
+                        addToCart(product);
+                        navigate('/checkout');
+                      }}
+                      className={`px-3 py-1.5 h-8 rounded-lg text-[11px] font-bold flex items-center justify-center transition-all ${isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:shadow-md'}`}
+                   >
+                      Quick Buy
+                   </button>
+                   <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isOutOfStock) {
+                           setToastMessage('Out of stock');
+                           setTimeout(() => setToastMessage(''), 2000);
+                           return;
+                        }
+                        addToCart(product);
+                        setIsAdded(true);
+                        setTimeout(() => setIsAdded(false), 2000);
+                      }}
+                      className={`h-8 w-8 rounded-lg shrink-0 flex items-center justify-center transition-all ${isAdded ? 'bg-emerald-500 text-white' : isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-indigo-700 shadow-sm'}`}
+                      title="Add to Cart"
+                   >
+                      {isAdded ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+                   </button>
+                </div>
              )}
           </div>
-          {isBuilderMode && (
-            <button
-               onClick={(e) => {
-                 e.stopPropagation();
-                 addToBuilder(product.categoryId, product);
-                 navigate('/builder');
-               }}
-               className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors"
-            >
-               Select
-            </button>
-          )}
+          
+          <button 
+            onClick={handleCompareClick} 
+            className="md:hidden flex items-center justify-center text-[11px] font-bold text-slate-500 hover:text-indigo-600 bg-slate-100 py-1.5 rounded-md w-full transition-colors"
+          >
+            {isComparing ? 'Remove from Compare' : '+ Add to Compare'}
+          </button>
         </div>
       </div>
     </motion.div>
@@ -214,10 +259,10 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
               </div>
               <h2 className="text-2xl font-bold text-slate-900 mb-4 leading-tight">{product.title}</h2>
               
-              <div className="flex items-end gap-3 mb-6">
-                <span className="text-3xl font-bold text-slate-900">৳{Number(displayPrice || 0).toFixed(2)}</span>
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-2xl font-normal text-indigo-700 bg-indigo-50/70 px-3 py-1 rounded-lg">৳{Number(displayPrice || 0).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
                 {hasDiscount && (
-                  <span className="text-lg text-slate-400 line-through mb-1">৳{Number(product.price || 0).toFixed(2)}</span>
+                  <span className="text-lg text-slate-400 line-through">৳{Number(product.price || 0).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
                 )}
               </div>
               

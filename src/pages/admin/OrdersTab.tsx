@@ -114,7 +114,7 @@ export default function OrdersTab() {
       order.paymentMethod || 'Cash on Delivery',
       order.paymentStatus || 'Pending',
       order.transactionId || 'N/A',
-      Number(order.totalAmount || 0).toFixed(2),
+      Number(order.totalAmount || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2}),
       (order.items || []).reduce((sum, item) => sum + item.quantity, 0).toString()
     ]);
 
@@ -148,7 +148,7 @@ export default function OrdersTab() {
       order.deliveryDetails?.fullName || 'N/A',
       order.status,
       order.paymentStatus || 'Pending',
-      `$${Number(order.totalAmount || 0).toFixed(2)}`,
+      `$${Number(order.totalAmount || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
       (order.items || []).reduce((sum, item) => sum + item.quantity, 0).toString()
     ]);
     
@@ -387,7 +387,7 @@ export default function OrdersTab() {
                   </div>
                 </div>
                 <div className="mt-4 md:mt-0 flex flex-wrap items-center gap-4">
-                  <span className="font-bold text-xl text-indigo-600">৳{Number(order.totalAmount || 0).toFixed(2)}</span>
+                  <span className="font-bold text-xl text-slate-700">৳{Number(order.totalAmount || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                   <select 
                     value={order.status}
                     onChange={(e) => updateStatus(order.id, e.target.value)}
@@ -507,14 +507,14 @@ export default function OrdersTab() {
                     {order.items.map(item => (
                       <li key={item.productId} className="flex justify-between border-b border-slate-200/60 pb-2 last:border-0 last:pb-0">
                         <span className="text-slate-700 line-clamp-1 flex-1 pr-4 font-medium">{item.quantity}x {item.title}</span>
-                        <span className="font-bold text-slate-900">৳{Number((item.price * item.quantity) || 0).toFixed(2)}</span>
+                        <span className="font-bold text-slate-900">৳{Number((item.price * item.quantity) || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                       </li>
                     ))}
                   </ul>
                   {order.discountAmount ? (
                     <div className="mt-4 flex justify-between items-center text-sm px-4">
                       <span className="text-slate-500">Discount Added</span>
-                      <span className="text-emerald-600 font-bold">-৳{Number(order.discountAmount || 0).toFixed(2)}</span>
+                      <span className="text-emerald-600 font-bold">-৳{Number(order.discountAmount || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                   ) : null}
                 </div>

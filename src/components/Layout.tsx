@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import BottomNav from './BottomNav';
 import CompareWidget from './CompareWidget';
 import { api } from '../lib/api';
+import SupportChat from './SupportChat';
 import ToastContainer from './ToastContainer';
 
 export default function Layout() {
@@ -15,8 +16,10 @@ export default function Layout() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showMiniCart, setShowMiniCart] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     try {
@@ -56,6 +59,29 @@ export default function Layout() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+
+      if (isInputFocused) return;
+
+      const key = e.key.toLowerCase();
+      
+      if (key === 's') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+        searchInputRef.current?.focus();
+      } else if (key === 'c') {
+        e.preventDefault();
+        navigate('/cart');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
 
   useEffect(() => {
     if (user && token) {
@@ -112,14 +138,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-900">
-      {location.pathname === '/' && (
-        <div className="hidden sm:block bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-700 text-white text-xs py-2 overflow-hidden w-full relative border-b border-indigo-800 shadow-sm whitespace-nowrap">
-          <div className="animate-marquee font-medium tracking-widest uppercase items-center">
-            <span className="mx-4">🌟</span> Welcome to QuantumRig Tech — The Ultimate Destination for PC Components and Custom Builds <span className="mx-4">🌟</span> Use code <span className="font-bold text-cyan-300 mx-2">QUANTUM24</span> for 10% off!
-          </div>
-        </div>
-      )}
-      <header className="hidden sm:block bg-white border-b border-slate-200 sticky top-0 z-50">
+      <header className="hidden md:block bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-24">
             <Link to="/" className="flex items-center space-x-2 text-indigo-600 shrink-0">
@@ -130,8 +149,9 @@ export default function Layout() {
               <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
+                  ref={searchInputRef}
                   type="text"
-                  placeholder="Search products, brands, categories..."
+                  placeholder="Search products, brands, categories... (Press 'S')"
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -229,7 +249,7 @@ export default function Layout() {
                                 <p className="text-xs text-slate-500 truncate">{product.categoryId ? categories.find(c => c.id === product.categoryId)?.name : ''}</p>
                               </div>
                               <div className="text-sm font-bold text-slate-900">
-                                ৳{Number(product.price || 0).toFixed(2)}
+                                ৳{Number(product.price || 0).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                               </div>
                             </div>
                           ))}
@@ -268,24 +288,95 @@ export default function Layout() {
                 <span>Offers</span>
               </Link>
               
-              <Link to="/cart" className="relative text-slate-600 hover:text-indigo-600 transition-colors">
-                <motion.div animate={isShaking ? { rotate: [0, -15, 15, -15, 15, 0], scale: [1, 1.2, 1] } : {}} transition={{ duration: 0.4 }}>
-                  <ShoppingCart className="w-6 h-6" />
-                </motion.div>
-                <AnimatePresence mode="popLayout">
-                  {cartItemsCount > 0 && (
-                    <motion.span 
-                      key={cartItemsCount}
-                      initial={{ scale: 0, y: -15, opacity: 0 }}
-                      animate={{ scale: 1, y: 0, opacity: 1 }}
-                      exit={{ scale: 0, opacity: 0 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                      className="absolute -top-2 -right-2 bg-rose-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center font-mono">
-                      {cartItemsCount}
-                    </motion.span>
+              <div 
+                className="relative group"
+                onMouseEnter={() => setShowMiniCart(true)}
+                onMouseLeave={() => setShowMiniCart(false)}
+              >
+                <Link to="/cart" title="Cart (Press 'C')" className="relative text-slate-600 hover:text-indigo-600 transition-colors flex items-center h-full py-4">
+                  <motion.div animate={isShaking ? { rotate: [0, -15, 15, -15, 15, 0], scale: [1, 1.2, 1] } : {}} transition={{ duration: 0.4 }}>
+                    <ShoppingCart className="w-6 h-6" />
+                  </motion.div>
+                  <AnimatePresence mode="popLayout">
+                    {cartItemsCount > 0 && (
+                      <motion.span 
+                        key={cartItemsCount}
+                        initial={{ scale: 0, y: -15, opacity: 0 }}
+                        animate={{ scale: 1, y: 0, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                        className="absolute top-2 -right-2 bg-rose-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center font-mono z-10">
+                        {cartItemsCount}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </Link>
+
+                {/* Mini Cart Dropdown */}
+                <AnimatePresence>
+                  {showMiniCart && cartItemsCount > 0 && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 top-full mt-1 w-80 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden"
+                    >
+                      <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                        <h4 className="font-bold text-slate-900 flex items-center gap-2">
+                          <ShoppingCart className="w-4 h-4 text-indigo-600" />
+                          Your Cart
+                        </h4>
+                        <span className="text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">
+                          {cartItemsCount} items
+                        </span>
+                      </div>
+                      
+                      <div className="max-h-80 overflow-y-auto p-4 space-y-4">
+                        {cart.map((item) => (
+                          <div key={item.product.id} className="flex gap-3">
+                            <div className="w-16 h-16 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
+                              {item.product.imageUrl ? (
+                                <img src={item.product.imageUrl} alt={item.product.title} className="w-full h-full object-cover" />
+                              ) : (
+                                <Package className="w-6 h-6 text-slate-400" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h5 className="text-sm font-bold text-slate-900 truncate" title={item.product.title}>{item.product.title}</h5>
+                              <p className="text-xs text-slate-500 mt-1">Qty: {item.quantity}</p>
+                              <p className="text-sm font-bold text-slate-700 mt-1">৳{(item.product.price * item.quantity).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="p-4 bg-slate-50 border-t border-slate-100">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-sm text-slate-600 font-medium">Subtotal</span>
+                          <span className="text-lg font-bold text-slate-900">
+                            ৳{cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Link 
+                            to="/cart" 
+                            className="text-center py-2 px-4 rounded-lg bg-white border border-slate-300 text-slate-700 font-medium text-sm hover:bg-slate-50 transition-colors"
+                          >
+                            View Cart
+                          </Link>
+                          <Link 
+                            to="/checkout" 
+                            className="text-center py-2 px-4 rounded-lg bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-700 transition-colors shadow-sm"
+                          >
+                            Checkout
+                          </Link>
+                        </div>
+                      </div>
+                    </motion.div>
                   )}
                 </AnimatePresence>
-              </Link>
+              </div>
               
               {user && (
                 <div className="relative" ref={notifRef}>
@@ -363,8 +454,34 @@ export default function Layout() {
         </div>
       </header>
       
+      {/* Mobile Sticky Header */}
+      <header className="md:hidden bg-slate-900 border-b border-indigo-900 sticky top-0 z-50 p-4 shadow-md">
+        <div className="flex items-center space-x-3">
+          <Link to="/" className="shrink-0">
+            <img src="/favicon.svg" alt="QuantumRig" className="h-8 w-auto brightness-0 invert" />
+          </Link>
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search products, brands, anything..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchQuery.trim()) {
+                  handleSearchSubmit(searchQuery);
+                }
+              }}
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border-[transparent] text-white placeholder:text-slate-400 focus:bg-slate-700 focus:border-indigo-500 rounded-full text-sm outline-none border focus:ring-2 focus:ring-indigo-500/50"
+            />
+          </div>
+        </div>
+      </header>
+
       <main className="flex-1 relative pb-16 sm:pb-0">
-        <Outlet />
+        <div className="flex-1 w-full h-full">
+          <Outlet />
+        </div>
       </main>
 
       <footer className="bg-slate-900 text-slate-400 py-12 pb-24 sm:pb-12">
@@ -408,6 +525,7 @@ export default function Layout() {
           <Link to="/admin-login" className="text-slate-800 hover:text-slate-600 transition-colors text-xs cursor-text">Internal Access</Link>
         </div>
       </footer>
+      <SupportChat />
       <BottomNav />
       <CompareWidget />
       <ToastContainer />

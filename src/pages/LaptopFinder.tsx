@@ -9,8 +9,9 @@ type BudgetFilter = 'all' | 'budget' | 'mid' | 'premium';
 type UseCaseFilter = 'all' | 'gaming' | 'creator' | 'student';
 
 export default function LaptopFinder() {
-  const { products } = useStore();
-  const laptops = products.filter(p => ['c11', 'laptops'].includes(p.categoryId));
+  const { products, categories } = useStore();
+  const laptopCategory = categories.find(c => c.slug.toLowerCase().includes('laptop') || c.id === 'c11');
+  const laptops = products.filter(p => p.categoryId === laptopCategory?.id || ['c11', 'laptops', 'laptop'].includes(p.categoryId) || p.title.toLowerCase().includes('laptop'));
   
   const [budget, setBudget] = useState<BudgetFilter>('all');
   const [useCase, setUseCase] = useState<UseCaseFilter>('all');

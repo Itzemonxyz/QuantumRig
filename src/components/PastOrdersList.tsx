@@ -60,71 +60,132 @@ export default function PastOrdersList({ token, initialOrders }: PastOrdersListP
     printWindow.document.write(`
       <html>
         <head>
-          <title>Order #${order.id}</title>
+          <title>Receipt_Order_${order.id}</title>
           <style>
-            body { font-family: system-ui, -apple-system, sans-serif; color: #1e293b; padding: 2rem; max-width: 800px; margin: 0 auto; }
-            .header { border-bottom: 2px solid #e2e8f0; padding-bottom: 1.5rem; margin-bottom: 2rem; }
-            .header h1 { margin: 0 0 0.5rem 0; font-size: 24px; color: #0f172a; }
-            .header p { margin: 0.25rem 0; color: #64748b; font-size: 14px; }
-            .section { margin-bottom: 2.5rem; }
-            .section h2 { font-size: 18px; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; color: #0f172a; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
-            th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
-            th { font-weight: 600; color: #64748b; }
-            .total { text-align: right; font-size: 18px; font-weight: bold; margin-top: 1rem; color: #0f172a; }
-            .tracking { list-style: none; padding: 0; margin: 0; }
-            .tracking li { margin-bottom: 1.5rem; }
-            .tracking-date { font-weight: bold; margin-bottom: 0.25rem; font-size: 14px; color: #0f172a; }
-            .tracking-status { color: #64748b; font-size: 14px; }
-            .details { background: #f8fafc; padding: 1.5rem; border-radius: 8px; font-size: 14px; line-height: 1.6; border: 1px solid #e2e8f0; }
+            @media print {
+              @page { margin: 0; }
+              body { margin: 1.6cm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              .no-print { display: none !important; }
+            }
+            body { font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #1e293b; padding: 3rem; max-width: 800px; margin: 0 auto; line-height: 1.5; }
+            .print-btn { background: #0f172a; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 14px; margin-bottom: 2rem; float: right; transition: opacity 0.2s; }
+            .print-btn:hover { opacity: 0.9; }
+            .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 3rem; }
+            .header { display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 2.5rem; margin-bottom: 3rem; align-items: flex-end; }
+            .header-info p { margin: 0.25rem 0; color: #64748b; font-size: 14px; }
+            .header-info h2 { font-size: 32px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; margin: 0 0 0.5rem 0; }
+            .header-info strong { color: #0f172a; font-weight: 600; }
+            .section { margin-bottom: 3rem; }
+            .section h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1.5rem; color: #64748b; font-weight: 600; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; }
+            th, td { padding: 1rem 0; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; }
+            th { font-weight: 600; color: #94a3b8; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; padding-bottom: 0.5rem; }
+            .item-title { font-weight: 500; color: #0f172a; }
+            .total-row { display: flex; justify-content: flex-end; }
+            .total-box { min-width: 300px; padding-top: 1rem; }
+            .total-line { display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 14px; color: #64748b; }
+            .total-line.grand-total { border-top: 1px solid #0f172a; padding-top: 1rem; margin-top: 1rem; font-size: 20px; font-weight: 700; color: #0f172a; }
+            .details { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 4rem; }
+            .detail-box { }
+            .detail-box p { margin: 0 0 0.25rem 0; color: #334155; font-size: 14px; }
+            .detail-box h4 { color: #94a3b8; margin: 0 0 0.5rem 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+            .footer { text-align: center; margin-top: 5rem; padding-top: 2rem; border-top: 1px solid #f1f5f9; color: #94a3b8; font-size: 13px; }
           </style>
         </head>
         <body>
+          <button class="no-print print-btn" onclick="window.print()">Print Receipt</button>
+          
+          <div class="brand">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px;">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            <div style="font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">Quantum<span style="color: #4f46e5;">Rig</span></div>
+          </div>
+          
           <div class="header">
-            <h1 style="color: #4f46e5;">QuantumRig Receipt</h1>
-            <p><strong>Order ID:</strong> #${order.id}</p>
-            <p><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
-            <p><strong>Status:</strong> ${order.status}</p>
+            <div class="header-info">
+              <h2>Receipt</h2>
+              <p><strong>Order #</strong> ${order.id}</p>
+              <p><strong>Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
+              <p><strong>Status:</strong> ${order.status}</p>
+            </div>
+            <div class="header-info" style="text-align: right;">
+              <p style="text-transform: uppercase; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 0.5rem;">Billed To</p>
+              <p><strong>${order.deliveryDetails?.fullName || 'N/A'}</strong></p>
+              <p>${order.deliveryDetails?.phone || 'N/A'}</p>
+              <p>${order.deliveryDetails?.address || ''}</p>
+            </div>
           </div>
           
           <div class="section">
-            <h2>Items</h2>
+            <h3>Order Items</h3>
             <table>
               <thead>
                 <tr>
-                  <th>Item</th>
-                  <th>Qty</th>
-                  <th>Price</th>
+                  <th>Description</th>
+                  <th style="text-align: center;">Qty</th>
+                  <th style="text-align: right;">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 ${order.items.map(item => `
                   <tr>
-                    <td>${item.title}</td>
-                    <td>${item.quantity}</td>
-                    <td>৳${Number((item.price * item.quantity) || 0).toFixed(2)}</td>
+                    <td class="item-title">${item.title}</td>
+                    <td style="text-align: center;">${item.quantity}</td>
+                    <td style="text-align: right; color: #0f172a; font-weight: 500;">৳${Number((item.price * item.quantity) || 0).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
-            <div class="total">Total: ৳${Number(order.totalAmount || 0).toFixed(2)}</div>
+            
+            <div class="total-row">
+              <div class="total-box">
+                <div class="total-line">
+                  <span>Subtotal</span>
+                  <span>৳${Number(order.totalAmount || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                <div class="total-line">
+                  <span>Shipping</span>
+                  <span>Calculated</span>
+                </div>
+                <div class="total-line grand-total">
+                  <span>Total</span>
+                  <span>৳${Number(order.totalAmount || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div class="section">
-            <h2>Delivery Details</h2>
+            <h3>Delivery & Payment</h3>
             <div class="details">
-              <p><strong>Receiver:</strong> ${order.deliveryDetails?.fullName || 'N/A'}</p>
-              <p><strong>Phone:</strong> ${order.deliveryDetails?.phone || 'N/A'}</p>
-              <p><strong>Address:</strong> ${order.deliveryDetails?.address || 'N/A'}</p>
-              ${order.deliveryDetails?.instructions ? `<p><strong>Instructions:</strong> ${order.deliveryDetails.instructions}</p>` : ''}
-              <p><strong>Payment Method:</strong> ${order.paymentMethod || 'Cash on Delivery'}</p>
+              <div class="detail-box">
+                <h4>Shipping Address</h4>
+                <p>${order.deliveryDetails?.address || 'N/A'}</p>
+                ${order.deliveryDetails?.instructions ? `<p style="margin-top: 1rem;"><h4>Instructions</h4>${order.deliveryDetails.instructions}</p>` : ''}
+              </div>
+              <div class="detail-box">
+                <h4>Payment Method</h4>
+                <p>${order.paymentMethod || 'Cash on Delivery'}</p>
+              </div>
             </div>
+          </div>
+          
+          <div class="footer">
+            <p>Thank you for shopping with QuantumRig!</p>
+            <p>If you have any questions concerning this invoice, please contact support.</p>
           </div>
         </body>
       </html>
     `);
     printWindow.document.close();
-    printWindow.print();
+    
+    // Slight delay to ensure styles are loaded before print dialog appears
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
   };
 
   if (loading) {
@@ -163,8 +224,15 @@ export default function PastOrdersList({ token, initialOrders }: PastOrdersListP
       </div>
 
       {orders.length === 0 ? (
-        <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg">
-          You haven't placed any orders yet.
+        <div className="text-center py-12 px-4 flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200">
+          <div className="w-20 h-20 bg-slate-50 text-indigo-400 rounded-full flex items-center justify-center mb-4">
+             <Package className="w-8 h-8" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">No orders yet</h3>
+          <p className="text-slate-500 mb-6 text-sm max-w-sm mx-auto tracking-tight">You haven't placed any orders. Start browsing our catalog to find the best hardware for your next build.</p>
+          <a href="/products" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl transition-colors text-sm shadow-sm">
+            Browse Products
+          </a>
         </div>
       ) : filteredOrders.length === 0 ? (
         <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg">
@@ -189,7 +257,7 @@ export default function PastOrdersList({ token, initialOrders }: PastOrdersListP
                   </div>
                   <div>
                     <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold block sm:inline">Total</span>
-                    <span className="text-sm text-slate-900 font-medium block sm:inline sm:ml-2">৳{Number(order.totalAmount || 0).toFixed(2)}</span>
+                    <span className="text-sm text-slate-900 font-medium block sm:inline sm:ml-2">৳{Number(order.totalAmount || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                   </div>
                   <div>
                     <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold block sm:inline sm:hidden">Order ID</span>
@@ -223,7 +291,7 @@ export default function PastOrdersList({ token, initialOrders }: PastOrdersListP
                           className="text-slate-600 hover:text-indigo-600 bg-white border border-slate-200 hover:border-indigo-200 px-3 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center space-x-1"
                         >
                           <Printer className="w-4 h-4" />
-                          <span className="hidden sm:inline">Print</span>
+                          <span className="hidden sm:inline">Download PDF</span>
                         </button>
                         <button 
                           onClick={() => toggleOrderExpand(order.id)}
@@ -292,7 +360,7 @@ export default function PastOrdersList({ token, initialOrders }: PastOrdersListP
                           className="mt-4 w-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-indigo-600 px-4 py-2 rounded-lg text-sm font-bold flex items-center justify-center transition-colors shadow-sm"
                         >
                           <Printer className="w-4 h-4 mr-2" />
-                          Print Receipt
+                          Download / Print PDF Receipt
                         </button>
                       </div>
                     </div>

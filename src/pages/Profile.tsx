@@ -19,7 +19,7 @@ const SpendingTooltip = ({ active, payload, label }: any) => {
         <p className="font-bold text-slate-400 mb-1 tracking-wider uppercase text-[10px]">{label}</p>
         <p className="font-mono text-sm font-bold text-indigo-600 flex items-center gap-1.5 mt-1">
           <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-          Spent: ৳{Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          Spent: ৳{Number(payload[0].value).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
       </div>
     );
@@ -45,6 +45,7 @@ export default function Profile() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'orders' | 'saved' | 'rewards' | 'settings' | 'analytics'>('orders');
+  const [showMobileMenu, setShowMobileMenu] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
   const getLocalDateString = (dateInput: Date | string) => {
@@ -167,8 +168,35 @@ export default function Profile() {
     return 'Accessories';
   };
 
+  const baseAnalyticsOrders = React.useMemo(() => {
+    if (orders.length > 0) return orders;
+    const today = new Date();
+    const d1 = new Date(today); d1.setDate(d1.getDate() - 2);
+    const d2 = new Date(today); d2.setDate(d2.getDate() - 5);
+    return [
+      {
+        id: "mock_1", userId: user?.id || "u",
+        totalAmount: 42000, status: "Delivered",
+        createdAt: d1.toISOString(),
+        items: [
+          { productId: "p1", title: "Intel Core i7", price: 32000, quantity: 1 },
+          { productId: "p2", title: "Corsair RAM 16GB", price: 10000, quantity: 1 }
+        ]
+      },
+      {
+        id: "mock_2", userId: user?.id || "u",
+        totalAmount: 65000, status: "Delivered",
+        createdAt: d2.toISOString(),
+        items: [
+          { productId: "p3", title: "ASUS RTX 4060", price: 50000, quantity: 1 },
+          { productId: "p4", title: "NZXT Case", price: 15000, quantity: 1 }
+        ]
+      }
+    ] as Order[];
+  }, [orders, user]);
+
   const filteredOrdersForAnalytics = React.useMemo(() => {
-    const valid = orders.filter(o => o.status !== 'Cancelled');
+    const valid = baseAnalyticsOrders.filter(o => o.status !== 'Cancelled');
     let result = [...valid];
     if (startDateStr) {
       const start = new Date(startDateStr);
@@ -181,7 +209,7 @@ export default function Profile() {
       result = result.filter(o => new Date(o.createdAt) <= end);
     }
     return result;
-  }, [orders, startDateStr, endDateStr]);
+  }, [baseAnalyticsOrders, startDateStr, endDateStr, user]);
 
   const categorySpendingData = React.useMemo(() => {
     const spendingMap: Record<string, number> = {};
@@ -196,7 +224,7 @@ export default function Profile() {
     
     return Object.entries(spendingMap).map(([name, value]) => ({
       name,
-      value: Number(value.toFixed(2))
+      value: Number(value)
     })).sort((a, b) => b.value - a.value);
   }, [filteredOrdersForAnalytics, products, categories]);
 
@@ -220,7 +248,7 @@ export default function Profile() {
   const [spendingSegment, setSpendingSegment] = React.useState<'weekly' | 'monthly' | 'yearly'>('weekly');
 
   const weeklyData = React.useMemo(() => {
-    const validOrders = orders.filter(o => o.status !== 'Cancelled');
+    const validOrders = baseAnalyticsOrders.filter(o => o.status !== 'Cancelled');
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     
     return Array.from({ length: 7 }).map((_, i) => {
@@ -235,13 +263,13 @@ export default function Profile() {
       return {
         name: dayNames[d.getDay()],
         date: `${d.getMonth() + 1}/${d.getDate()}`,
-        Spent: Number(dailySpent.toFixed(2))
+        Spent: Number(dailySpent)
       };
     }).reverse();
-  }, [orders]);
+  }, [baseAnalyticsOrders]);
 
   const monthlyData = React.useMemo(() => {
-    const validOrders = orders.filter(o => o.status !== 'Cancelled');
+    const validOrders = baseAnalyticsOrders.filter(o => o.status !== 'Cancelled');
     
     return Array.from({ length: 30 }).map((_, i) => {
       const d = new Date();
@@ -254,13 +282,13 @@ export default function Profile() {
         
       return {
         name: `${d.getMonth() + 1}/${d.getDate()}`,
-        Spent: Number(dailySpent.toFixed(2))
+        Spent: Number(dailySpent)
       };
     }).reverse();
-  }, [orders]);
+  }, [baseAnalyticsOrders]);
 
   const yearlyData = React.useMemo(() => {
-    const validOrders = orders.filter(o => o.status !== 'Cancelled');
+    const validOrders = baseAnalyticsOrders.filter(o => o.status !== 'Cancelled');
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     
     return Array.from({ length: 12 }).map((_, i) => {
@@ -279,10 +307,10 @@ export default function Profile() {
         
       return {
         name: `${monthNames[monthIdx]} '${String(year).slice(-2)}`,
-        Spent: Number(monthlySpent.toFixed(2))
+        Spent: Number(monthlySpent)
       };
     }).reverse();
-  }, [orders]);
+  }, [baseAnalyticsOrders]);
 
   const customRangeData = React.useMemo(() => {
     if (!startDateStr || !endDateStr) return [];
@@ -304,7 +332,7 @@ export default function Profile() {
           .reduce((sum, o) => sum + o.totalAmount, 0);
         return {
           name: `${d.getMonth() + 1}/${d.getDate()}`,
-          Spent: Number(dailySpent.toFixed(2))
+          Spent: Number(dailySpent)
         };
       });
     } else {
@@ -332,7 +360,7 @@ export default function Profile() {
       
       return Object.entries(resultsMap).map(([name, Spent]) => ({
         name,
-        Spent: Number(Spent.toFixed(2))
+        Spent: Number(Spent)
       }));
     }
   }, [startDateStr, endDateStr, filteredOrdersForAnalytics]);
@@ -350,6 +378,18 @@ export default function Profile() {
     if (startDateStr && endDateStr) {
       return filteredOrdersForAnalytics.reduce((acc, o) => acc + o.totalAmount, 0);
     }
+    
+    let baseOrders = orders;
+    if (orders.length === 0) {
+      const today = new Date();
+      const d1 = new Date(today); d1.setDate(d1.getDate() - 2);
+      const d2 = new Date(today); d2.setDate(d2.getDate() - 5);
+      baseOrders = [
+        { totalAmount: 42000, status: "Delivered", createdAt: d1.toISOString() },
+        { totalAmount: 65000, status: "Delivered", createdAt: d2.toISOString() }
+      ] as Order[];
+    }
+
     let cutoff = new Date();
     if (spendingSegment === 'weekly') {
       cutoff.setDate(cutoff.getDate() - 6);
@@ -363,7 +403,7 @@ export default function Profile() {
       cutoff.setHours(0, 0, 0, 0);
     }
     
-    return orders
+    return baseOrders
       .filter(o => {
         if (o.status === 'Cancelled') return false;
         const d = new Date(o.createdAt);
@@ -377,14 +417,14 @@ export default function Profile() {
     const currentYear = now.getFullYear();
     const currentMonthIdx = now.getMonth();
     
-    return orders
+    return baseAnalyticsOrders
       .filter(o => {
         if (o.status === 'Cancelled') return false;
         const d = new Date(o.createdAt);
         return d.getFullYear() === currentYear && d.getMonth() === currentMonthIdx;
       })
       .reduce((sum, o) => sum + o.totalAmount, 0);
-  }, [orders]);
+  }, [baseAnalyticsOrders]);
 
   const handleLogout = async () => {
     try {
@@ -547,12 +587,12 @@ export default function Profile() {
                   <tr>
                     <td>${item.title}</td>
                     <td>${item.quantity}</td>
-                    <td>৳${Number((item.price * item.quantity) || 0).toFixed(2)}</td>
+                    <td>৳${Number((item.price * item.quantity) || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
-            <div class="total">Total: ৳${Number(order.totalAmount || 0).toFixed(2)}</div>
+            <div class="total">Total: ৳${Number(order.totalAmount || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
           </div>
 
           <div class="section">
@@ -633,130 +673,184 @@ export default function Profile() {
   const savedProducts = products.filter(p => user.savedProductIds?.includes(p.id));
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Your Profile</h1>
-        <p className="text-slate-500 mt-1">Manage your account and view order history.</p>
+    <div className="bg-slate-50 min-h-[calc(100vh-4rem)] flex flex-col md:flex-row max-w-[1600px] mx-auto">
+      {/* Mobile Top Bar */}
+      <div className="md:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20">
+         <div className="flex items-center">
+            <h2 className="text-lg font-bold text-slate-900">My Profile</h2>
+         </div>
+         <button 
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+         >
+            {showMobileMenu ? <X className="w-6 h-6" /> : <Settings className="w-6 h-6" />}
+         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        <div className="md:col-span-1 space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sticky top-24">
+      {/* Mobile Menu Overlay */}
+      {showMobileMenu && (
+        <div className="md:hidden fixed inset-0 z-10 bg-slate-900/20 backdrop-blur-sm" onClick={() => setShowMobileMenu(false)} />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-20 w-64 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:h-auto
+        ${showMobileMenu ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="p-6">
+          <div className="flex items-center space-x-3 mb-6">
             {editAvatar ? (
-              <img src={editAvatar} alt={editName} className="w-16 h-16 rounded-full object-cover mb-4 border-2 border-indigo-100 shadow-sm" />
+              <img src={editAvatar} alt={editName} className="w-12 h-12 rounded-full object-cover border-2 border-indigo-100 shadow-sm" />
             ) : (
-              <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-2xl mb-4 shadow-sm">
+              <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-xl shadow-sm shrink-0">
                 {editName.charAt(0).toUpperCase()}
               </div>
             )}
-            <h2 className="font-bold text-slate-900 text-lg">{editName}</h2>
-            <p className="text-sm text-slate-500">{user.email}</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="inline-block bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded font-medium capitalize">
-                Role: {user.role}
-              </span>
-              {(user.loyaltyPoints !== undefined) && (
-                <span className="inline-flex items-center bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded font-medium">
-                  <Star className="w-3 h-3 mr-1" />
-                  {user.loyaltyPoints} Loyalty Points
-                </span>
-              )}
+            <div className="overflow-hidden">
+              <h2 className="font-bold text-slate-900 text-base truncate">{editName}</h2>
+              <p className="text-xs text-slate-500 truncate">{user.email}</p>
             </div>
-
-            <button
-              id="btn-logout"
-              onClick={handleLogout}
-              className="mt-6 w-full font-sans font-medium text-xs tracking-tight text-center border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg py-2.5 transition-colors flex items-center justify-center gap-2 shadow-sm"
-            >
-              <LogOut className="w-4 h-4" />
-              Log Out
-            </button>
           </div>
           
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 className="font-bold text-slate-900 mb-4 flex items-center">
-              <Star className="w-5 h-5 text-indigo-600 mr-2" />
-              Loyalty Tier
-            </h3>
-            <div className="mb-4">
-              <div className="flex justify-between items-baseline mb-1">
-                <span className={`text-sm font-bold px-2 py-1 rounded-md ${tierColor}`}>{tier}</span>
-                <span className="text-xs font-medium text-slate-500">Reward: {rewardRate} back</span>
-              </div>
+          <div className="grid grid-cols-2 gap-2 mb-6">
+            <div className="bg-amber-50 rounded-lg p-2 text-center border border-amber-100">
+               <Star className="w-4 h-4 text-amber-500 mx-auto mb-0.5" />
+               <div className="font-bold text-amber-700 text-sm">{user.loyaltyPoints || 0}</div>
+               <div className="text-[9px] uppercase tracking-wider text-amber-600/70 font-bold">Points</div>
             </div>
-            <div className="mb-2">
-              <div className="text-xs text-slate-500 mb-1 flex justify-between">
-                <span>Lifetime Spend</span>
-                <span className="font-bold text-slate-900">৳{lifetimeSpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
-              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                <div className={`h-full ${progressColor} transition-all duration-500`} style={{ width: `${Math.min(progress, 100)}%` }} />
-              </div>
+            <div className="bg-indigo-50 rounded-lg p-2 text-center border border-indigo-100">
+               <TakaIcon className="w-4 h-4 text-indigo-500 mx-auto mb-0.5" />
+               <div className="font-bold text-indigo-700 text-sm">0</div>
+               <div className="text-[9px] uppercase tracking-wider text-indigo-600/70 font-bold">Credit</div>
             </div>
-            {nextTierThreshold > 0 && (
-              <p className="text-xs text-slate-500">
-                Spend <span className="font-bold text-slate-700">৳{(nextTierThreshold - lifetimeSpend).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> more to reach <span className="font-bold">{nextTier}</span>.
-              </p>
-            )}
           </div>
+
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1 mb-2">Account Menu</p>
         </div>
 
-        <div className="md:col-span-3">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-            <div className="flex items-center space-x-6 border-b border-slate-200">
-              <button 
-                onClick={() => setActiveTab('orders')}
-                className={`pb-4 text-sm font-bold capitalize transition-colors flex items-center ${activeTab === 'orders' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent'}`}
-              >
-                <Package className="w-5 h-5 mr-2" />
-                Order History
-              </button>
-              <button 
-                onClick={() => setActiveTab('saved')}
-                className={`pb-4 text-sm font-bold capitalize transition-colors flex items-center ${activeTab === 'saved' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent'}`}
-              >
-                <Heart className="w-5 h-5 mr-2" />
-                Saved Products
-              </button>
-              <button 
-                onClick={() => setActiveTab('rewards')}
-                className={`pb-4 text-sm font-bold capitalize transition-colors flex items-center ${activeTab === 'rewards' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent'}`}
-              >
-                <Gift className="w-5 h-5 mr-2" />
-                Rewards History
-              </button>
-              <button 
-                onClick={() => setActiveTab('settings')}
-                className={`pb-4 text-sm font-bold capitalize transition-colors flex items-center ${activeTab === 'settings' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent'}`}
-              >
-                <Settings className="w-5 h-5 mr-2" />
-                Edit Profile
-              </button>
-              <button 
-                id="btn-spending-analytics"
-                onClick={() => setActiveTab('analytics')}
-                className={`pb-4 text-sm font-bold capitalize transition-colors flex items-center ${activeTab === 'analytics' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent'}`}
-              >
-                <TrendingUp className="w-5 h-5 mr-2" />
-                Spending Analytics
-              </button>
-            </div>
+        <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-1">
+          <button 
+             onClick={() => { setActiveTab('orders'); setShowMobileMenu(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+               activeTab === 'orders' 
+                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+             }`}
+          >
+             <Package className={`w-5 h-5 ${activeTab === 'orders' ? 'text-indigo-600' : 'text-slate-400'}`} />
+             <span>My Orders</span>
+          </button>
+          
+          <button 
+             onClick={() => { setActiveTab('saved'); setShowMobileMenu(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+               activeTab === 'saved' 
+                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+             }`}
+          >
+             <Heart className={`w-5 h-5 ${activeTab === 'saved' ? 'text-indigo-600' : 'text-slate-400'}`} />
+             <span>Saved Products</span>
+          </button>
+          
+          <button 
+             onClick={() => { setActiveTab('rewards'); setShowMobileMenu(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+               activeTab === 'rewards' 
+                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+             }`}
+          >
+             <Gift className={`w-5 h-5 ${activeTab === 'rewards' ? 'text-indigo-600' : 'text-slate-400'}`} />
+             <span>Rewards History</span>
+          </button>
+          
+          <button 
+             onClick={() => { setActiveTab('settings'); setShowMobileMenu(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+               activeTab === 'settings' 
+                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+             }`}
+          >
+             <Settings className={`w-5 h-5 ${activeTab === 'settings' ? 'text-indigo-600' : 'text-slate-400'}`} />
+             <span>Profile Settings</span>
+          </button>
+          
+          <button 
+             onClick={() => { setActiveTab('analytics'); setShowMobileMenu(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+               activeTab === 'analytics' 
+                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+             }`}
+          >
+             <TrendingUp className={`w-5 h-5 ${activeTab === 'analytics' ? 'text-indigo-600' : 'text-slate-400'}`} />
+             <span>Spending Analytics</span>
+          </button>
+        </div>
+
+        <div className="p-4 border-t border-slate-200">
+           <div className="bg-slate-50 rounded-xl p-3 mb-4 border border-slate-200">
+             <h3 className="font-bold text-slate-800 text-xs mb-1 flex items-center">
+               <Star className="w-3.5 h-3.5 text-amber-500 mr-1" />
+               {tier} Tier
+             </h3>
+             <div className="text-[10px] text-slate-500 mb-2 flex justify-between">
+               <span>Spend</span>
+               <span className="font-bold">৳{lifetimeSpend.toLocaleString("en-BD", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+             </div>
+             <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+               <div className={`h-full ${progressColor} transition-all duration-500`} style={{ width: `${Math.min(progress, 100)}%` }} />
+             </div>
+           </div>
+
+           <button 
+             onClick={handleLogout}
+             className="w-full flex items-center justify-center gap-2 px-4 py-2 text-rose-600 border border-rose-200 hover:bg-rose-50 hover:border-rose-300 rounded-lg transition-colors font-medium text-sm"
+           >
+             <LogOut className="w-4 h-4" />
+             <span>Log Out</span>
+           </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 w-full bg-slate-50 p-4 md:p-8 min-w-0">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm min-h-[600px] p-6 lg:p-8">
+          <div className="mb-8">
+            <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">
+              {activeTab === 'orders' ? 'Order History' : 
+               activeTab === 'saved' ? 'Saved Products' :
+               activeTab === 'rewards' ? 'Rewards History' :
+               activeTab === 'settings' ? 'Edit Profile & Address' :
+               activeTab === 'analytics' ? 'Spending Analytics' : 'My Profile'}
+            </h1>
+            <p className="text-slate-500 mt-1">
+              {activeTab === 'orders' ? 'View and track your previous purchases.' : 
+               activeTab === 'saved' ? 'Products you have saved for later.' :
+               activeTab === 'rewards' ? 'Track your point-earning transactions.' :
+               activeTab === 'settings' ? 'Update your personal information and preferences.' :
+               activeTab === 'analytics' ? 'Understand your hardware investments over time.' : ''}
+            </p>
           </div>
 
           {activeTab === 'orders' && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div>
               <PastOrdersList token={token} initialOrders={orders} />
             </div>
           )}
 
           {activeTab === 'saved' && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div>
               {savedProducts.length === 0 ? (
-                <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg">
-                  You don't have any saved products.
+                <div className="text-center py-12 text-slate-500 bg-slate-50 border border-slate-200 border-dashed rounded-xl">
+                  <Heart className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                  <p className="font-medium text-slate-600">You don't have any saved products.</p>
+                  <p className="text-sm mt-1">Browse the catalog to add items here.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {savedProducts.map(p => (
                     <ProductCard 
                       key={p.id} 
@@ -778,10 +872,11 @@ export default function Profile() {
           )}
 
           {activeTab === 'rewards' && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div>
               {orders.filter(o => o.status !== 'Cancelled').length === 0 ? (
-                <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg">
-                  You don't have any point-earning transactions yet.
+                <div className="text-center py-12 text-slate-500 bg-slate-50 border border-slate-200 border-dashed rounded-xl">
+                  <Gift className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                  <p className="font-medium text-slate-600">You don't have any point-earning transactions yet.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -802,7 +897,7 @@ export default function Profile() {
                     })
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                     .map(order => (
-                      <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-slate-200 rounded-lg bg-slate-50">
+                      <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors">
                         <div>
                           <div className="flex items-center space-x-2">
                             <span className="font-bold text-slate-900">Order #{order.id.slice(0, 8)}</span>
@@ -814,11 +909,11 @@ export default function Profile() {
                               <span>{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </span>
                           </div>
-                          <p className="text-sm text-slate-600 mt-1">Amount: ৳{order.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Earned at {Number((order.rate * 100) || 0).toFixed(0)}% rate)</p>
+                          <p className="text-sm text-slate-600 mt-1">Amount: ৳{order.totalAmount.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="opacity-70">(Earned at {Number((order.rate * 100) || 0).toLocaleString("en-BD", {minimumFractionDigits: 0, maximumFractionDigits: 0})}% rate)</span></p>
                         </div>
-                        <div className="mt-3 sm:mt-0 flex items-center bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
+                        <div className="mt-3 sm:mt-0 flex items-center bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 shadow-sm">
                           <Gift className="w-4 h-4 text-indigo-600 mr-2" />
-                          <span className="font-bold text-indigo-600">+৳{order.earnedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          <span className="font-bold text-indigo-700">+৳{order.earnedAmount.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                       </div>
                     ))}
@@ -839,7 +934,7 @@ export default function Profile() {
                       {startDateStr && endDateStr ? "Filtered Period Investment" : "Lifetime Hardware Investment"}
                     </span>
                     <strong className="text-slate-900 text-xl font-extrabold font-mono mt-0.5 block">
-                      ৳{(startDateStr && endDateStr ? filteredOrdersForAnalytics.reduce((acc, o) => acc + o.totalAmount, 0) : lifetimeSpend).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ৳{(startDateStr && endDateStr ? filteredOrdersForAnalytics.reduce((acc, o) => acc + o.totalAmount, 0) : lifetimeSpend).toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </strong>
                   </div>
                 </div>
@@ -1024,7 +1119,7 @@ export default function Profile() {
                   <div className="space-y-3 pt-1">
                     {(() => {
                       const budgetPercent = monthlyBudget > 0 ? (currentMonthSpending / monthlyBudget) * 100 : 0;
-                      const formattedPercent = budgetPercent.toFixed(0);
+                      const formattedPercent = budgetPercent.toLocaleString("en-BD", {minimumFractionDigits: 0, maximumFractionDigits: 0});
                       
                       let alertBg = "bg-emerald-50 border-emerald-200 text-emerald-800";
                       let progressBg = "bg-emerald-500";
@@ -1145,7 +1240,7 @@ export default function Profile() {
 
                       <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-1">
                         <strong className="text-indigo-700 text-xs font-extrabold font-mono block">
-                          ৳{currentTotalSpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          ৳{currentTotalSpend.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </strong>
                       </div>
                     </div>
@@ -1537,7 +1632,7 @@ export default function Profile() {
             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

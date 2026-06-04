@@ -124,8 +124,10 @@ export default function Cart() {
 
   if (cart.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <ShoppingBag className="w-16 h-16 text-slate-350 mx-auto mb-4" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center flex flex-col items-center justify-center min-h-[50vh]">
+        <div className="w-24 h-24 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-6">
+          <ShoppingBag className="w-10 h-10" />
+        </div>
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Your cart is empty</h2>
         <p className="text-slate-500 mb-8 max-w-md mx-auto">Looks like you haven't added components yet. Let's add top-tier hardware to assemble your dream machine!</p>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -186,11 +188,11 @@ export default function Cart() {
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     {item.product.discountPrice ? (
                       <>
-                        <span className="text-rose-600 font-bold text-sm">৳{Number(item.product.discountPrice || 0).toFixed(2)}</span>
-                        <span className="text-xs text-slate-400 line-through">৳{Number(item.product.price || 0).toFixed(2)}</span>
+                        <span className="text-slate-600 font-bold text-sm">৳{Number(item.product.discountPrice || 0).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        <span className="text-xs text-slate-400 line-through">৳{Number(item.product.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                       </>
                     ) : (
-                      <span className="text-indigo-600 font-bold text-sm">৳{Number(item.product.price || 0).toFixed(2)}</span>
+                      <span className="text-slate-700 font-bold text-sm">৳{Number(item.product.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     )}
                   </div>
                 </div>
@@ -272,23 +274,23 @@ export default function Cart() {
             <div className="space-y-3 font-medium text-sm text-slate-600">
               <div className="flex justify-between">
                 <span>Subtotal ({cart.length} items)</span>
-                <span className="text-slate-900 font-semibold">৳{Number(subtotal || 0).toFixed(2)}</span>
+                <span className="text-slate-900 font-semibold">৳{Number(subtotal || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-bold">
                   <span>Discount ({appliedCoupon?.code})</span>
-                  <span>-৳{Number(discountAmount || 0).toFixed(2)}</span>
+                  <span>-৳{Number(discountAmount || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span>Estimated Shipping</span>
                 <span className="text-slate-900 font-semibold">
-                  {shipping === 0 ? <span className="text-emerald-600 font-bold">FREE SHIPPING</span> : `৳${Number(shipping || 0).toFixed(2)}`}
+                  {shipping === 0 ? <span className="text-emerald-600 font-bold">FREE SHIPPING</span> : `৳${Number(shipping || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
                 </span>
               </div>
               <div className="border-t border-slate-200 pt-3 flex justify-between font-extrabold text-slate-900 text-base md:text-lg">
                 <span>Total Amount</span>
-                <span className="text-indigo-600">৳{Number(total || 0).toFixed(2)}</span>
+                <span className="text-slate-700">৳{Number(total || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               </div>
             </div>
           </div>

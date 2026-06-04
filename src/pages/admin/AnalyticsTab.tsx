@@ -259,7 +259,7 @@ export default function AnalyticsTab() {
           <p className="font-bold text-slate-400 mb-1 tracking-wider uppercase">{label}</p>
           <p className="font-mono text-sm font-bold text-indigo-400 flex items-center gap-1.5 mt-1">
             <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse"></span>
-            Revenue: ৳{Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            Revenue: ৳{Number(payload[0].value).toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
       );
@@ -532,14 +532,17 @@ export default function AnalyticsTab() {
 }
 
 function StatCard({ icon, title, value }: { icon: React.ReactNode, title: string, value: string | number }) {
+  // Determine if value is very long (like total revenue)
+  const isLongValue = value.toString().length > 10;
+  
   return (
-    <div className="bg-white p-5 lg:p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4 h-full overflow-hidden">
+    <div className="bg-white p-5 lg:p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4 h-full">
       <div className="p-3 flex-shrink-0 bg-indigo-50 rounded-lg">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 truncate" title={title}>{title}</p>
-        <p className="text-xl sm:text-2xl font-bold text-slate-900 truncate" title={value.toString()}>{value}</p>
+        <p className={`${isLongValue ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'} font-bold text-slate-900 break-words tracking-tight`} title={value.toString()}>{value}</p>
       </div>
     </div>
   );
