@@ -278,7 +278,14 @@ export default function Cart() {
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-bold">
-                  <span>Discount ({appliedCoupon?.code})</span>
+                  <span className="flex items-center space-x-1">
+                    <span>Discount ({appliedCoupon?.code})</span>
+                    {appliedCoupon?.discountPercentage && (
+                      <span className="text-xs font-bold px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-md">
+                        {appliedCoupon.discountPercentage}% OFF
+                      </span>
+                    )}
+                  </span>
                   <span>-৳{Number(discountAmount || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
               )}

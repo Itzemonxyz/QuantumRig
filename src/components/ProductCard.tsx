@@ -2,8 +2,9 @@ import React from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Product } from '../types';
 import { useStore } from '../store';
-import { ArrowLeftRight, Check, Eye, X, ShoppingCart, Share2, TrendingDown, TrendingUp, Trash2 } from 'lucide-react';
+import { ArrowLeftRight, Check, Eye, X, ShoppingCart, Share2, TrendingDown, TrendingUp, Trash2, Loader2, ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { api } from '../lib/api';
 
 interface ProductCardProps {
   product: Product;
@@ -16,12 +17,15 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const isBuilderMode = searchParams.get('builder') === 'true';
-  const { compareIds, toggleCompare, addToCart, addToBuilder, token } = useStore();
+  const { compareIds, toggleCompare, addToCart, removeFromCart, addToBuilder, token, cart, user, updateUser, addToast } = useStore();
   const [toastMessage, setToastMessage] = React.useState('');
   const [showQuickView, setShowQuickView] = React.useState(false);
   const [isAdded, setIsAdded] = React.useState(false);
+  const [isAdding, setIsAdding] = React.useState(false);
+  const [activeImageIndex, setActiveImageIndex] = React.useState(0);
 
   const isComparing = compareIds.includes(product.id);
+  const isInCart = cart.some(item => item.product.id === product.id);
   const handleCompareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isComparing && compareIds.length >= 4) {
@@ -49,6 +53,39 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
       navigator.clipboard.writeText(url);
       setToastMessage('Link copied to clipboard!');
       setTimeout(() => setToastMessage(''), 3000);
+    }
+  };
+
+  const isSaved = user?.savedProductIds?.includes(product.id) || false;
+  
+  const handleToggleSave = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user || !token) {
+      navigate('/login');
+      return;
+    }
+    
+    // Optimistic update
+    const previousSavedIds = user.savedProductIds || [];
+    const isCurrentlySaved = previousSavedIds.includes(product.id);
+    const newSavedIds = isCurrentlySaved 
+      ? previousSavedIds.filter(id => id !== product.id)
+      : [...previousSavedIds, product.id];
+      
+    updateUser({ ...user, savedProductIds: newSavedIds });
+
+    try {
+      if (isCurrentlySaved) {
+        await api.delete(`/users/me/saved-products/${product.id}`, token);
+        addToast("Removed.", 'info');
+      } else {
+        await api.post('/users/me/saved-products', { productId: product.id }, token);
+        addToast("Added to save product successfully", 'success');
+      }
+    } catch (err) {
+      console.error('Failed to toggle save:', err);
+      updateUser({ ...user, savedProductIds: previousSavedIds });
+      addToast('Failed to update wishlist.', 'error');
     }
   };
 
@@ -98,6 +135,19 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
         >
           <Share2 className="w-4 h-4" />
         </button>
+        <motion.button 
+          whileTap={{ scale: 0.9 }}
+          onClick={handleToggleSave}
+          title={isSaved ? "Remove from Saved" : "Save Product"}
+          className={`p-1.5 sm:p-2 rounded-full transition-all shadow-sm ${isSaved ? 'bg-rose-50 text-rose-500 border-rose-200' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'} opacity-100 md:opacity-0 md:group-hover:opacity-100 flex items-center justify-center`}
+        >
+          <motion.div
+            animate={isSaved ? { scale: [1, 1.4, 0.9, 1.1, 1] } : { scale: 1 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+          >
+            <Heart className="w-4 h-4" fill={isSaved ? "currentColor" : "none"} />
+          </motion.div>
+        </motion.button>
         {onRemove && (
           <button 
             onClick={(e) => {
@@ -152,14 +202,7 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
         <div className="mt-auto pt-3 border-t border-slate-200 flex flex-col justify-between gap-3 grow-0 shrink-0">
           <div className="flex flex-row items-center justify-between">
              <div className="flex flex-col">
-                {hasDiscount ? (
-                  <>
-                    <span className="text-xs text-slate-400 line-through">৳{Number(product.price).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
-                    <span className="text-sm sm:text-lg font-normal text-indigo-700 bg-indigo-50/70 px-2 py-0.5 rounded-md">৳{Number(displayPrice).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
-                  </>
-                ) : (
-                  <span className="text-sm sm:text-lg font-normal text-indigo-700 bg-indigo-50/70 px-2 py-0.5 rounded-md mt-auto w-fit">৳{Number(displayPrice).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
-                )}
+                <span className="text-sm sm:text-lg font-normal text-indigo-700 bg-indigo-50/70 px-2 py-0.5 rounded-md mt-auto w-fit">৳{Number(displayPrice).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
              </div>
              
              {isBuilderMode ? (
@@ -174,38 +217,56 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
                   Select
                </button>
              ) : (
-                <div className="flex items-center gap-1.5 z-10">
+                <div className="flex items-center gap-1.5 z-10 relative">
+                   {isAdded && (
+                     <motion.div
+                       initial={{ opacity: 0, y: 10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] sm:text-xs rounded px-2 py-1 whitespace-nowrap pointer-events-none shadow-lg after:content-[''] after:absolute after:-bottom-1 after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-slate-900 z-50"
+                     >
+                       Product added to cart
+                     </motion.div>
+                   )}
                    <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (isInCart) {
+                           removeFromCart(product.id);
+                           return;
+                        }
                         if (isOutOfStock) {
                            setToastMessage('Out of stock');
                            setTimeout(() => setToastMessage(''), 2000);
                            return;
                         }
-                        addToCart(product);
-                        navigate('/checkout');
+                        setIsAdding(true);
+                        setTimeout(() => {
+                           addToCart(product);
+                           setIsAdding(false);
+                           setIsAdded(true);
+                           setTimeout(() => setIsAdded(false), 2000);
+                        }, 400); // 400ms simulated loading before adding
                       }}
-                      className={`px-3 py-1.5 h-8 rounded-lg text-[11px] font-bold flex items-center justify-center transition-all ${isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:shadow-md'}`}
+                      className={`px-3 py-1.5 h-8 rounded-lg text-[11px] font-bold flex flex-1 sm:flex-none items-center justify-center transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-95 ${isAdded ? 'bg-emerald-500 text-white' : isInCart ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-indigo-700 shadow-sm border border-transparent'}`}
+                      title={isInCart ? "Remove from Cart" : "Add to Cart"}
+                      disabled={isAdding}
                    >
-                      Quick Buy
-                   </button>
-                   <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (isOutOfStock) {
-                           setToastMessage('Out of stock');
-                           setTimeout(() => setToastMessage(''), 2000);
-                           return;
-                        }
-                        addToCart(product);
-                        setIsAdded(true);
-                        setTimeout(() => setIsAdded(false), 2000);
-                      }}
-                      className={`h-8 w-8 rounded-lg shrink-0 flex items-center justify-center transition-all ${isAdded ? 'bg-emerald-500 text-white' : isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-indigo-700 shadow-sm'}`}
-                      title="Add to Cart"
-                   >
-                      {isAdded ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+                      {isAdding ? (
+                         <div className="flex items-center space-x-1.5">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Adding...</span>
+                         </div>
+                      ) : isAdded ? (
+                         <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center space-x-1.5">
+                            <Check className="w-4 h-4" />
+                            <span>Added</span>
+                         </motion.div>
+                      ) : (
+                        <div className="flex items-center space-x-1.5">
+                           <ShoppingCart className="w-4 h-4" fill={isInCart ? "currentColor" : "none"} />
+                           <span>{isInCart ? 'Remove from Cart' : 'Add to Cart'}</span>
+                        </div>
+                      )}
                    </button>
                 </div>
              )}
@@ -222,33 +283,73 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
     </motion.div>
     
     <AnimatePresence>
-      {showQuickView && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-          onClick={() => setShowQuickView(false)}
-        >
+      {showQuickView && (() => {
+        const allImages = [product.imageUrl, ...(product.additionalImages || [])];
+        
+        return (
           <motion.div 
-            initial={{ scale: 0.95, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto flex flex-col md:flex-row relative"
-            onClick={e => e.stopPropagation()}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            onClick={() => setShowQuickView(false)}
           >
-            <button 
-              onClick={() => setShowQuickView(false)}
-              className="absolute top-4 right-4 p-2 bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 rounded-full transition-colors z-20"
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto flex flex-col md:flex-row relative"
+              onClick={e => e.stopPropagation()}
             >
-              <X className="w-5 h-5" />
-            </button>
-            
-            <div className="w-full md:w-1/2 p-8 bg-slate-50 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-200">
-              <img src={product.imageUrl} alt={product.title} className="w-full max-w-sm object-contain mix-blend-multiply" />
-            </div>
-            
-            <div className="w-full md:w-1/2 p-8 flex flex-col">
+              <button 
+                onClick={() => setShowQuickView(false)}
+                className="absolute top-4 right-4 p-2 bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 rounded-full transition-colors z-20 shadow-sm"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="w-full md:w-1/2 bg-slate-50 relative flex flex-col border-b md:border-b-0 md:border-r border-slate-200 min-h-[300px] md:min-h-[500px]">
+                <div className="absolute inset-0 p-8 flex items-center justify-center">
+                  <img src={allImages[activeImageIndex]} alt={product.title} className="w-full h-full object-contain mix-blend-multiply" />
+                </div>
+                
+                {allImages.length > 1 && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveImageIndex(prev => (prev === 0 ? allImages.length - 1 : prev - 1));
+                      }}
+                      className="absolute left-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-slate-200 text-slate-800 rounded-full flex items-center justify-center shadow-lg hover:bg-slate-50 transition-colors z-10"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveImageIndex(prev => (prev === allImages.length - 1 ? 0 : prev + 1));
+                      }}
+                      className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-slate-200 text-slate-800 rounded-full flex items-center justify-center shadow-lg hover:bg-slate-50 transition-colors z-10"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                    <div className="absolute bottom-6 left-0 right-0 gap-2 flex justify-center z-10">
+                      {allImages.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveImageIndex(idx);
+                          }}
+                          className={`w-2.5 h-2.5 rounded-full transition-colors ${idx === activeImageIndex ? 'bg-indigo-600' : 'bg-slate-300 hover:bg-slate-400'}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              <div className="w-full md:w-1/2 p-8 md:p-10 flex flex-col">
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <div className="text-sm font-bold tracking-widest text-indigo-600 uppercase">{product.brand || 'Premium'}</div>
                 {product.code && (
@@ -271,6 +372,11 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
               <div className="mt-auto space-y-3">
                 <button
                   onClick={() => {
+                    if (isInCart) {
+                       setShowQuickView(false);
+                       navigate('/cart');
+                       return;
+                    }
                     if (!token) {
                       setShowQuickView(false);
                       navigate('/login', { state: { from: location } });
@@ -283,8 +389,8 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
                       setShowQuickView(false);
                     }, 800);
                   }}
-                  disabled={isOutOfStock}
-                  className={`w-full flex items-center justify-center px-6 py-4 rounded-xl font-bold text-lg transition-all z-10 relative overflow-hidden ${isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : isAdded ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-600/20 active:scale-95'}`}
+                  disabled={isOutOfStock && !isInCart}
+                  className={`w-full flex items-center justify-center px-6 py-4 rounded-xl font-bold text-lg transition-all z-10 relative overflow-hidden ${(isOutOfStock && !isInCart) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : isAdded ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : isInCart ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200' : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-600/20 active:scale-95'}`}
                 >
                   {isAdded ? (
                     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center">
@@ -293,8 +399,8 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
                     </motion.div>
                   ) : (
                     <>
-                      <ShoppingCart className="w-5 h-5 mr-3" />
-                      {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+                      <ShoppingCart className="w-5 h-5 mr-3" fill={isInCart ? "currentColor" : "none"} />
+                      {(isOutOfStock && !isInCart) ? 'Out of Stock' : isInCart ? 'View in Cart' : 'Add to Cart'}
                     </>
                   )}
                 </button>
@@ -308,7 +414,8 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
             </div>
           </motion.div>
         </motion.div>
-      )}
+        );
+      })()}
     </AnimatePresence>
     </>
   );

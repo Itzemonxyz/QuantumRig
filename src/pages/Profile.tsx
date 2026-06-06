@@ -11,6 +11,7 @@ import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCre
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell, PieChart, Pie } from 'recharts';
 import PastOrdersList from '../components/PastOrdersList';
+import { motion, AnimatePresence } from 'motion/react';
 
 const SpendingTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -46,6 +47,7 @@ export default function Profile() {
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'orders' | 'saved' | 'rewards' | 'settings' | 'analytics'>('orders');
   const [showMobileMenu, setShowMobileMenu] = useState(true);
+  const [showEnlargedAvatar, setShowEnlargedAvatar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const getLocalDateString = (dateInput: Date | string) => {
@@ -700,9 +702,17 @@ export default function Profile() {
         <div className="p-6">
           <div className="flex items-center space-x-3 mb-6">
             {editAvatar ? (
-              <img src={editAvatar} alt={editName} className="w-12 h-12 rounded-full object-cover border-2 border-indigo-100 shadow-sm" />
+              <img 
+                src={editAvatar} 
+                alt={editName} 
+                className="w-12 h-12 rounded-full object-cover border-2 border-indigo-100 shadow-sm cursor-pointer hover:border-indigo-300 transition-colors" 
+                onClick={() => setShowEnlargedAvatar(true)}
+              />
             ) : (
-              <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-xl shadow-sm shrink-0">
+              <div 
+                className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-xl shadow-sm shrink-0 cursor-pointer hover:bg-indigo-200 transition-colors"
+                onClick={() => setShowEnlargedAvatar(true)}
+              >
                 {editName.charAt(0).toUpperCase()}
               </div>
             )}
@@ -1633,6 +1643,44 @@ export default function Profile() {
           )}
         </div>
       </main>
+
+      {/* Enlarged Avatar Modal */}
+      <AnimatePresence>
+        {showEnlargedAvatar && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm"
+            onClick={() => setShowEnlargedAvatar(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              className="relative max-w-sm w-full md:max-w-md"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => setShowEnlargedAvatar(false)}
+                className="absolute -top-12 right-0 p-2 text-white/70 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              <div className="bg-white rounded-3xl p-2 shadow-2xl overflow-hidden aspect-square flex items-center justify-center">
+                {editAvatar ? (
+                  <img src={editAvatar} alt={editName} className="w-full h-full object-cover rounded-2xl" />
+                ) : (
+                  <div className="w-full h-full rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center font-bold text-7xl md:text-9xl shadow-inner border-[12px] border-white">
+                    {editName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

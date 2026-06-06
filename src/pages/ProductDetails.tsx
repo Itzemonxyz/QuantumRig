@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useStore } from '../store';
 import { api } from '../lib/api';
-import { ShoppingCart, ArrowLeft, Check, AlertTriangle, Heart, Share2, CheckCircle2, ChevronDown, ChevronUp, HelpCircle, X, Scale, Zap, Bell, TrendingUp, TrendingDown, Copy } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, Check, AlertTriangle, Heart, Share2, CheckCircle2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, HelpCircle, X, Scale, Zap, Bell, TrendingUp, TrendingDown, Copy, Loader2 } from 'lucide-react';
 import Breadcrumbs from '../components/Breadcrumbs';
 import ScrollToTopButton from '../components/ScrollToTopButton';
 import { motion, AnimatePresence } from 'motion/react';
@@ -32,9 +32,10 @@ function ProductDetailsInner({ product }: { product: any }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { products, categories, addToCart, user, token, updateUser, compareIds, toggleCompare, addToast } = useStore();
+  const { products, categories, addToCart, removeFromCart, user, token, updateUser, compareIds, toggleCompare, addToast, cart } = useStore();
 
   const category = categories.find(c => c.id === product.categoryId);
+  const isInCart = product ? cart.some(item => item.product.id === product.id) : false;
   const isOutOfStock = product.stockStatus === 'Out of Stock' || product.inventoryCount === 0;
   const isLowStock = !isOutOfStock && product.inventoryCount !== undefined && product.inventoryCount < 5;
   const stockTrend = product.inventoryCount !== undefined ? (product.inventoryCount < 10 ? 'depleting' : 'replenishing') : 'unknown';
@@ -45,7 +46,9 @@ function ProductDetailsInner({ product }: { product: any }) {
   const [copiedCode, setCopiedCode] = useState(false);
   const [showAllSpecs, setShowAllSpecs] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
   const [showQuickBuyModal, setShowQuickBuyModal] = useState(false);
+  const [quickBuyImageIndex, setQuickBuyImageIndex] = useState(0);
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [showSupportToast, setShowSupportToast] = useState(false);
   const [priceDropSubscribed, setPriceDropSubscribed] = useState(false);
@@ -55,6 +58,8 @@ function ProductDetailsInner({ product }: { product: any }) {
 
   const allImages = [product.imageUrl, ...(product.additionalImages || [])];
   const [activeImage, setActiveImage] = useState(product.imageUrl);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
 
   const [zoomStyle, setZoomStyle] = useState({});
   const imageContainerRef = useRef<HTMLDivElement>(null);
@@ -241,7 +246,11 @@ function ProductDetailsInner({ product }: { product: any }) {
             ref={imageContainerRef}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
-            className="bg-white border border-slate-200 rounded-2xl p-8 flex items-center justify-center min-h-[400px] relative overflow-hidden group cursor-crosshair"
+            onClick={() => {
+              setModalImageIndex(allImages.indexOf(activeImage));
+              setShowImageModal(true);
+            }}
+            className="bg-white border border-slate-200 rounded-2xl p-8 flex items-center justify-center min-h-[400px] relative overflow-hidden group cursor-pointer"
           >
             <img 
               src={activeImage} 
@@ -430,30 +439,55 @@ function ProductDetailsInner({ product }: { product: any }) {
                   </button>
                 </div>
                 
-                <button
-                  onClick={() => {
-                    if (!token) {
-                      navigate('/login', { state: { from: location } });
-                      return;
-                    }
-                    setIsAdded(true);
-                    addToCart(product, quantity);
-                    setTimeout(() => setIsAdded(false), 800);
-                  }}
-                  className={`flex items-center justify-center px-8 py-4 rounded-xl font-bold text-lg transition-all transform flex-1 min-w-[200px] h-14 relative overflow-hidden ${isAdded ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-indigo-600 hover:bg-indigo-700 hover:scale-105 active:scale-95 text-white shadow-lg shadow-indigo-600/20'}`}
-                >
-                  {isAdded ? (
-                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center">
-                      <CheckCircle2 className="w-6 h-6 mr-3" />
-                      Added to Cart!
+                <div className="relative flex-1 min-w-[200px] flex">
+                  {isAdded && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs sm:text-sm font-medium rounded px-3 py-1.5 whitespace-nowrap pointer-events-none shadow-lg after:content-[''] after:absolute after:-bottom-1 after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-slate-900 z-50"
+                    >
+                      Product added to cart
                     </motion.div>
-                  ) : (
-                    <>
-                      <ShoppingCart className="w-6 h-6 mr-3" />
-                      Add to Cart
-                    </>
                   )}
-                </button>
+                  <button
+                    onClick={() => {
+                      if (isInCart) {
+                        removeFromCart(product.id);
+                        return;
+                      }
+                      if (!token) {
+                        navigate('/login', { state: { from: location } });
+                        return;
+                      }
+                      setIsAdding(true);
+                      setTimeout(() => {
+                        addToCart(product, quantity);
+                        setIsAdding(false);
+                        setIsAdded(true);
+                        setTimeout(() => setIsAdded(false), 2000);
+                      }, 400); // simulated loading
+                    }}
+                    disabled={isAdding}
+                    className={`flex items-center justify-center px-8 py-4 rounded-xl font-bold text-lg transition-all w-full h-14 relative overflow-hidden active:scale-95 hover:scale-105 hover:-translate-y-0.5 hover:shadow-lg ${isAdded ? 'bg-emerald-500 text-white shadow-emerald-500/20' : isInCart ? 'bg-indigo-100 text-indigo-700 shadow-none' : 'bg-indigo-600 text-white shadow-indigo-600/20 hover:bg-indigo-700'}`}
+                  >
+                    {isAdding ? (
+                      <div className="flex items-center">
+                        <Loader2 className="w-6 h-6 mr-3 animate-spin" />
+                        Adding...
+                      </div>
+                    ) : isAdded ? (
+                      <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center">
+                        <CheckCircle2 className="w-6 h-6 mr-3" />
+                        Added to Cart!
+                      </motion.div>
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-6 h-6 mr-3" fill={isInCart ? 'currentColor' : 'none'} />
+                        {isInCart ? 'Remove from Cart' : 'Add to Cart'}
+                      </>
+                    )}
+                  </button>
+                </div>
 
                 <div className="w-full relative flex flex-col items-center">
                   <motion.button
@@ -690,67 +724,112 @@ function ProductDetailsInner({ product }: { product: any }) {
       <ScrollToTopButton />
 
       <AnimatePresence>
-        {showQuickBuyModal && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
-          >
+        {showQuickBuyModal && (() => {
+          const buyImages = [product.imageUrl, ...(product.additionalImages || [])];
+          
+          return (
             <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl overflow-hidden border border-slate-200"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md"
+              onClick={() => setShowQuickBuyModal(false)}
             >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-slate-900">Quick Purchase</h3>
-                <button onClick={() => setShowQuickBuyModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-100 hover:bg-slate-200 p-2 rounded-full">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="flex gap-4 items-center mb-6 border-b border-slate-100 pb-6">
-                <img src={product.imageUrl} className="w-20 h-20 object-contain mix-blend-multiply bg-slate-50 rounded-lg p-2" />
-                <div>
-                  <h4 className="font-bold text-slate-900">{product.title}</h4>
-                  <p className="text-slate-500 text-sm">Qty: {quantity}</p>
-                </div>
-              </div>
-
-              <div className="space-y-3 mb-8">
-                <div className="flex justify-between text-slate-600">
-                  <span>Subtotal</span>
-                  <span className="font-medium">৳{Number(((product.discountPrice || product.price) * quantity) || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Shipping</span>
-                  <span className="font-medium text-emerald-600">Calculated at checkout</span>
-                </div>
-                <div className="flex justify-between text-xl font-bold text-slate-900 pt-3 border-t border-slate-200">
-                  <span>Total</span>
-                  <span>৳{Number(((product.discountPrice || product.price) * quantity) || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                </div>
-              </div>
-
-              <button
-                onClick={() => {
-                  if (!token) {
-                    setShowQuickBuyModal(false);
-                    navigate('/login', { state: { from: location } });
-                    return;
-                  }
-                  addToCart(product, quantity);
-                  setShowQuickBuyModal(false);
-                  navigate('/cart');
-                }}
-                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-4 px-6 rounded-xl transition-colors shadow-lg shadow-amber-500/20"
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full flex flex-col md:flex-row overflow-hidden border border-slate-200 relative"
+                onClick={e => e.stopPropagation()}
               >
-                Proceed to Checkout
-              </button>
+                <div className="w-full md:w-1/2 bg-slate-50 relative flex flex-col min-h-[300px]">
+                  <div className="absolute inset-0 p-8 flex items-center justify-center">
+                    <img src={buyImages[quickBuyImageIndex]} alt={product.title} className="w-full h-full object-contain mix-blend-multiply" />
+                  </div>
+                  {buyImages.length > 1 && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setQuickBuyImageIndex(prev => (prev === 0 ? buyImages.length - 1 : prev - 1));
+                        }}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-slate-200 text-slate-800 rounded-full flex items-center justify-center shadow-md hover:bg-slate-50 transition-colors z-10"
+                      >
+                        <ChevronLeft className="w-6 h-6" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setQuickBuyImageIndex(prev => (prev === buyImages.length - 1 ? 0 : prev + 1));
+                        }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-slate-200 text-slate-800 rounded-full flex items-center justify-center shadow-md hover:bg-slate-50 transition-colors z-10"
+                      >
+                        <ChevronRight className="w-6 h-6" />
+                      </button>
+                      <div className="absolute bottom-4 left-0 right-0 gap-2 flex justify-center z-10">
+                        {buyImages.map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setQuickBuyImageIndex(idx);
+                            }}
+                            className={`w-2.5 h-2.5 rounded-full transition-colors ${idx === quickBuyImageIndex ? 'bg-indigo-600' : 'bg-slate-300 hover:bg-slate-400'}`}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="w-full md:w-1/2 p-6 sm:p-10 flex flex-col justify-center">
+                  <div className="flex justify-between items-start mb-6">
+                    <h3 className="text-3xl font-bold text-slate-900 leading-tight">Quick Purchase</h3>
+                    <button onClick={() => setShowQuickBuyModal(false)} className="text-slate-400 hover:text-slate-900 transition-colors bg-slate-100 hover:bg-slate-200 p-2 rounded-full flex-shrink-0 ml-4">
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  <div className="mb-8">
+                    <h4 className="font-bold text-lg text-slate-900 mb-2 truncate" title={product.title}>{product.title}</h4>
+                    <p className="text-slate-500 text-base">Quantity selected: <strong className="text-slate-900">{quantity}</strong></p>
+                  </div>
+
+                  <div className="space-y-4 mb-10 bg-slate-50 p-6 rounded-xl border border-slate-100">
+                    <div className="flex justify-between text-slate-600 text-lg">
+                      <span>Subtotal</span>
+                      <span className="font-medium">৳{Number(((product.discountPrice || product.price) * quantity) || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600 text-lg">
+                      <span>Shipping</span>
+                      <span className="font-medium text-emerald-600">Calculated at checkout</span>
+                    </div>
+                    <div className="flex justify-between text-2xl font-bold text-slate-900 pt-4 border-t border-slate-200 mt-2">
+                      <span>Total Value</span>
+                      <span className="text-indigo-700">৳{Number(((product.discountPrice || product.price) * quantity) || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      if (!token) {
+                        setShowQuickBuyModal(false);
+                        navigate('/login', { state: { from: location } });
+                        return;
+                      }
+                      addToCart(product, quantity);
+                      setShowQuickBuyModal(false);
+                      navigate('/cart');
+                    }}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-5 px-6 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-amber-500/20 text-lg mt-auto"
+                  >
+                    Proceed to Checkout
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
+          );
+        })()}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -813,6 +892,63 @@ function ProductDetailsInner({ product }: { product: any }) {
                 >
                   Send Question
                 </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showImageModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm"
+            onClick={() => setShowImageModal(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              className="relative max-w-4xl w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => setShowImageModal(false)}
+                className="absolute -top-12 right-0 p-2 text-white/70 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              <div className="bg-white rounded-3xl p-4 shadow-2xl overflow-hidden aspect-[4/3] md:aspect-[16/9] flex items-center justify-center relative">
+                <img src={allImages[modalImageIndex]} alt={product.title} className="w-full h-full object-contain mix-blend-multiply" />
+                
+                {allImages.length > 1 && (
+                  <div className="absolute bottom-4 right-4 flex items-center gap-2 bg-white/80 backdrop-blur border border-slate-200 rounded-full p-1.5 shadow-sm z-10">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setModalImageIndex(prev => prev === 0 ? allImages.length - 1 : prev - 1);
+                      }}
+                      className="p-3 hover:bg-slate-100 rounded-full text-slate-700 transition"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <div className="px-2 text-sm font-medium text-slate-500 font-mono">
+                      {modalImageIndex + 1} / {allImages.length}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setModalImageIndex(prev => prev === allImages.length - 1 ? 0 : prev + 1);
+                      }}
+                      className="p-3 hover:bg-slate-100 rounded-full text-slate-700 transition"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>

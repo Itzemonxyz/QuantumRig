@@ -259,62 +259,7 @@ export default function Home() {
 
       {/* Main Content Container */}
       <div className="max-w-7xl mx-auto">
-        {/* Search Bar */}
-        <div className="p-6 sticky top-16 bg-slate-50/90 backdrop-blur-md z-40" ref={searchRef}>
-        <form onSubmit={handleSearch} className="relative max-w-xl mx-auto">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search our entire product catalog..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setIsSearchOpen(true);
-            }}
-            onFocus={() => setIsSearchOpen(true)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 text-slate-900 rounded-full text-sm outline-none focus:border-indigo-500 transition-colors shadow-sm"
-          />
-          {isSearchOpen && searchQuery.trim() !== '' && (
-            <div className="absolute top-14 left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-xl shadow-black/5 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
-              {searchResults.length > 0 ? (
-                <div className="max-h-96 overflow-y-auto">
-                  {searchResults.map(product => (
-                    <div 
-                      key={product.id}
-                      onClick={() => {
-                        navigate(`/products/${product.id}`);
-                        setSearchQuery('');
-                        setIsSearchOpen(false);
-                      }}
-                      className="flex items-center space-x-4 p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0"
-                    >
-                      <img src={product.imageUrl} alt={product.title} className="w-12 h-12 object-contain bg-white rounded" />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold text-slate-900 truncate">{product.title}</h4>
-                        <p className="text-xs text-slate-500 truncate">{product.description}</p>
-                      </div>
-                      <div className="text-sm font-bold flex flex-col items-end">
-                        {product.discountPrice ? (
-                          <>
-                            <span className="text-slate-600">৳{Number(product.discountPrice || 0).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                            <span className="text-xs text-slate-400 line-through">৳{Number(product.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                          </>
-                        ) : (
-                          <span className="text-slate-700">৳{Number(product.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-4 text-center text-sm text-slate-500">
-                  No products found for "{searchQuery}"
-                </div>
-              )}
-            </div>
-          )}
-        </form>
-      </div>
+
 
       {/* Portals Section - Relocated with beautiful graphic cards */}
       <div className="hidden md:block px-8 mt-4 mb-12">

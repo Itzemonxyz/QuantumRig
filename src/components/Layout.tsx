@@ -84,6 +84,45 @@ export default function Layout() {
   }, [navigate]);
 
   useEffect(() => {
+    const handleGlobalEnter = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        const activeEl = document.activeElement as HTMLElement | null;
+        if (activeEl && activeEl.tagName === 'INPUT' && activeEl.closest('form')) {
+          const type = (activeEl as HTMLInputElement).type;
+          
+          if (!['submit', 'button', 'reset', 'checkbox', 'radio', 'file'].includes(type)) {
+            e.preventDefault();
+            
+            // Limit to form elements
+            const form = activeEl.closest('form');
+            if (form) {
+              const focusableElements = Array.from(
+                form.querySelectorAll<HTMLElement>(
+                  'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), button[type="submit"]:not([disabled])'
+                )
+              ).filter(el => {
+                const bounds = el.getBoundingClientRect();
+                return bounds.width > 0 && bounds.height > 0;
+              });
+              
+              const index = focusableElements.indexOf(activeEl);
+              if (index > -1) {
+                // Focus the next element. If it's the last, optionally stay or blur, but typically just focus the next focusable item (submit button).
+                 if (index + 1 < focusableElements.length) {
+                   focusableElements[index + 1].focus();
+                 }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalEnter, true);
+    return () => window.removeEventListener('keydown', handleGlobalEnter, true);
+  }, []);
+
+  useEffect(() => {
     if (user && token) {
       api.get('/users/me/notifications', token).then(data => {
         if (data && Array.isArray(data)) setNotifications(data);
@@ -431,17 +470,32 @@ export default function Layout() {
                     </Link>
                   )}
                   
-                  <Link to="/profile" className="flex items-center transition-transform hover:scale-105" title="User Profile">
-                    {user.avatar ? (
-                      <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-indigo-600 shadow-sm relative shrink-0">
-                        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                  <div className="relative group">
+                    <Link to="/profile" className="flex items-center transition-transform hover:scale-105" title="User Profile">
+                      {user.avatar ? (
+                        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-indigo-600 shadow-sm relative shrink-0">
+                          <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm tracking-tight border-2 border-indigo-200 shadow-sm shrink-0">
+                          {user.name ? user.name.slice(0, 2).toUpperCase() : 'UR'}
+                        </div>
+                      )}
+                    </Link>
+                    
+                    {/* User Info Hover Popup */}
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none translate-y-2 group-hover:translate-y-0">
+                      <div className="p-4 border-b border-slate-100">
+                        <p className="font-bold text-slate-900 truncate">{user.name}</p>
+                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
                       </div>
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm tracking-tight border-2 border-indigo-200 shadow-sm shrink-0">
-                        {user.name ? user.name.slice(0, 2).toUpperCase() : 'UR'}
+                      <div className="p-2">
+                        <p className="text-xs text-indigo-600 font-medium px-2 py-1 bg-indigo-50 rounded-md inline-block">
+                          {user.role === 'admin' ? 'Admin Account' : 'Customer Account'}
+                        </p>
                       </div>
-                    )}
-                  </Link>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <Link to="/login" className="flex items-center space-x-1 text-slate-600 hover:text-indigo-600 font-medium transition-colors">

@@ -511,7 +511,7 @@ export default function Products() {
                   transition={{ duration: 0.3, delay: index * 0.05 }}
                   className="h-full"
                 >
-                  <ProductCard product={p} isBuilderMode={isBuilderMode} />
+                  <ProductCard product={p} />
                 </motion.div>
               ))}
             </div>
