@@ -1,7 +1,8 @@
 export const api = {
   get: async (endpoint: string, token?: string | null) => {
     const timestamp = Date.now();
-    const url = endpoint.includes('?') ? `/api${endpoint}&_t=${timestamp}` : `/api${endpoint}?_t=${timestamp}`;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const url = endpoint.includes('?') ? `${baseUrl}/api${endpoint}&_t=${timestamp}` : `${baseUrl}/api${endpoint}?_t=${timestamp}`;
     const res = await fetch(url, {
       headers: {
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -21,7 +22,8 @@ export const api = {
     }
   },
   post: async (endpoint: string, data: any, token?: string | null) => {
-    const res = await fetch(`/api${endpoint}`, {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const res = await fetch(`${baseUrl}/api${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -39,7 +41,8 @@ export const api = {
     try { return JSON.parse(text); } catch { return null; }
   },
   put: async (endpoint: string, data: any, token?: string | null) => {
-    const res = await fetch(`/api${endpoint}`, {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const res = await fetch(`${baseUrl}/api${endpoint}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -57,7 +60,8 @@ export const api = {
     try { return JSON.parse(text); } catch { return null; }
   },
   delete: async (endpoint: string, token?: string | null) => {
-    const res = await fetch(`/api${endpoint}`, {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const res = await fetch(`${baseUrl}/api${endpoint}`, {
       method: 'DELETE',
       headers: {
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})

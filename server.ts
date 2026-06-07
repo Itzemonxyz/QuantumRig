@@ -3,11 +3,7 @@ import path from "path";
 import cors from "cors";
 import { createServer as createViteServer } from "vite";
 import fs from "fs";
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, updateDoc, initializeFirestore, setLogLevel } from "firebase/firestore";
 import { User, Category, Brand, Product, Order, Settings, Coupon, Offer, RestockRequest, UserNotification, SocialLink } from "./src/types";
-
-setLogLevel('silent');
 
 
 const app = express();
@@ -33,29 +29,25 @@ app.use((req, res, next) => {
   next();
 });
 
-// ================= FIREBASE SETUP =================
-let db: any = null;
-const firebaseConfigPath = path.join(process.cwd(), "firebase-applet-config.json");
-let firebaseConfig = null;
+import * as admin from 'firebase-admin';
 
-if (fs.existsSync(firebaseConfigPath)) {
-  firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, "utf-8"));
-} else if (process.env.VITE_FIREBASE_API_KEY) {
-  firebaseConfig = {
-    apiKey: process.env.VITE_FIREBASE_API_KEY,
-    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.VITE_FIREBASE_APP_ID,
-    firestoreDatabaseId: process.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || "(default)"
-  };
-}
+// Initialize the Admin SDK
+let db: admin.firestore.Firestore;
+const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
 
-if (firebaseConfig) {
-  const firebaseApp = initializeApp(firebaseConfig);
-  db = initializeFirestore(firebaseApp, { experimentalForceLongPolling: true }, firebaseConfig.firestoreDatabaseId || "(default)");
-  console.log("🔥 Connected to Firebase Firestore with Long Polling");
+if (serviceAccountJson) {
+  try {
+    const serviceAccount = JSON.parse(serviceAccountJson);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    db = admin.firestore();
+    console.log("🔥 Connected to Firebase Admin (bypasses security rules)");
+  } catch (error) {
+    console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT environment variable:", error);
+  }
+} else {
+  console.warn("⚠️ FIREBASE_SERVICE_ACCOUNT environment variable is missing.");
 }
 
 // IN-MEMORY DATABASE
@@ -121,7 +113,7 @@ async function syncDatabase() {
   if (!db) return;
   try {
     // 1. Sync Products
-    const pSnap = await getDocs(collection(db, "products"));
+    const pSnap = await db.collection("products").get();
     if (!pSnap.empty) {
       products = pSnap.docs.map((d: any) => d.data() as Product);
       
@@ -130,37 +122,37 @@ async function syncDatabase() {
       for (const p of products) {
         if (!p.code) {
           p.code = p.id;
-          await setDoc(doc(db, "products", p.id), JSON.parse(JSON.stringify(p))).catch(console.error);
+          await db.collection("products").doc(p.id).set(JSON.parse(JSON.stringify(p))).catch(console.error);
         }
       }
     } else {
       for (const p of products) {
-        await setDoc(doc(db, "products", p.id), JSON.parse(JSON.stringify(p)));
+        await db.collection("products").doc(p.id).set(JSON.parse(JSON.stringify(p)));
       }
     }
 
     // 2. Sync Categories
-    const cSnap = await getDocs(collection(db, "categories"));
+    const cSnap = await db.collection("categories").get();
     if (!cSnap.empty) {
       categories = cSnap.docs.map((d: any) => d.data() as Category);
     } else {
       for (const c of categories) {
-        await setDoc(doc(db, "categories", c.id), JSON.parse(JSON.stringify(c)));
+        await db.collection("categories").doc(c.id).set(JSON.parse(JSON.stringify(c)));
       }
     }
 
     // 3. Sync Brands
-    const bSnap = await getDocs(collection(db, "brands"));
+    const bSnap = await db.collection("brands").get();
     if (!bSnap.empty) {
       brands = bSnap.docs.map((d: any) => d.data() as Brand);
     } else {
       for (const b of brands) {
-        await setDoc(doc(db, "brands", b.id), JSON.parse(JSON.stringify(b)));
+        await db.collection("brands").doc(b.id).set(JSON.parse(JSON.stringify(b)));
       }
     }
 
     // 4. Sync Users 
-    const uSnap = await getDocs(collection(db, "users"));
+    const uSnap = await db.collection("users").get();
     if (!uSnap.empty) {
        // Merge users carefully so we don't overwrite mock memory if there's no auth system.
        const fsUsers = uSnap.docs.map((d: any) => d.data() as User);
@@ -171,7 +163,7 @@ async function syncDatabase() {
     }
 
     // 5. Sync Orders
-    const oSnap = await getDocs(collection(db, "orders"));
+    const oSnap = await db.collection("orders").get();
     if (!oSnap.empty) {
       orders = oSnap.docs.map((d: any) => d.data() as Order);
       
@@ -179,57 +171,57 @@ async function syncDatabase() {
       const mockOrdersToDelete = orders.filter(o => o.id && o.id.startsWith("mock_"));
       if (mockOrdersToDelete.length > 0) {
         for (const mo of mockOrdersToDelete) {
-          await deleteDoc(doc(db, "orders", mo.id)).catch(console.error);
+          await db.collection("orders").doc(mo.id).delete().catch(console.error);
         }
         orders = orders.filter(o => !o.id || !o.id.startsWith("mock_"));
       }
     } // if empty, do not seed mock orders to avoid bloat
 
     // 6. Sync Settings
-    const setSnap = await getDocs(collection(db, "settings"));
+    const setSnap = await db.collection("settings").get();
     if (!setSnap.empty) {
       const globalSet = setSnap.docs.find(d => d.id === 'global');
       if (globalSet) settings = globalSet.data() as Settings;
     } else {
-      await setDoc(doc(db, "settings", "global"), JSON.parse(JSON.stringify(settings))).catch(console.error);
+      await db.collection("settings").doc("global").set(JSON.parse(JSON.stringify(settings))).catch(console.error);
     }
 
     // 7. Sync Coupons
-    const cpSnap = await getDocs(collection(db, "coupons"));
+    const cpSnap = await db.collection("coupons").get();
     if (!cpSnap.empty) {
       coupons = cpSnap.docs.map((d: any) => d.data() as Coupon);
     }
 
     // 8. Sync Offers
-    const ofSnap = await getDocs(collection(db, "offers"));
+    const ofSnap = await db.collection("offers").get();
     if (!ofSnap.empty) {
       offers = ofSnap.docs.map((d: any) => d.data() as Offer);
     }
 
     // 9. Sync Restock Requests
-    const rrSnap = await getDocs(collection(db, "restocks"));
+    const rrSnap = await db.collection("restocks").get();
     if (!rrSnap.empty) {
       restockRequests = rrSnap.docs.map((d: any) => d.data() as RestockRequest);
     }
 
     // 10. Sync Support Tickets
-    const stSnap = await getDocs(collection(db, "support"));
+    const stSnap = await db.collection("support").get();
     if (!stSnap.empty) {
       supportTickets = stSnap.docs.map((d: any) => d.data() as any);
     }
 
     // 11. Sync Social Links
-    const slSnap = await getDocs(collection(db, "social_links"));
+    const slSnap = await db.collection("social_links").get();
     if (!slSnap.empty) {
       socialLinks = slSnap.docs.map((d: any) => d.data() as SocialLink);
     } else {
       for (const sl of socialLinks) {
-        await setDoc(doc(db, "social_links", sl.id), JSON.parse(JSON.stringify(sl))).catch(console.error);
+        await db.collection("social_links").doc(sl.id).set(JSON.parse(JSON.stringify(sl))).catch(console.error);
       }
     }
 
     // 12. Sync Complaints
-    const cmpSnap = await getDocs(collection(db, "complaints"));
+    const cmpSnap = await db.collection("complaints").get();
     if (!cmpSnap.empty) {
       complaints = cmpSnap.docs.map((d: any) => d.data() as any);
     }
@@ -253,7 +245,7 @@ app.post("/api/users/me/saved-products", async (req, res) => {
   const { productId } = req.body;
   if (!user.savedProductIds.includes(productId)) {
     user.savedProductIds.push(productId);
-    if (db) await setDoc(doc(db, "users", user.id), { savedProductIds: user.savedProductIds }, { merge: true }).catch(console.error);
+    if (db) await db.collection("users").doc(user.id).set({ savedProductIds: user.savedProductIds }, { merge: true }).catch(console.error);
   }
   const { password, ...userWithoutPassword } = user;
   res.json(userWithoutPassword);
@@ -266,7 +258,7 @@ app.delete("/api/users/me/saved-products/:productId", async (req, res) => {
   
   if (user.savedProductIds) {
     user.savedProductIds = user.savedProductIds.filter(id => id !== req.params.productId);
-    if (db) await setDoc(doc(db, "users", user.id), { savedProductIds: user.savedProductIds }, { merge: true }).catch(console.error);
+    if (db) await db.collection("users").doc(user.id).set({ savedProductIds: user.savedProductIds }, { merge: true }).catch(console.error);
   }
   const { password, ...userWithoutPassword } = user;
   res.json(userWithoutPassword);
@@ -281,7 +273,7 @@ app.post("/api/users/me/cart", async (req, res) => {
   user.cart = Array.isArray(cart) ? cart : [];
   
   if (db) {
-    await setDoc(doc(db, "users", user.id), { cart: user.cart }, { merge: true }).catch(console.error);
+    await db.collection("users").doc(user.id).set({ cart: user.cart }, { merge: true }).catch(console.error);
   }
   
   const { password, ...userWithoutPassword } = user;
@@ -305,7 +297,7 @@ app.post("/api/auth/register", async (req, res) => {
     return res.status(400).json({ error: "Email taken" });
   }
   const newUser: User = { id: `u${Date.now()}`, name, email, password, phone, role: role || "user", savedProductIds: [] };
-  if (db) await setDoc(doc(db, "users", newUser.id), JSON.parse(JSON.stringify(newUser))).catch(console.error);
+  if (db) await db.collection("users").doc(newUser.id).set(JSON.parse(JSON.stringify(newUser))).catch(console.error);
   users.push(newUser);
   const { password: _, ...userWithoutPassword } = newUser;
   res.json({ token: `dummy-token-${newUser.id}`, user: userWithoutPassword });
@@ -321,7 +313,7 @@ app.post("/api/auth/google", async (req, res) => {
     if (role) user.role = role;
   } else {
     user = { id: `u${Date.now()}`, name, email, phone, avatar, role: role || "user", savedProductIds: [] };
-    if (db) await setDoc(doc(db, "users", user.id), JSON.parse(JSON.stringify(user))).catch(console.error);
+    if (db) await db.collection("users").doc(user.id).set(JSON.parse(JSON.stringify(user))).catch(console.error);
     users.push(user);
   }
   const { password, ...userWithoutPassword } = user;
@@ -372,7 +364,7 @@ app.put("/api/users/me", (req, res) => {
 app.get("/api/social-links", (req, res) => res.json(socialLinks));
 app.post("/api/social-links", async (req, res) => {
   const sl: SocialLink = { id: `sl${Date.now()}`, ...req.body };
-  if (db) await setDoc(doc(db, "social_links", sl.id), JSON.parse(JSON.stringify(sl))).catch(console.error);
+  if (db) await db.collection("social_links").doc(sl.id).set(JSON.parse(JSON.stringify(sl))).catch(console.error);
   socialLinks.push(sl);
   res.json(sl);
 });
@@ -380,13 +372,13 @@ app.put("/api/social-links/:id", async (req, res) => {
   const idx = socialLinks.findIndex(sl => sl.id === req.params.id);
   if (idx > -1) {
     socialLinks[idx] = { ...socialLinks[idx], ...req.body };
-    if (db) await setDoc(doc(db, "social_links", socialLinks[idx].id), JSON.parse(JSON.stringify(socialLinks[idx]))).catch(console.error);
+    if (db) await db.collection("social_links").doc(socialLinks[idx].id).set(JSON.parse(JSON.stringify(socialLinks[idx]))).catch(console.error);
     res.json(socialLinks[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
 app.delete("/api/social-links/:id", async (req, res) => {
   socialLinks = socialLinks.filter(sl => sl.id !== req.params.id);
-  if (db) await deleteDoc(doc(db, "social_links", req.params.id)).catch(console.error);
+  if (db) await db.collection("social_links").doc(req.params.id).delete().catch(console.error);
   res.sendStatus(204);
 });
 
@@ -394,7 +386,7 @@ app.delete("/api/social-links/:id", async (req, res) => {
 app.get("/api/settings", (req, res) => res.json(settings));
 app.put("/api/settings", async (req, res) => {
   settings = { ...settings, ...req.body };
-  if (db) await setDoc(doc(db, "settings", "global"), JSON.parse(JSON.stringify(settings))).catch(console.error);
+  if (db) await db.collection("settings").doc("global").set(JSON.parse(JSON.stringify(settings))).catch(console.error);
   res.json(settings);
 });
 
@@ -425,14 +417,14 @@ app.post("/api/restock-requests", async (req, res) => {
     status: 'pending',
     createdAt: new Date().toISOString()
   };
-  if (db) await setDoc(doc(db, "restocks", newReq.id), JSON.parse(JSON.stringify(newReq))).catch(console.error);
+  if (db) await db.collection("restocks").doc(newReq.id).set(JSON.parse(JSON.stringify(newReq))).catch(console.error);
   restockRequests.push(newReq);
   res.json(newReq);
 });
 
 app.delete("/api/restock-requests/:id", async (req, res) => {
   restockRequests = restockRequests.filter(r => r.id !== req.params.id);
-  if (db) await deleteDoc(doc(db, "restocks", req.params.id)).catch(console.error);
+  if (db) await db.collection("restocks").doc(req.params.id).delete().catch(console.error);
   res.sendStatus(204);
 });
 
@@ -462,7 +454,7 @@ app.put("/api/users/me/notifications/:id/read", async (req, res) => {
   const notif = (user.notifications || []).find((n) => n.id === req.params.id);
   if (notif) {
     notif.read = true;
-    if (db) await setDoc(doc(db, "users", user.id), { notifications: user.notifications }, { merge: true }).catch(console.error);
+    if (db) await db.collection("users").doc(user.id).set({ notifications: user.notifications }, { merge: true }).catch(console.error);
   }
   res.json({ success: true });
 });
@@ -486,7 +478,7 @@ app.post("/api/support-tickets", async (req, res) => {
   const { productId, email, question } = req.body;
   if (!productId || !email || !question) return res.status(400).json({ error: 'Missing fields' });
   const ticket = { id: `st_${Date.now()}`, productId, email, question, status: 'Open' as const, createdAt: new Date().toISOString() };
-  if (db) await setDoc(doc(db, "support", ticket.id), JSON.parse(JSON.stringify(ticket))).catch(console.error);
+  if (db) await db.collection("support").doc(ticket.id).set(JSON.parse(JSON.stringify(ticket))).catch(console.error);
   supportTickets.push(ticket);
   res.json(ticket);
 });
@@ -495,7 +487,7 @@ app.put("/api/support-tickets/:id", async (req, res) => {
   const idx = supportTickets.findIndex(t => t.id === req.params.id);
   if (idx !== -1) {
     supportTickets[idx] = { ...supportTickets[idx], ...req.body };
-    if (db) await setDoc(doc(db, "support", supportTickets[idx].id), JSON.parse(JSON.stringify(supportTickets[idx]))).catch(console.error);
+    if (db) await db.collection("support").doc(supportTickets[idx].id).set(JSON.parse(JSON.stringify(supportTickets[idx]))).catch(console.error);
     res.json(supportTickets[idx]);
   } else {
     res.status(404).json({ error: "Not found" });
@@ -504,7 +496,7 @@ app.put("/api/support-tickets/:id", async (req, res) => {
 
 app.delete("/api/support-tickets/:id", async (req, res) => {
   supportTickets = supportTickets.filter(t => t.id !== req.params.id);
-  if (db) await deleteDoc(doc(db, "support", req.params.id)).catch(console.error);
+  if (db) await db.collection("support").doc(req.params.id).delete().catch(console.error);
   res.sendStatus(204);
 });
 
@@ -523,20 +515,20 @@ app.post("/api/complaints", async (req, res) => {
     description,
     createdAt: new Date().toISOString()
   };
-  if (db) await setDoc(doc(db, "complaints", complaint.id), JSON.parse(JSON.stringify(complaint))).catch(console.error);
+  if (db) await db.collection("complaints").doc(complaint.id).set(JSON.parse(JSON.stringify(complaint))).catch(console.error);
   complaints.push(complaint);
   res.json(complaint);
 });
 
 app.delete("/api/complaints/:id", async (req, res) => {
   complaints = complaints.filter(c => c.id !== req.params.id);
-  if (db) await deleteDoc(doc(db, "complaints", req.params.id)).catch(console.error);
+  if (db) await db.collection("complaints").doc(req.params.id).delete().catch(console.error);
   res.sendStatus(204);
 });
 
 app.post("/api/categories", async (req, res) => {
   const c: Category = { id: `c${Date.now()}`, ...req.body };
-  if (db) await setDoc(doc(db, "categories", c.id), JSON.parse(JSON.stringify(c))).catch(console.error);
+  if (db) await db.collection("categories").doc(c.id).set(JSON.parse(JSON.stringify(c))).catch(console.error);
   categories.push(c);
   res.json(c);
 });
@@ -544,13 +536,13 @@ app.put("/api/categories/:id", async (req, res) => {
   const idx = categories.findIndex(c => c.id === req.params.id);
   if (idx > -1) {
     categories[idx] = { ...categories[idx], ...req.body };
-    if (db) await setDoc(doc(db, "categories", categories[idx].id), JSON.parse(JSON.stringify(categories[idx]))).catch(console.error);
+    if (db) await db.collection("categories").doc(categories[idx].id).set(JSON.parse(JSON.stringify(categories[idx]))).catch(console.error);
     res.json(categories[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
 app.delete("/api/categories/:id", async (req, res) => {
   categories = categories.filter(c => c.id !== req.params.id);
-  if (db) await deleteDoc(doc(db, "categories", req.params.id)).catch(console.error);
+  if (db) await db.collection("categories").doc(req.params.id).delete().catch(console.error);
   res.sendStatus(204);
 });
 
@@ -558,7 +550,7 @@ app.delete("/api/categories/:id", async (req, res) => {
 app.get("/api/brands", (req, res) => res.json(brands));
 app.post("/api/brands", async (req, res) => {
   const b: Brand = { id: `b${Date.now()}`, ...req.body };
-  if (db) await setDoc(doc(db, "brands", b.id), JSON.parse(JSON.stringify(b))).catch(console.error);
+  if (db) await db.collection("brands").doc(b.id).set(JSON.parse(JSON.stringify(b))).catch(console.error);
   brands.push(b);
   res.json(b);
 });
@@ -566,13 +558,13 @@ app.put("/api/brands/:id", async (req, res) => {
   const idx = brands.findIndex(b => b.id === req.params.id);
   if (idx > -1) {
     brands[idx] = { ...brands[idx], ...req.body };
-    if (db) await setDoc(doc(db, "brands", brands[idx].id), JSON.parse(JSON.stringify(brands[idx]))).catch(console.error);
+    if (db) await db.collection("brands").doc(brands[idx].id).set(JSON.parse(JSON.stringify(brands[idx]))).catch(console.error);
     res.json(brands[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
 app.delete("/api/brands/:id", async (req, res) => {
   brands = brands.filter(b => b.id !== req.params.id);
-  if (db) await deleteDoc(doc(db, "brands", req.params.id)).catch(console.error);
+  if (db) await db.collection("brands").doc(req.params.id).delete().catch(console.error);
   res.sendStatus(204);
 });
 
@@ -580,8 +572,8 @@ app.delete("/api/internal/clear-all", async (req, res) => {
   products = [];
   try {
     if (db) {
-      const snap = await getDocs(collection(db, "products"));
-      const promises = snap.docs.map(d => deleteDoc(d.ref));
+      const snap = await db.collection("products").get();
+      const promises = snap.docs.map(d => d.ref.delete());
       await Promise.all(promises);
     }
     res.sendStatus(204);
@@ -620,7 +612,7 @@ app.post("/api/products", async (req, res) => {
   }
   const p: Product = { ...req.body, id: code, code };
   const safeP = JSON.parse(JSON.stringify(p));
-  if (db) await setDoc(doc(db, "products", p.id), safeP).catch(console.error);
+  if (db) await db.collection("products").doc(p.id).set(safeP).catch(console.error);
   products.push(p);
   res.json(p);
 });
@@ -646,9 +638,9 @@ app.put("/api/products/:id", async (req, res) => {
     const safeProduct = JSON.parse(JSON.stringify(newProduct));
     if (db) {
       if (oldProduct.id !== newProduct.id) {
-        await deleteDoc(doc(db, "products", oldProduct.id)).catch(console.error);
+        await db.collection("products").doc(oldProduct.id).delete().catch(console.error);
       }
-      await setDoc(doc(db, "products", newProduct.id), safeProduct).catch(console.error);
+      await db.collection("products").doc(newProduct.id).set(safeProduct).catch(console.error);
     }
     
     if (
@@ -668,10 +660,10 @@ app.put("/api/products/:id", async (req, res) => {
               read: false,
               createdAt: new Date().toISOString()
             });
-            if (db) await setDoc(doc(db, "users", users[uIdx].id), { notifications: users[uIdx].notifications }, { merge: true }).catch(console.error);
+            if (db) await db.collection("users").doc(users[uIdx].id).set({ notifications: users[uIdx].notifications }, { merge: true }).catch(console.error);
           }
           restockRequests[i] = { ...r, status: 'fulfilled' };
-          if (db) await updateDoc(doc(db, "restocks", r.id), { status: 'fulfilled' }).catch(console.error);
+          if (db) await db.collection("restocks").doc(r.id).update({ status: 'fulfilled' }).catch(console.error);
         }
       }
     }
@@ -681,7 +673,7 @@ app.put("/api/products/:id", async (req, res) => {
 });
 app.delete("/api/products/:id", async (req, res) => {
   products = products.filter(p => p.id !== req.params.id);
-  if (db) await deleteDoc(doc(db, "products", req.params.id)).catch(console.error);
+  if (db) await db.collection("products").doc(req.params.id).delete().catch(console.error);
   res.sendStatus(204);
 });
 
@@ -710,7 +702,7 @@ app.post("/api/products/:id/reviews", async (req, res) => {
 
   products[idx].reviews = products[idx].reviews || [];
   products[idx].reviews.push(review);
-  if (db) await setDoc(doc(db, "products", products[idx].id), JSON.parse(JSON.stringify(products[idx]))).catch(console.error);
+  if (db) await db.collection("products").doc(products[idx].id).set(JSON.parse(JSON.stringify(products[idx]))).catch(console.error);
 
   res.json(review);
 });
@@ -719,7 +711,7 @@ app.post("/api/products/:id/reviews", async (req, res) => {
 app.get("/api/offers", (req, res) => res.json(offers));
 app.post("/api/offers", async (req, res) => {
   const o: Offer = { id: `of${Date.now()}`, ...req.body };
-  if (db) await setDoc(doc(db, "offers", o.id), JSON.parse(JSON.stringify(o))).catch(console.error);
+  if (db) await db.collection("offers").doc(o.id).set(JSON.parse(JSON.stringify(o))).catch(console.error);
   offers.push(o);
   res.json(o);
 });
@@ -727,13 +719,13 @@ app.put("/api/offers/:id", async (req, res) => {
   const idx = offers.findIndex(o => o.id === req.params.id);
   if (idx > -1) {
     offers[idx] = { ...offers[idx], ...req.body };
-    if (db) await setDoc(doc(db, "offers", offers[idx].id), JSON.parse(JSON.stringify(offers[idx]))).catch(console.error);
+    if (db) await db.collection("offers").doc(offers[idx].id).set(JSON.parse(JSON.stringify(offers[idx]))).catch(console.error);
     res.json(offers[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
 app.delete("/api/offers/:id", async (req, res) => {
   offers = offers.filter(o => o.id !== req.params.id);
-  if (db) await deleteDoc(doc(db, "offers", req.params.id)).catch(console.error);
+  if (db) await db.collection("offers").doc(req.params.id).delete().catch(console.error);
   res.sendStatus(204);
 });
 
@@ -741,7 +733,7 @@ app.delete("/api/offers/:id", async (req, res) => {
 app.get("/api/coupons", (req, res) => res.json(coupons));
 app.post("/api/coupons", async (req, res) => {
   const c: Coupon = { id: `cp${Date.now()}`, ...req.body };
-  if (db) await setDoc(doc(db, "coupons", c.id), JSON.parse(JSON.stringify(c))).catch(console.error);
+  if (db) await db.collection("coupons").doc(c.id).set(JSON.parse(JSON.stringify(c))).catch(console.error);
   coupons.push(c);
   res.json(c);
 });
@@ -749,13 +741,13 @@ app.put("/api/coupons/:id", async (req, res) => {
   const idx = coupons.findIndex(c => c.id === req.params.id);
   if (idx > -1) {
     coupons[idx] = { ...coupons[idx], ...req.body };
-    if (db) await setDoc(doc(db, "coupons", coupons[idx].id), JSON.parse(JSON.stringify(coupons[idx]))).catch(console.error);
+    if (db) await db.collection("coupons").doc(coupons[idx].id).set(JSON.parse(JSON.stringify(coupons[idx]))).catch(console.error);
     res.json(coupons[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
 app.delete("/api/coupons/:id", async (req, res) => {
   coupons = coupons.filter(c => c.id !== req.params.id);
-  if (db) await deleteDoc(doc(db, "coupons", req.params.id)).catch(console.error);
+  if (db) await db.collection("coupons").doc(req.params.id).delete().catch(console.error);
   res.sendStatus(204);
 });
 app.get("/api/coupons/validate/:code", (req, res) => {
@@ -775,7 +767,7 @@ app.get("/api/orders", (req, res) => {
 
 app.delete("/api/orders/:id", async (req, res) => {
   orders = orders.filter(o => o.id !== req.params.id);
-  if (db) await deleteDoc(doc(db, "orders", req.params.id)).catch(console.error);
+  if (db) await db.collection("orders").doc(req.params.id).delete().catch(console.error);
   res.sendStatus(204);
 });
 
@@ -828,7 +820,7 @@ app.post("/api/orders", async (req, res) => {
           }
         }
         if (db) {
-          await setDoc(doc(db, "products", prod.id), JSON.parse(JSON.stringify(prod))).catch(console.error);
+          await db.collection("products").doc(prod.id).set(JSON.parse(JSON.stringify(prod))).catch(console.error);
         }
       }
     }
@@ -837,7 +829,7 @@ app.post("/api/orders", async (req, res) => {
   // Remove undefined fields to prevent Firestore errors
   const safeOrder = JSON.parse(JSON.stringify(order));
   
-  if (db) await setDoc(doc(db, "orders", order.id), safeOrder).catch(console.error);
+  if (db) await db.collection("orders").doc(order.id).set(safeOrder).catch(console.error);
   orders.push(order);
   res.json(order);
 });
@@ -861,7 +853,7 @@ app.put("/api/orders/:id/status", async (req, res) => {
       description: descriptions[req.body.status] || "Order status updated."
     });
 
-    if (db) await updateDoc(doc(db, "orders", req.params.id), { status: req.body.status, trackingHistory: orders[idx].trackingHistory }).catch(console.error);
+    if (db) await db.collection("orders").doc(req.params.id).update({ status: req.body.status, trackingHistory: orders[idx].trackingHistory }).catch(console.error);
     res.json(orders[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
@@ -870,7 +862,7 @@ app.put("/api/orders/:id/paymentStatus", async (req, res) => {
   const idx = orders.findIndex(o => o.id === req.params.id);
   if (idx > -1) {
     orders[idx].paymentStatus = req.body.paymentStatus;
-    if (db) await updateDoc(doc(db, "orders", req.params.id), { paymentStatus: req.body.paymentStatus }).catch(console.error);
+    if (db) await db.collection("orders").doc(req.params.id).update({ paymentStatus: req.body.paymentStatus }).catch(console.error);
     res.json(orders[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
@@ -954,6 +946,11 @@ app.get("/api/admin/analytics", (req, res) => {
 
 // Vite & Static file serving
 async function startServer() {
+  // Do not run vite middleware or static serving in Netlify Serverless environment
+  if (process.env.NETLIFY || process.env.NETLIFY_LOCAL) {
+    return;
+  }
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -974,3 +971,8 @@ async function startServer() {
 }
 
 startServer();
+
+// For Netlify Functions
+import serverless from 'serverless-http';
+export const handler = serverless(app);
+export default app;
