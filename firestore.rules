@@ -11,81 +11,81 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // 1. Users Profile Collection (Includes savedProductIds, cart, notifications, and loyaltyPoints)
+    // 1. Users Profile Collection
     match /users/{userId} {
-      // Allows the unauthenticated server (server.ts) or local syncing, 
-      // but strictly isolates authenticated client profiles to their respective owners.
-      allow read, write: if !isSignedIn() || isOwner(userId);
+      // Only the authenticated user can access their own profile.
+      // Admin SDK bypasses these rules automatically.
+      allow read, write: if isOwner(userId);
     }
     
     // 2. Catalog Collections (Products, Categories, Brands, Reviews)
     match /products/{productId} {
       allow read: if true;
-      allow write: if !isSignedIn(); // Allows admin server writes
+      allow write: if false;
       
       match /reviews/{reviewId} {
         allow read: if true;
-        allow write: if !isSignedIn() || (isSignedIn() && request.auth.uid == request.resource.data.userId);
+        allow write: if false;
       }
     }
     
     match /categories/{categoryId} {
       allow read: if true;
-      allow write: if !isSignedIn();
+      allow write: if false;
     }
     
     match /brands/{brandId} {
       allow read: if true;
-      allow write: if !isSignedIn();
+      allow write: if false;
     }
     
     // 3. Orders Collection
     match /orders/{orderId} {
-      allow read: if !isSignedIn() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
-      allow write: if !isSignedIn() || (isSignedIn() && request.auth.uid == request.resource.data.userId);
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false; // Writes should be handled by the backend
     }
     
     // 4. Coupons & Config
     match /coupons/{couponId} {
       allow read: if true;
-      allow write: if !isSignedIn();
+      allow write: if false;
     }
     
     match /settings/{settingId} {
       allow read: if true;
-      allow write: if !isSignedIn();
+      allow write: if false;
     }
     
     match /offers/{offerId} {
       allow read: if true;
-      allow write: if !isSignedIn();
+      allow write: if false;
     }
     
     match /social_links/{linkId} {
       allow read: if true;
-      allow write: if !isSignedIn();
+      allow write: if false;
     }
     
     // 5. Customer support and restocks
     match /restocks/{restockId} {
-      allow read: if !isSignedIn() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || resource.data.userEmail == request.auth.token.email));
-      allow write: if !isSignedIn() || (isSignedIn() && request.auth.uid == request.resource.data.userId);
+      allow read: if false;
+      allow write: if false; // Handled by backend
     }
     
     match /support/{ticketId} {
-      allow read: if !isSignedIn() || (isSignedIn() && (resource == null || resource.data.email == request.auth.token.email));
-      allow write: if !isSignedIn() || (isSignedIn() && request.auth.token.email == request.resource.data.email);
+      allow read: if false;
+      allow write: if false; // Handled by backend
     }
     
     match /complaints/{complaintId} {
-      allow read: if true;
-      allow write: if true;
+      allow read: if false;
+      allow write: if false; // Handled by backend
     }
 
     // 6. Triggered Mail/Order Receipts
     match /mail/{mailId} {
-      allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid);
-      allow create: if isSignedIn();
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if false; // Handled by backend
     }
 
     // Catch-all default deny

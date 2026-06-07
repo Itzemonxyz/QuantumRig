@@ -231,9 +231,17 @@ async function syncDatabase() {
     console.warn("Firestore Sync Error (rules may not open yet):", error);
   }
 }
-syncDatabase();
+
+const initialSyncPromise = syncDatabase();
 
 // ================= API ROUTES =================
+
+app.use(async (req, res, next) => {
+  if (initialSyncPromise) {
+    await initialSyncPromise;
+  }
+  next();
+});
 
 // Users & Auth
 app.post("/api/users/me/saved-products", async (req, res) => {
@@ -965,14 +973,29 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  if (!process.env.NETLIFY && !process.env.NETLIFY_LOCAL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
 }
 
 startServer();
 
 // For Netlify Functions
 import serverless from 'serverless-http';
-export const handler = serverless(app);
+
+export const handler = async (event: any, context: any) => {
+  // Netlify sometimes sets the path to /.netlify/functions/server/...
+  // We want to make sure Express receives the correct /api/... path
+  if (event.path && event.path.includes('/api/')) {
+    event.path = '/api/' + event.path.split('/api/')[1];
+  } else if (event.path && !event.path.startsWith('/api')) {
+    event.path = '/api' + event.path;
+  }
+  
+  const serverlessHandler = serverless(app);
+  return serverlessHandler(event, context);
+};
+
 export default app;
