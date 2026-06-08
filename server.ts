@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import cors from "cors";
@@ -29,19 +30,20 @@ app.use((req, res, next) => {
   next();
 });
 
-import * as admin from 'firebase-admin';
+import { initializeApp, cert } from 'firebase-admin/app';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
 // Initialize the Admin SDK
-let db: admin.firestore.Firestore;
+let db: Firestore;
 const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
 
 if (serviceAccountJson) {
   try {
     const serviceAccount = JSON.parse(serviceAccountJson);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
+    initializeApp({
+      credential: cert(serviceAccount)
     });
-    db = admin.firestore();
+    db = getFirestore();
     console.log("🔥 Connected to Firebase Admin (bypasses security rules)");
   } catch (error) {
     console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT environment variable:", error);
