@@ -5,6 +5,7 @@ import { Trash2, ShoppingBag, ArrowLeft, CheckCircle2, Ticket, Sparkles } from '
 import { Coupon } from '../types';
 import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 export default function Cart() {
   const { cart, removeFromCart, updateQuantity, clearCart, token, user, addToast, isLoading } = useStore();
@@ -15,6 +16,8 @@ export default function Cart() {
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [showEmptyConfirm, setShowEmptyConfirm] = useState(false);
+  
+  useScrollLock(showEmptyConfirm);
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;

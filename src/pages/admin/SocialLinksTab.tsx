@@ -3,12 +3,13 @@ import { api } from '../../lib/api';
 import { useStore } from '../../store';
 import { SocialLink } from '../../types';
 import { Plus, Edit2, Trash2, Loader2, Link as LinkIcon, CheckCircle, XCircle } from 'lucide-react';
+import SocialIcon from '../../components/SocialIcon';
 
 export default function SocialLinksTab() {
   const { token } = useStore();
   const [links, setLinks] = useState<SocialLink[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentLink, setCurrentLink] = useState<Partial<SocialLink>>({});
+  const [currentLink, setCurrentLink] = useState<Partial<SocialLink>>({ icon: 'default' });
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export default function SocialLinksTab() {
         setLinks([...links, added]);
       }
       setIsEditing(false);
-      setCurrentLink({});
+      setCurrentLink({ icon: 'default' });
     } catch (err) {
       console.error(err);
       alert('Failed to save social link');
@@ -60,12 +61,21 @@ export default function SocialLinksTab() {
     }
   };
 
+  const PREDEFINED_ICONS = [
+    { value: 'default', label: 'Default (Link Icon)' },
+    { value: 'facebook', label: 'Facebook' },
+    { value: 'instagram', label: 'Instagram' },
+    { value: 'messenger', label: 'Messenger' },
+    { value: 'whatsapp', label: 'WhatsApp' },
+    { value: 'custom', label: 'Custom (Image URL)' }
+  ];
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-slate-800">Social Links</h2>
         <button 
-          onClick={() => { setIsEditing(true); setCurrentLink({}); }} 
+          onClick={() => { setIsEditing(true); setCurrentLink({ icon: 'default' }); }} 
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium flex items-center shadow hover:bg-indigo-500 transition-colors"
         >
           <Plus className="w-5 h-5 mr-1" /> Add Link
@@ -99,6 +109,33 @@ export default function SocialLinksTab() {
                 placeholder="https://"
               />
             </div>
+            
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium mb-1 text-slate-700">Icon / Logo</label>
+              <select
+                value={currentLink.icon && currentLink.icon.startsWith('http') ? 'custom' : (currentLink.icon || 'default')}
+                onChange={e => setCurrentLink({...currentLink, icon: e.target.value === 'custom' ? '' : e.target.value})}
+                className="w-full border border-slate-300 rounded px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              >
+                {PREDEFINED_ICONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            
+            {(currentLink.icon === '' || (currentLink.icon && currentLink.icon.startsWith('http'))) && (
+              <div className="md:col-span-1 border-l-2 border-indigo-200 pl-4 py-1">
+                <label className="block text-sm font-bold text-slate-700 mb-1">Custom Image URL</label>
+                <input 
+                  required 
+                  type="url" 
+                  value={currentLink.icon || ''} 
+                  onChange={e => setCurrentLink({...currentLink, icon: e.target.value})} 
+                  className="w-full border border-slate-300 rounded px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500" 
+                  placeholder="https://example.com/logo.png"
+                />
+              </div>
+            )}
 
             <div className="md:col-span-2 flex justify-end space-x-3 mt-4">
               <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium">Cancel</button>
@@ -119,7 +156,7 @@ export default function SocialLinksTab() {
             <li key={link.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
               <div className="flex items-center space-x-4">
                 <div className="w-10 h-10 rounded bg-indigo-50 flex items-center justify-center text-indigo-500 flex-shrink-0">
-                  <LinkIcon className="w-5 h-5" />
+                  <SocialIcon link={link} />
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-900">{link.name}</h4>

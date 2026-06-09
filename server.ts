@@ -4,7 +4,7 @@ import path from "path";
 import cors from "cors";
 import { createServer as createViteServer } from "vite";
 import fs from "fs";
-import { User, Category, Brand, Product, Order, Settings, Coupon, Offer, RestockRequest, UserNotification, SocialLink } from "./src/types";
+import { User, Category, Brand, Product, Order, Settings, Coupon, Offer, RestockRequest, UserNotification, SocialLink, StockAdjustmentLog } from "./src/types";
 
 
 const app = express();
@@ -53,14 +53,16 @@ if (serviceAccountJson) {
 }
 
 // IN-MEMORY DATABASE
+let stockLogs: StockAdjustmentLog[] = [];
 let stockNotifications: { id: string; productId: string; email: string; createdAt: string }[] = [];
 let supportTickets: { id: string; productId: string; email: string; question: string; status: 'Open' | 'Closed'; createdAt: string }[] = [];
 let complaints: { id: string; name: string; email: string; orderId?: string; category: string; description: string; createdAt: string }[] = [];
 let analyticsEvents: { id: string; event: string; productId: string; timestamp: string }[] = [];
 let restockRequests: RestockRequest[] = [];
+let adminNotifications: { id: string; message: string; type: string; read: boolean; createdAt: string }[] = [];
 let users: User[] = [
-  { id: "admin_1", name: "Administrator", email: "admin@quantumrig.tech", password: "admin", role: "admin", savedProductIds: [] },
-  { id: "admin_2", name: "Administrator", email: "admin@quantumrig.tech", password: "admin6207", role: "admin", savedProductIds: [] }
+  { id: "admin_1", name: "Administrator", email: "admin@quantumrig.tech", password: "admin", role: "admin", savedProductIds: [], createdAt: new Date(Date.now() - 86400000 * 30).toISOString(), lastVisited: new Date().toISOString() },
+  { id: "admin_2", name: "Administrator", email: "admin@quantumrig.tech", password: "admin6207", role: "admin", savedProductIds: [], createdAt: new Date(Date.now() - 86400000 * 15).toISOString(), lastVisited: new Date().toISOString() }
 ];
 
 let categories: Category[] = [
@@ -119,16 +121,27 @@ async function syncDatabase() {
     if (!pSnap.empty) {
       products = pSnap.docs.map((d: any) => d.data() as Product);
       
-      // Just load products
-      // No code rewriting
-      for (const p of products) {
-        if (!p.code) {
-          p.code = p.id;
+      // Ensure product code is a 5-digit number and has a valid order index
+      let dbUpdated = false;
+      for (const [index, p] of products.entries()) {
+        let changed = false;
+        if (p.order === undefined) {
+          p.order = index;
+          changed = true;
+        }
+        if (!p.code || p.code.startsWith('p') || p.code.length > 5) {
+          p.code = Math.floor(10000 + Math.random() * 90000).toString();
+          changed = true;
+        }
+        if (changed) {
           await db.collection("products").doc(p.id).set(JSON.parse(JSON.stringify(p))).catch(console.error);
+          dbUpdated = true;
         }
       }
+      products.sort((a, b) => (a.order ?? 99999) - (b.order ?? 99999));
     } else {
-      for (const p of products) {
+      for (const [index, p] of products.entries()) {
+        p.order = index;
         await db.collection("products").doc(p.id).set(JSON.parse(JSON.stringify(p)));
       }
     }
@@ -137,8 +150,10 @@ async function syncDatabase() {
     const cSnap = await db.collection("categories").get();
     if (!cSnap.empty) {
       categories = cSnap.docs.map((d: any) => d.data() as Category);
+      categories.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     } else {
-      for (const c of categories) {
+      for (const [index, c] of categories.entries()) {
+        c.order = index;
         await db.collection("categories").doc(c.id).set(JSON.parse(JSON.stringify(c)));
       }
     }
@@ -147,6 +162,25 @@ async function syncDatabase() {
     const bSnap = await db.collection("brands").get();
     if (!bSnap.empty) {
       brands = bSnap.docs.map((d: any) => d.data() as Brand);
+      
+      let maxId = 0;
+      brands.forEach(b => {
+        if (/^b\d+$/.test(b.id)) {
+          const num = parseInt(b.id.substring(1));
+          if (num > maxId && num < 1000000) maxId = num;
+        }
+      });
+      let nextId = maxId + 1;
+
+      for (const b of brands) {
+        if (b.id && b.id.length > 5) { // Assuming timestamp ids are long
+          const oldId = b.id;
+          b.id = `b${nextId}`;
+          nextId++;
+          await db.collection("brands").doc(b.id).set(JSON.parse(JSON.stringify(b))).catch(console.error);
+          await db.collection("brands").doc(oldId).delete().catch(console.error);
+        }
+      }
     } else {
       for (const b of brands) {
         await db.collection("brands").doc(b.id).set(JSON.parse(JSON.stringify(b)));
@@ -210,6 +244,17 @@ async function syncDatabase() {
     const stSnap = await db.collection("support").get();
     if (!stSnap.empty) {
       supportTickets = stSnap.docs.map((d: any) => d.data() as any);
+      
+      let dbUpdated = false;
+      for (const t of supportTickets) {
+        if (t.id && t.id.startsWith('st_')) {
+          const oldId = t.id;
+          t.id = t.id.replace('st_', '');
+          await db.collection("support").doc(t.id).set(JSON.parse(JSON.stringify(t))).catch(console.error);
+          await db.collection("support").doc(oldId).delete().catch(console.error);
+          dbUpdated = true;
+        }
+      }
     }
 
     // 11. Sync Social Links
@@ -226,6 +271,22 @@ async function syncDatabase() {
     const cmpSnap = await db.collection("complaints").get();
     if (!cmpSnap.empty) {
       complaints = cmpSnap.docs.map((d: any) => d.data() as any);
+      
+      for (const c of complaints) {
+        if (c.id && c.id.startsWith('cmp_')) {
+          const oldId = c.id;
+          c.id = c.id.replace('cmp_', '');
+          await db.collection("complaints").doc(c.id).set(JSON.parse(JSON.stringify(c))).catch(console.error);
+          await db.collection("complaints").doc(oldId).delete().catch(console.error);
+        }
+      }
+    }
+
+    // 13. Sync Stock Logs
+    const slgsSnap = await db.collection("stock_logs").get();
+    if (!slgsSnap.empty) {
+      stockLogs = slgsSnap.docs.map((d: any) => d.data() as StockAdjustmentLog);
+      stockLogs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
 
   } catch (error: any) {
@@ -290,10 +351,12 @@ app.post("/api/users/me/cart", async (req, res) => {
   res.json(userWithoutPassword);
 });
 
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
   const { email, password } = req.body;
   const user = users.find((u) => u.email === email && u.password === password);
   if (user) {
+    user.lastVisited = new Date().toISOString();
+    if (db) await db.collection("users").doc(user.id).set({ lastVisited: user.lastVisited }, { merge: true }).catch(console.error);
     const { password, ...userWithoutPassword } = user;
     res.json({ token: `dummy-token-${user.id}`, user: userWithoutPassword });
   } else {
@@ -306,7 +369,7 @@ app.post("/api/auth/register", async (req, res) => {
   if (users.find(u => u.email === email)) {
     return res.status(400).json({ error: "Email taken" });
   }
-  const newUser: User = { id: `u${Date.now()}`, name, email, password, phone, role: role || "user", savedProductIds: [] };
+  const newUser: User = { id: `u${Date.now()}`, name, email, password, phone, role: role || "user", savedProductIds: [], createdAt: new Date().toISOString(), lastVisited: new Date().toISOString() };
   if (db) await db.collection("users").doc(newUser.id).set(JSON.parse(JSON.stringify(newUser))).catch(console.error);
   users.push(newUser);
   const { password: _, ...userWithoutPassword } = newUser;
@@ -321,8 +384,10 @@ app.post("/api/auth/google", async (req, res) => {
     if (avatar) user.avatar = avatar;
     if (name) user.name = name;
     if (role) user.role = role;
+    user.lastVisited = new Date().toISOString();
+    if (db) await db.collection("users").doc(user.id).set({ lastVisited: user.lastVisited }, { merge: true }).catch(console.error);
   } else {
-    user = { id: `u${Date.now()}`, name, email, phone, avatar, role: role || "user", savedProductIds: [] };
+    user = { id: `u${Date.now()}`, name, email, phone, avatar, role: role || "user", savedProductIds: [], createdAt: new Date().toISOString(), lastVisited: new Date().toISOString() };
     if (db) await db.collection("users").doc(user.id).set(JSON.parse(JSON.stringify(user))).catch(console.error);
     users.push(user);
   }
@@ -348,7 +413,10 @@ app.get("/api/users/me", (req, res) => {
      const userOrders = orders.filter((o) => o.userId === user.id && o.status !== 'Cancelled');
      const totalSpent = userOrders.reduce((acc, order) => acc + order.totalAmount, 0);
      const loyaltyPoints = Math.floor(totalSpent / 100);
-     res.json({ ...userWithoutPassword, loyaltyPoints });
+     
+     const userTickets = supportTickets.filter(t => t.email === user.email);
+     
+     res.json({ ...userWithoutPassword, loyaltyPoints, tickets: userTickets });
   } else {
     res.status(401).json({ error: "Unauthorized" });
   }
@@ -438,6 +506,47 @@ app.delete("/api/restock-requests/:id", async (req, res) => {
   res.sendStatus(204);
 });
 
+app.put("/api/admin/restock-requests/:id/accept", async (req, res) => {
+  const reqId = req.params.id;
+  const idx = restockRequests.findIndex(r => r.id === reqId);
+  if (idx === -1) return res.status(404).json({ error: "Not found" });
+  
+  restockRequests[idx] = { ...restockRequests[idx], status: 'accepted' };
+  const updatedReq = restockRequests[idx];
+  
+  if (db) {
+    await db.collection("restocks").doc(reqId).update({ status: 'accepted' }).catch(console.error);
+  }
+  
+  // Admin Notification
+  adminNotifications.push({
+    id: `notif_${Date.now()}_${Math.random()}`,
+    message: `Restock request for ${updatedReq.productTitle} was successfully accepted.`,
+    type: 'restock_accepted',
+    read: false,
+    createdAt: new Date().toISOString()
+  });
+
+  // Notify user
+  const uIdx = users.findIndex(u => u.id === updatedReq.userId);
+  if (uIdx > -1) {
+    const notifUser = users[uIdx];
+    notifUser.notifications = notifUser.notifications || [];
+    notifUser.notifications.push({
+      id: `notif_${Date.now()}_${Math.random()}`,
+      message: `Your restock request for ${updatedReq.productTitle} has been accepted by the admin. You will be notified when it is available in stock!`,
+      link: `/products/${updatedReq.productId}`,
+      read: false,
+      createdAt: new Date().toISOString()
+    });
+    if (db) {
+      await db.collection("users").doc(notifUser.id).set({ notifications: notifUser.notifications }, { merge: true }).catch(console.error);
+    }
+  }
+  
+  res.json(updatedReq);
+});
+
 app.post("/api/users/me/price-alerts", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
   const user = users.find((u) => u.id === token);
@@ -469,6 +578,67 @@ app.put("/api/users/me/notifications/:id/read", async (req, res) => {
   res.json({ success: true });
 });
 
+app.post("/api/users/me/request-deletion", async (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+  const user = users.find((u) => u.id === token);
+  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+  
+  user.deletionRequested = true;
+  if (db) await db.collection("users").doc(user.id).set({ deletionRequested: true }, { merge: true }).catch(console.error);
+  
+  // Notify admin
+  adminNotifications.push({
+    id: `notif_${Date.now()}_${Math.random()}`,
+    message: `User ${user.name} (${user.email}) has requested account deletion.`,
+    type: 'deletion_request',
+    read: false,
+    createdAt: new Date().toISOString()
+  });
+  
+  res.json({ success: true });
+});
+
+app.post("/api/admin/users/:id/approve-deletion", async (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+  const admin = users.find((u) => u.id === token && u.role === 'admin');
+  if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+  
+  const userId = req.params.id;
+  users = users.filter(u => u.id !== userId);
+  
+  if (db) await db.collection("users").doc(userId).delete().catch(console.error);
+  
+  res.json({ success: true });
+});
+
+app.post("/api/admin/users/:id/deny-deletion", async (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+  const admin = users.find((u) => u.id === token && u.role === 'admin');
+  if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+  
+  const userId = req.params.id;
+  const userToDeny = users.find(u => u.id === userId);
+  if (userToDeny) {
+    userToDeny.deletionRequested = false;
+    userToDeny.notifications = userToDeny.notifications || [];
+    userToDeny.notifications.push({
+      id: `notif_${Date.now()}_${Math.random()}`,
+      message: `Your account deletion request was denied by the administrator.`,
+      read: false,
+      createdAt: new Date().toISOString()
+    });
+    
+    if (db) {
+      await db.collection("users").doc(userId).set({ 
+        deletionRequested: false, 
+        notifications: userToDeny.notifications 
+      }, { merge: true }).catch(console.error);
+    }
+  }
+  
+  res.json({ success: true });
+});
+
 app.post("/api/notify-stock", (req, res) => {
   const { productId, email } = req.body;
   if (!productId || !email) return res.status(400).json({ error: 'Missing fields' });
@@ -487,7 +657,7 @@ app.get("/api/support-tickets", (req, res) => res.json(supportTickets));
 app.post("/api/support-tickets", async (req, res) => {
   const { productId, email, question } = req.body;
   if (!productId || !email || !question) return res.status(400).json({ error: 'Missing fields' });
-  const ticket = { id: `st_${Date.now()}`, productId, email, question, status: 'Open' as const, createdAt: new Date().toISOString() };
+  const ticket = { id: Date.now().toString(), productId, email, question, status: 'Open' as const, createdAt: new Date().toISOString() };
   if (db) await db.collection("support").doc(ticket.id).set(JSON.parse(JSON.stringify(ticket))).catch(console.error);
   supportTickets.push(ticket);
   res.json(ticket);
@@ -517,7 +687,7 @@ app.post("/api/complaints", async (req, res) => {
   const { name, email, orderId, category, description } = req.body;
   if (!name || !email || !category || !description) return res.status(400).json({ error: 'Missing fields' });
   const complaint = {
-    id: `cmp_${Date.now()}`,
+    id: Date.now().toString(),
     name,
     email,
     orderId: orderId || '',
@@ -556,10 +726,35 @@ app.delete("/api/categories/:id", async (req, res) => {
   res.sendStatus(204);
 });
 
+app.post("/api/categories/reorder", async (req, res) => {
+  const { reorderedCategories } = req.body;
+  if (Array.isArray(reorderedCategories)) {
+    reorderedCategories.forEach((rc, i) => {
+      const idx = categories.findIndex(c => c.id === rc.id);
+      if (idx > -1) {
+        categories[idx].order = i;
+        if (db) db.collection("categories").doc(categories[idx].id).update({ order: i }).catch(console.error);
+      }
+    });
+    categories.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    res.json(categories);
+  } else {
+    res.status(400).json({ error: "Invalid data" });
+  }
+});
+
 // Brands
 app.get("/api/brands", (req, res) => res.json(brands));
 app.post("/api/brands", async (req, res) => {
-  const b: Brand = { id: `b${Date.now()}`, ...req.body };
+  let maxId = 0;
+  brands.forEach(b => {
+    if (/^b\d+$/.test(b.id)) {
+      const num = parseInt(b.id.substring(1));
+      if (num > maxId) maxId = num;
+    }
+  });
+  const nextId = maxId + 1;
+  const b: Brand = { id: `b${nextId}`, ...req.body };
   if (db) await db.collection("brands").doc(b.id).set(JSON.parse(JSON.stringify(b))).catch(console.error);
   brands.push(b);
   res.json(b);
@@ -607,6 +802,23 @@ app.get("/api/admin/products/search", (req, res) => {
 
 app.get("/api/products", (req, res) => res.json(products));
 
+app.post("/api/products/reorder", async (req, res) => {
+  const { reorderedProducts } = req.body;
+  if (Array.isArray(reorderedProducts)) {
+    reorderedProducts.forEach((rp, i) => {
+      const idx = products.findIndex(p => p.id === rp.id);
+      if (idx > -1) {
+        products[idx].order = i;
+        if (db) db.collection("products").doc(products[idx].id).update({ order: i }).catch(console.error);
+      }
+    });
+    products.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    res.json(products);
+  } else {
+    res.status(400).json({ error: "Invalid data" });
+  }
+});
+
 app.post("/api/products", async (req, res) => {
   let code = req.body.code;
   if (!code) {
@@ -620,7 +832,7 @@ app.post("/api/products", async (req, res) => {
       attempts++;
     }
   }
-  const p: Product = { ...req.body, id: code, code };
+  const p: Product = { ...req.body, id: code, code, order: req.body.order !== undefined ? req.body.order : products.length };
   const safeP = JSON.parse(JSON.stringify(p));
   if (db) await db.collection("products").doc(p.id).set(safeP).catch(console.error);
   products.push(p);
@@ -652,20 +864,56 @@ app.put("/api/products/:id", async (req, res) => {
       }
       await db.collection("products").doc(newProduct.id).set(safeProduct).catch(console.error);
     }
+
+    const oldInventory = oldProduct.inventoryCount || 0;
+    const newInventory = newProduct.inventoryCount || 0;
+    if (oldInventory !== newInventory) {
+      const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+      const user = users.find((u) => u.id === token);
+      const userEmail = user?.email || "admin@quantumrig.tech";
+      const userName = user?.name || "Administrator";
+      const amountChanged = newInventory - oldInventory;
+      
+      const adjustmentLog: StockAdjustmentLog = {
+        id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        productId: newProduct.id,
+        productTitle: newProduct.title,
+        productSlug: newProduct.slug,
+        userEmail,
+        userName,
+        amountChanged,
+        newQuantity: newInventory,
+        createdAt: new Date().toISOString()
+      };
+      
+      stockLogs.unshift(adjustmentLog);
+      if (db) {
+        await db.collection("stock_logs").doc(adjustmentLog.id).set(JSON.parse(JSON.stringify(adjustmentLog))).catch(console.error);
+      }
+    }
     
     if (
       (oldProduct.stockStatus === 'Out of Stock' || oldProduct.inventoryCount === 0) &&
       (newProduct.stockStatus !== 'Out of Stock' && newProduct.inventoryCount !== undefined && newProduct.inventoryCount > 0)
     ) {
+      // Admin Notification
+      adminNotifications.push({
+        id: `admin_notif_${Date.now()}_${Math.random()}`,
+        message: `Inventory updated for ${newProduct.title} (Stock: ${newProduct.inventoryCount}).`,
+        type: 'inventory_updated',
+        read: false,
+        createdAt: new Date().toISOString()
+      });
+
       for (let i = 0; i < restockRequests.length; i++) {
         let r = restockRequests[i];
-        if (r.productId === newProduct.id && r.status === 'pending') {
+        if (r.productId === newProduct.id && (r.status === 'pending' || r.status === 'accepted')) {
           const uIdx = users.findIndex(u => u.id === r.userId);
           if (uIdx > -1) {
             users[uIdx].notifications = users[uIdx].notifications || [];
             users[uIdx].notifications.push({
               id: `notif_${Date.now()}_${Math.random()}`,
-              message: `${newProduct.title} is back in stock!`,
+              message: `${newProduct.title} is now back in stock! Get it before it's gone!`,
               link: `/products/${newProduct.id}`,
               read: false,
               createdAt: new Date().toISOString()
@@ -715,6 +963,22 @@ app.post("/api/products/:id/reviews", async (req, res) => {
   if (db) await db.collection("products").doc(products[idx].id).set(JSON.parse(JSON.stringify(products[idx]))).catch(console.error);
 
   res.json(review);
+});
+
+app.delete("/api/products/:id/reviews/:reviewId", async (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+  const user = users.find((u) => u.id === token);
+  if (!user || user.role !== 'admin') return res.status(401).json({ error: "Unauthorized" });
+
+  const idx = products.findIndex(p => p.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Not found" });
+
+  if (products[idx].reviews) {
+    products[idx].reviews = products[idx].reviews.filter(r => r.id !== req.params.reviewId);
+    if (db) await db.collection("products").doc(products[idx].id).set(JSON.parse(JSON.stringify(products[idx]))).catch(console.error);
+  }
+
+  res.sendStatus(204);
 });
 
 // Offers
@@ -897,6 +1161,64 @@ app.get("/api/public/orders/:id", (req, res) => {
 
 
 // Analytics
+app.get("/api/admin/stock-logs", (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+  const admin = users.find((u) => u.id === token && u.role === 'admin');
+  if (!admin) return res.status(401).json({ error: "Unauthorized" });
+  res.json(stockLogs);
+});
+
+app.get("/api/admin/notifications", (req, res) => {
+  res.json(adminNotifications);
+});
+
+app.put("/api/admin/notifications/:id/read", (req, res) => {
+  const notif = adminNotifications.find(n => n.id === req.params.id);
+  if (notif) {
+    notif.read = true;
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ error: "Not found" });
+  }
+});
+
+app.get("/api/admin/users", (req, res) => {
+  res.json(users.map(u => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    phone: u.phone,
+    role: u.role,
+    deletionRequested: u.deletionRequested
+  })));
+});
+
+app.get("/api/admin/users/:id", (req, res) => {
+  const user = users.find(u => u.id === req.params.id);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  
+  const userOrders = orders.filter(o => o.userId === user.id);
+  const userComplaints = complaints.filter(c => c.email === user.email);
+  const userTickets = supportTickets.filter(t => t.email === user.email);
+  
+  res.json({
+    ...user,
+    orders: userOrders,
+    complaints: userComplaints,
+    tickets: userTickets
+  });
+});
+
+app.post("/api/admin/users/bulk-delete", (req, res) => {
+    const { userIds } = req.body;
+    if (Array.isArray(userIds)) {
+        users = users.filter(u => !userIds.includes(u.id));
+        res.json({ success: true });
+    } else {
+        res.status(400).json({ error: "Invalid request" });
+    }
+});
+
 app.get("/api/admin/analytics", (req, res) => {
   const validOrders = orders.filter(o => o.status !== 'Cancelled');
   const totalRevenue = validOrders.reduce((sum, o) => sum + o.totalAmount, 0);

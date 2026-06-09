@@ -12,9 +12,12 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 export default function CompareWidget() {
   const { compareIds, products, showCompareModal, setShowCompareModal, clearCompare, toggleCompare } = useStore();
+  
+  useScrollLock(showCompareModal);
 
   const comparedProducts = useMemo(() => {
     return compareIds.map(id => products.find(p => p.id === id)!).filter(Boolean);

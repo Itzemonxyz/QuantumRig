@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { Search, Package, Navigation, AlertTriangle, Check } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -33,7 +34,8 @@ function OrderItemImage({ item, products }: { item: any; products: any[] }) {
 
 export default function TrackOrder() {
   const { products } = useStore();
-  const [orderId, setOrderId] = useState('');
+  const { id } = useParams<{ id: string }>();
+  const [orderId, setOrderId] = useState(id || '');
   const [loading, setLoading] = useState(false);
   const [orderData, setOrderData] = useState<any>(null);
   const [error, setError] = useState('');
@@ -54,16 +56,15 @@ export default function TrackOrder() {
     return 0; // fallback
   };
 
-  const handleTrack = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!orderId.trim()) return;
+  const fetchOrder = async (searchId: string) => {
+    if (!searchId.trim()) return;
     
     setLoading(true);
     setError('');
     setOrderData(null);
     
     try {
-      const data = await api.get(`/public/orders/${orderId.trim()}`);
+      const data = await api.get(`/public/orders/${searchId.trim()}`);
       setOrderData(data);
     } catch (err: any) {
       if (err.statusCode === 404) {
@@ -74,6 +75,17 @@ export default function TrackOrder() {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (id) {
+      fetchOrder(id);
+    }
+  }, [id]);
+
+  const handleTrack = async (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchOrder(orderId);
   };
 
   return (
@@ -136,11 +148,11 @@ export default function TrackOrder() {
                 {orderData.status === 'Cancelled' ? (
                   <span className="text-xs font-bold bg-rose-100 text-rose-700 px-3 py-1 rounded-full uppercase tracking-wider">Cancelled</span>
                 ) : orderData.status === 'Delivered' ? (
-                  <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
+                  <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-sm">
                     <Check className="w-3.5 h-3.5" /> Delivered
                   </span>
                 ) : (
-                  <span className="text-xs font-bold bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full uppercase tracking-wider animate-pulse">In Progress</span>
+                  <span className="text-xs font-bold bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full uppercase tracking-wider animate-pulse shadow-sm">In Progress</span>
                 )}
               </div>
               
@@ -153,12 +165,14 @@ export default function TrackOrder() {
                   </div>
                 </div>
               ) : (
-                <div className="relative pt-2">
+                <div className="relative mt-2">
                   {/* Outer connection Track path line */}
-                  <div className="absolute top-[22px] left-8 right-8 h-1 bg-slate-200 -translate-y-1/2 rounded-full z-0">
-                    <div 
-                      className="h-full bg-gradient-to-r from-indigo-600 to-cyan-400 rounded-full transition-all duration-700"
-                      style={{ width: `${(getActiveStep(orderData.status) / (steps.length - 1)) * 100}%` }}
+                  <div className="absolute top-[22px] left-[12.5%] right-[12.5%] h-1.5 bg-slate-200 -translate-y-1/2 rounded-full z-0 overflow-hidden shadow-inner">
+                    <motion.div 
+                      className="h-full bg-gradient-to-r from-indigo-500 via-indigo-400 to-cyan-400 rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(getActiveStep(orderData.status) / (steps.length - 1)) * 100}%` }}
+                      transition={{ duration: 1, ease: "easeInOut" }}
                     />
                   </div>
 
@@ -166,41 +180,47 @@ export default function TrackOrder() {
                   <div className="relative flex justify-between z-10">
                     {steps.map((step, index) => {
                       const activeIndex = getActiveStep(orderData.status);
-                      const isCompleted = index < activeIndex;
-                      const isActive = index === activeIndex;
-                      const isFuture = index > activeIndex;
+                      const isCompleted = index <= activeIndex;
+                      const isCurrent = index === activeIndex;
 
                       return (
-                        <div key={index} className="flex flex-col items-center flex-1 text-center">
+                        <div key={index} className="flex flex-col items-center flex-1 text-center group">
                           {/* Round Step Cap Grid */}
-                          <div 
-                            className={`w-11 h-11 rounded-full flex items-center justify-center border-4 transition-all duration-300 relative ${
+                          <motion.div 
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: index * 0.15 + 0.2, type: "spring", stiffness: 200 }}
+                            className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-500 relative ${
                               isCompleted 
-                                ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-600/25' 
-                                : isActive 
-                                  ? 'bg-white border-indigo-600 text-indigo-600 font-extrabold shadow-md shadow-indigo-500/10' 
-                                  : 'bg-white border-slate-200 text-slate-400'
+                                ? 'bg-gradient-to-br from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-600/30 border-2 border-white' 
+                                : 'bg-white border-4 border-slate-100 text-slate-300'
                             }`}
                           >
                             {isCompleted ? (
-                              <Check className="w-5 h-5 text-white" strokeWidth={3} />
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: index * 0.15 + 0.5, type: "spring" }}
+                              >
+                                <Check className="w-5 h-5 text-white" strokeWidth={3} />
+                              </motion.div>
                             ) : (
                               <span className="text-xs font-mono font-bold">{index + 1}</span>
                             )}
                             {/* Glowing ping marker ring for real-time item status focus */}
-                            {isActive && (
-                              <span className="absolute -inset-1 rounded-full animate-ping border-2 border-indigo-400/40 opacity-75 pointer-events-none" />
+                            {isCurrent && orderData.status !== 'Delivered' && (
+                              <span className="absolute -inset-2 rounded-full animate-ping border-2 border-indigo-400/50 opacity-75 pointer-events-none" />
                             )}
-                          </div>
+                          </motion.div>
                           
                           {/* Label descriptions */}
-                          <div className="mt-3 px-1">
-                            <h4 className={`text-xs md:text-sm font-extrabold tracking-tight transition-colors duration-300 ${
-                              isActive ? 'text-indigo-600' : isCompleted ? 'text-slate-800 font-bold' : 'text-slate-400'
+                          <div className="mt-4 px-1">
+                            <h4 className={`text-sm tracking-tight transition-colors duration-300 ${
+                              isCurrent ? 'text-indigo-600 font-extrabold' : isCompleted ? 'text-slate-800 font-bold' : 'text-slate-400 font-bold'
                             }`}>
                               {step.label}
                             </h4>
-                            <p className="text-xs text-slate-500 mt-1 max-w-[90px] md:max-w-none leading-tight font-medium">
+                            <p className={`text-xs mt-1 max-w-[90px] md:max-w-none leading-tight ${isCurrent ? 'text-indigo-500 font-medium' : 'text-slate-500 font-medium'}`}>
                               {step.desc}
                             </p>
                           </div>
@@ -212,25 +232,57 @@ export default function TrackOrder() {
               )}
             </div>
 
-            <div className="mb-10">
-              <h3 className="font-bold text-slate-900 mb-6 flex items-center">
-                <Navigation className="w-5 h-5 mr-2 text-slate-400" /> Tracking History
+            <div className="mb-10 bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">
+              <h3 className="font-bold text-slate-900 text-lg mb-8 flex items-center tracking-tight">
+                <Navigation className="w-5 h-5 mr-3 text-indigo-500" /> Tracking History
               </h3>
-              <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-                {orderData.trackingHistory?.map((event: any, i: number) => (
-                  <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-slate-200 text-slate-500 group-[.is-active]:bg-indigo-600 group-[.is-active]:text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 relative z-10 transition-colors">
-                      <div className="w-2.5 h-2.5 bg-current rounded-full" />
-                    </div>
-                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-bold text-slate-900">{event.status}</h4>
-                        <time className="text-xs text-slate-500 font-mono">{new Date(event.date).toLocaleDateString()}</time>
-                      </div>
-                      <p className="text-slate-600 text-sm leading-snug">{event.description}</p>
-                    </div>
-                  </div>
-                ))}
+              <div className="relative pl-1 sm:pl-2">
+                {/* Continuous Vertical Line */}
+                <div className="absolute left-[19px] sm:left-[23px] top-6 bottom-6 w-[2px] bg-slate-100 rounded-full" />
+                
+                <div className="space-y-8">
+                  {orderData.trackingHistory?.map((event: any, i: number) => {
+                    const isLatest = i === orderData.trackingHistory.length - 1;
+                    return (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.2 + 0.3, type: "spring", stiffness: 100 }}
+                        key={i} 
+                        className="relative flex items-start group"
+                      >
+                        {/* Dot */}
+                        <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-4 shrink-0 mr-4 sm:mr-6 transition-all duration-300 shadow-sm ${
+                           isLatest ? 'bg-indigo-600 border-white text-white shadow-indigo-600/30 ring-2 ring-indigo-200' : 'bg-slate-100 border-white text-slate-400 ring-2 ring-slate-100'
+                        }`}>
+                          {isLatest ? (
+                             <motion.div 
+                               initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: i * 0.2 + 0.6, type: "spring" }}
+                               className="w-3 h-3 rounded-full bg-white shadow-sm" 
+                             />
+                          ) : (
+                             <div className="w-2.5 h-2.5 rounded-full bg-slate-300" />
+                          )}
+                        </div>
+                        
+                        {/* Content */}
+                        <div className={`flex-1 mt-0 p-5 rounded-2xl border transition-all duration-300 ${isLatest ? 'bg-indigo-50/40 border-indigo-100/60 shadow-lg shadow-indigo-100/20' : 'bg-white border-slate-100 shadow-sm hover:border-slate-200'}`}>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                            <h4 className={`text-base font-bold tracking-tight ${isLatest ? 'text-indigo-900' : 'text-slate-800'}`}>
+                              {event.status}
+                            </h4>
+                            <div className="flex items-center text-xs font-mono font-medium text-slate-500 bg-slate-100/60 px-2.5 py-1 rounded-md">
+                              {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • {new Date(event.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                          <p className={`text-sm leading-relaxed max-w-2xl ${isLatest ? 'text-indigo-700/80 font-medium' : 'text-slate-500'}`}>
+                            {event.description}
+                          </p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 

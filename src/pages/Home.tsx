@@ -4,6 +4,7 @@ import { useStore } from '../store';
 import { motion, AnimatePresence } from 'motion/react';
 import ProductSkeleton from '../components/ProductSkeleton';
 import ProductCard from '../components/ProductCard';
+import { useScrollLock } from '../hooks/useScrollLock';
 import { api } from '../lib/api';
 import { 
   Cpu, 
@@ -49,6 +50,9 @@ export default function Home() {
 
   // Complaints states
   const [isComplaintOpen, setIsComplaintOpen] = useState(false);
+  
+  useScrollLock(isComplaintOpen);
+
   const [complaintName, setComplaintName] = useState('');
   const [complaintEmail, setComplaintEmail] = useState('');
   const [complaintOrderId, setComplaintOrderId] = useState('');
@@ -309,18 +313,18 @@ export default function Home() {
           <Link 
             to="/track-order" 
             id="portal-track-order"
-            className="group relative overflow-hidden flex flex-col justify-between bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-slate-500/10 hover:-translate-y-1 transition-all duration-300 min-h-[180px]"
+            className="group relative overflow-hidden flex flex-col justify-between bg-white hover:bg-emerald-50/50 border border-slate-200 hover:border-emerald-300 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1 transition-all duration-300 min-h-[180px]"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-slate-200/50 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-100/50 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
             
             <div className="flex flex-col gap-4 z-10">
-              <div className="w-12 h-12 rounded-xl bg-slate-50 shadow-sm border border-slate-100 group-hover:bg-slate-200 group-hover:border-slate-300 flex items-center justify-center text-slate-700 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 shadow-sm border border-slate-100 group-hover:bg-emerald-100 group-hover:border-emerald-200 flex items-center justify-center text-emerald-600 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <Box className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 transition-colors">Track Order</h3>
+              <h3 className="text-lg font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">Track Order</h3>
             </div>
             
-            <div className="mt-6 text-xs font-bold text-slate-700 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 z-10 opacity-70 group-hover:opacity-100">
+            <div className="mt-6 text-xs font-bold text-emerald-600 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 z-10 opacity-70 group-hover:opacity-100">
               Track Progress <ArrowRight className="w-4 h-4" />
             </div>
           </Link>

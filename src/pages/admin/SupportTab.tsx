@@ -3,6 +3,7 @@ import { api } from '../../lib/api';
 import { useStore } from '../../store';
 import { SupportTicket } from '../../types';
 import { Trash2, Loader2, ClipboardList, LifeBuoy } from 'lucide-react';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface Complaint {
   id: string;
@@ -26,15 +27,21 @@ export default function SupportTab() {
   const [loadingComplaints, setLoadingComplaints] = useState(true);
   const [deletingComplaintId, setDeletingComplaintId] = useState<string | null>(null);
 
+  const [replyTicketId, setReplyTicketId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [submittingReply, setSubmittingReply] = useState(false);
+  
+  useScrollLock(!!replyTicketId);
+
   useEffect(() => {
     loadTickets();
     loadComplaints();
     const intervalId = setInterval(() => {
-      loadTickets();
-      loadComplaints();
+      if (!replyTicketId) loadTickets();
+      if (!replyTicketId) loadComplaints();
     }, 5000);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [replyTicketId]);
 
   const loadTickets = async () => {
     try {
@@ -58,12 +65,28 @@ export default function SupportTab() {
     }
   };
 
-  const handleUpdateStatus = async (id: string, status: 'Open' | 'Closed') => {
+  const handleUpdateStatus = async (id: string, status: 'Open' | 'Closed' | 'Answered') => {
     try {
       await api.put(`/support-tickets/${id}`, { status }, token);
       loadTickets();
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleReplySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyText.trim() || !replyTicketId) return;
+    setSubmittingReply(true);
+    try {
+      await api.put(`/support-tickets/${replyTicketId}`, { status: 'Answered', answer: replyText }, token);
+      setReplyTicketId(null);
+      setReplyText('');
+      loadTickets();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmittingReply(false);
     }
   };
 
@@ -92,7 +115,7 @@ export default function SupportTab() {
   };
 
   return (
-    <div>
+    <div className="p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Customer Issues & Logs</h2>
@@ -135,12 +158,12 @@ export default function SupportTab() {
               <table className="w-full text-sm text-left">
                 <thead className="bg-slate-50 text-slate-800 font-bold uppercase tracking-tight text-xs">
                   <tr>
-                    <th className="px-6 py-4">Ticket ID</th>
-                    <th className="px-6 py-4">Email</th>
-                    <th className="px-6 py-4">Question</th>
-                    <th className="px-6 py-4">Product ID</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
+                    <th className="px-6 py-4 whitespace-nowrap text-center">Ticket ID</th>
+                    <th className="px-6 py-4 whitespace-nowrap">Email</th>
+                    <th className="px-6 py-4 whitespace-nowrap">Question</th>
+                    <th className="px-6 py-4 whitespace-nowrap text-center">Product ID</th>
+                    <th className="px-6 py-4 whitespace-nowrap text-center">Status</th>
+                    <th className="px-6 py-4 whitespace-nowrap text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 text-slate-900">
@@ -152,25 +175,44 @@ export default function SupportTab() {
                     </tr>
                   ) : tickets.map((ticket) => (
                     <tr key={ticket.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-mono text-xs text-slate-500">{ticket.id}</td>
-                      <td className="px-6 py-4 font-medium">{ticket.email}</td>
+                      <td className="px-6 py-4 font-mono text-sm text-slate-600 whitespace-nowrap text-center">{ticket.id}</td>
+                      <td className="px-6 py-4 font-medium whitespace-nowrap">{ticket.email}</td>
                       <td className="px-6 py-4 max-w-xs"><div className="truncate" title={ticket.question}>{ticket.question}</div></td>
-                      <td className="px-6 py-4 font-mono text-xs text-slate-500">{ticket.productId}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 font-mono text-sm text-slate-600 whitespace-nowrap text-center">
+                        {ticket.productId && ticket.productId !== 'General Inquiry' ? (
+                          <a href={`/products/${ticket.productId}`} target="_blank" rel="noopener noreferrer" className="font-bold text-indigo-600 hover:text-indigo-800 underline">
+                            {ticket.productId}
+                          </a>
+                        ) : (
+                          'General Inquiry'
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
-                          ticket.status === 'Open' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                          ticket.status === 'Open' ? 'bg-indigo-100 text-indigo-700' :
+                          ticket.status === 'Answered' ? 'bg-emerald-100 text-emerald-700' :
+                           'bg-slate-100 text-slate-600'
                         }`}>
                           {ticket.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right space-x-3 text-sm flex items-center justify-end">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end space-x-3 text-sm text-right">
                         {ticket.status === 'Open' ? (
-                          <button 
-                            onClick={() => handleUpdateStatus(ticket.id, 'Closed')}
-                            className="font-bold text-slate-600 hover:text-slate-900 transition-colors"
-                          >
-                            Close
-                          </button>
+                          <>
+                            <button 
+                              onClick={() => setReplyTicketId(ticket.id)}
+                              className="font-bold text-emerald-600 hover:text-emerald-900 transition-colors"
+                            >
+                              Reply
+                            </button>
+                            <button 
+                              onClick={() => handleUpdateStatus(ticket.id, 'Closed')}
+                              className="font-bold text-slate-600 hover:text-slate-900 transition-colors"
+                            >
+                              Close
+                            </button>
+                          </>
                         ) : (
                           <button 
                             onClick={() => handleUpdateStatus(ticket.id, 'Open')}
@@ -182,6 +224,7 @@ export default function SupportTab() {
                         <button onClick={() => handleDelete(ticket.id)} disabled={deletingId === ticket.id} className="p-1.5 text-slate-400 hover:text-rose-500 transition-colors disabled:opacity-50">
                           {deletingId === ticket.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Trash2 className="w-4 h-4" />}
                         </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -199,13 +242,13 @@ export default function SupportTab() {
               <table className="w-full text-sm text-left">
                 <thead className="bg-slate-50 text-slate-800 font-bold uppercase tracking-tight text-xs">
                   <tr>
-                    <th className="px-6 py-4">ID</th>
-                    <th className="px-6 py-4">Customer</th>
-                    <th className="px-6 py-4">Order ID</th>
-                    <th className="px-6 py-4">Category</th>
-                    <th className="px-6 py-4">Description</th>
-                    <th className="px-6 py-4">Date</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
+                    <th className="px-6 py-4 whitespace-nowrap text-center">ID</th>
+                    <th className="px-6 py-4 whitespace-nowrap">Customer</th>
+                    <th className="px-6 py-4 whitespace-nowrap">Order ID</th>
+                    <th className="px-6 py-4 whitespace-nowrap">Category</th>
+                    <th className="px-6 py-4 whitespace-nowrap">Description</th>
+                    <th className="px-6 py-4 whitespace-nowrap">Date</th>
+                    <th className="px-6 py-4 whitespace-nowrap text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 text-slate-900">
@@ -217,7 +260,7 @@ export default function SupportTab() {
                     </tr>
                   ) : complaints.map((complaint) => (
                     <tr key={complaint.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-mono text-xs text-slate-500">{complaint.id.slice(0, 10)}</td>
+                      <td className="px-6 py-4 font-mono text-sm text-slate-600 whitespace-nowrap text-center">{complaint.id.startsWith('cmp_') ? complaint.id.replace('cmp_', '') : complaint.id}</td>
                       <td className="px-6 py-4">
                         <div className="font-bold text-slate-900">{complaint.name}</div>
                         <div className="text-xs text-slate-500 mt-0.5">{complaint.email}</div>
@@ -265,6 +308,44 @@ export default function SupportTab() {
             </div>
           </div>
         )
+      )}
+
+      {/* Reply Modal */}
+      {replyTicketId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div className="p-4 bg-slate-50 border-b border-slate-100 font-bold text-slate-800">
+              Reply to Ticket #{replyTicketId}
+            </div>
+            <form onSubmit={handleReplySubmit} className="p-6 flex flex-col gap-4">
+              <label className="text-sm font-bold text-slate-700">Your Answer</label>
+              <textarea
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                placeholder="Type your response here..."
+                required
+                rows={5}
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <div className="flex gap-3 justify-end mt-2">
+                <button
+                  type="button"
+                  onClick={() => setReplyTicketId(null)}
+                  className="px-4 py-2 font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingReply}
+                  className="px-4 py-2 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors text-sm disabled:opacity-50"
+                >
+                  {submittingReply ? 'Sending...' : 'Send Reply'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

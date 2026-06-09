@@ -6,6 +6,7 @@ import { ArrowLeft, CheckCircle2, Ticket, Info, Copy, Mail, ShieldAlert } from '
 import { Coupon } from '../types';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
+import TakaIcon from '../components/TakaIcon';
 
 export default function Checkout() {
   const { cart, removeFromCart, clearCart, token, user, addToast } = useStore();
@@ -348,9 +349,9 @@ export default function Checkout() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-slate-800 truncate text-xs">{item.product.title}</p>
-                        <p className="text-slate-500 text-xs font-medium">Qty: {item.quantity} × ৳{Number(item.product.discountPrice || item.product.price).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                        <p className="text-slate-500 text-xs font-medium flex items-center">Qty: {item.quantity} × <TakaIcon className="w-3.5 h-3.5 mx-[1px]"/> {Number(item.product.discountPrice || item.product.price).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                       </div>
-                      <span className="font-semibold text-slate-800 text-xs">৳{Number((item.product.discountPrice || item.product.price) * item.quantity).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                      <span className="font-semibold text-slate-800 text-xs flex items-center"><TakaIcon className="w-3.5 h-3.5 mr-[1px]"/> {Number((item.product.discountPrice || item.product.price) * item.quantity).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                   ))}
                 </div>
@@ -360,7 +361,7 @@ export default function Checkout() {
               <div className="space-y-3 border-t border-slate-100 pt-4 text-sm font-medium">
                 <div className="flex justify-between text-slate-600">
                   <span>Items subtotal</span>
-                  <span>৳{Number(subtotal || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                  <span className="flex items-center"><TakaIcon className="w-3.5 h-3.5 mr-[1px]"/> {Number(subtotal || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-emerald-600 font-bold">
@@ -372,16 +373,16 @@ export default function Checkout() {
                         </span>
                       )}
                     </span>
-                    <span>-৳{Number(discountAmount || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    <span className="flex items-center">-<TakaIcon className="w-3.5 h-3.5 mr-[1px]"/> {Number(discountAmount || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-slate-600">
+                <div className="flex justify-between text-slate-600 border-b border-slate-100 pb-3">
                   <span>Shipping delivery</span>
-                  <span>{shipping === 0 ? <span className="text-emerald-650 font-bold">FREE</span> : `৳${Number(shipping || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}</span>
+                  <span className="flex items-center">{shipping === 0 ? <span className="text-emerald-650 font-bold">FREE</span> : <><TakaIcon className="w-3.5 h-3.5 mr-[1px]"/>{Number(shipping || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</>}</span>
                 </div>
-                <div className="border-t border-slate-100 pt-3 flex justify-between font-bold text-lg text-slate-900">
+                <div className="pt-3 flex justify-between font-bold text-lg text-slate-900">
                   <span>Invoice Total</span>
-                  <span>৳{Number(total || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                  <span className="flex items-center"><TakaIcon className="w-[18px] h-[18px] mr-[1px]"/> {Number(total || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
               </div>
             </div>

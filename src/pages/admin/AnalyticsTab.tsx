@@ -8,6 +8,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, Legend, BarChart, Bar 
 } from 'recharts';
+import { Link } from 'react-router-dom';
 
 const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444']; // Pending, Accepted, Delivered, Shipped
 // Adjust mapping for pie chart
@@ -336,6 +337,7 @@ export default function AnalyticsTab() {
           icon={<Users className="w-8 h-8 text-indigo-600" />} 
           title="Total Users" 
           value={analytics.totalUsers.toLocaleString()} 
+          to="/admin/users"
         />
         <StatCard 
           icon={<Package className="w-8 h-8 text-indigo-600" />} 
@@ -531,12 +533,12 @@ export default function AnalyticsTab() {
   );
 }
 
-function StatCard({ icon, title, value }: { icon: React.ReactNode, title: string, value: string | number }) {
+function StatCard({ icon, title, value, to }: { icon: React.ReactNode, title: string, value: string | number, to?: string }) {
   // Determine if value is very long (like total revenue)
   const isLongValue = value.toString().length > 10;
   
-  return (
-    <div className="bg-white p-5 lg:p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4 h-full">
+  const content = (
+    <div className={`bg-white p-5 lg:p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4 h-full ${to ? 'hover:bg-slate-50 transition-colors cursor-pointer' : ''}`}>
       <div className="p-3 flex-shrink-0 bg-indigo-50 rounded-lg">
         {icon}
       </div>
@@ -546,4 +548,9 @@ function StatCard({ icon, title, value }: { icon: React.ReactNode, title: string
       </div>
     </div>
   );
+
+  if (to) {
+    return <Link to={to} className="block h-full">{content}</Link>;
+  }
+  return content;
 }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { Order } from '../types';
-import { Package, MapPin, ChevronDown, ChevronUp, CheckCircle2, Printer, Search, Loader, Clock, Calendar } from 'lucide-react';
+import { Package, Printer, Search, Loader, Clock, Calendar, ArrowRight } from 'lucide-react';
 
 interface PastOrdersListProps {
   token: string | null;
@@ -9,11 +10,11 @@ interface PastOrdersListProps {
 }
 
 export default function PastOrdersList({ token, initialOrders }: PastOrdersListProps) {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>(initialOrders || []);
   const [loading, setLoading] = useState(!initialOrders);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (initialOrders) {
@@ -42,16 +43,6 @@ export default function PastOrdersList({ token, initialOrders }: PastOrdersListP
 
     fetchOrders();
   }, [token, initialOrders]);
-
-  const toggleOrderExpand = (id: string) => {
-    const newExpanded = new Set(expandedOrders);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedOrders(newExpanded);
-  };
 
   const handlePrint = (order: Order) => {
     const printWindow = window.open('', '_blank');
@@ -241,7 +232,6 @@ export default function PastOrdersList({ token, initialOrders }: PastOrdersListP
       ) : (
         <div className="space-y-6">
           {filteredOrders.map(order => {
-            const isExpanded = expandedOrders.has(order.id);
             return (
               <div key={order.id} className="border border-slate-200 rounded-xl overflow-hidden transition-all duration-300 bg-white">
                 <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -294,78 +284,16 @@ export default function PastOrdersList({ token, initialOrders }: PastOrdersListP
                           <span className="hidden sm:inline">Download PDF</span>
                         </button>
                         <button 
-                          onClick={() => toggleOrderExpand(order.id)}
-                          className="text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-1"
+                          onClick={() => navigate(`/track-order/${order.id}`)}
+                          className="text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-lg text-sm font-bold transition-colors flex items-center space-x-1"
                         >
-                          <span>{isExpanded ? 'Hide Details' : 'Track Package'}</span>
-                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          <span>Track Package</span>
+                          <ArrowRight className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Expanded Section */}
-                {isExpanded && (
-                  <div className="border-t border-slate-100 bg-white p-4 sm:p-6 animate-in slide-in-from-top-2 fade-in duration-200">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {/* Tracking Timeline */}
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center">
-                          <MapPin className="w-4 h-4 mr-1 text-slate-400" />
-                          Tracking Updates
-                        </h3>
-                        {order.trackingHistory && order.trackingHistory.length > 0 ? (
-                          <div className="space-y-6 relative before:absolute before:inset-0 before:ml-2 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-slate-200">
-                            {order.trackingHistory.map((step, idx) => (
-                              <div key={idx} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-white bg-indigo-500 text-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow z-10 translate-x-[3px]">
-                                  <CheckCircle2 className="w-3 h-3" />
-                                </div>
-                                <div className="w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] bg-slate-50 p-3 rounded border border-slate-100 shadow-sm ml-4 md:ml-0 translate-x-1">
-                                  <div className="flex items-center justify-between mb-1 gap-2">
-                                    <div className="font-bold text-slate-800 text-xs">{step.status}</div>
-                                    <div className="text-xs text-slate-400 font-medium shrink-0">
-                                      {new Date(step.date).toLocaleDateString()} {new Date(step.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                    </div>
-                                  </div>
-                                  <div className="text-xs text-slate-500">{step.description}</div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-slate-500 italic bg-slate-50 p-3 rounded">No tracking information available yet.</p>
-                        )}
-                      </div>
-
-                      {/* Delivery Detail summary */}
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Delivery Details</h3>
-                        <div className="text-sm text-slate-600 bg-slate-50 p-4 rounded border border-slate-100 space-y-2">
-                          <p><span className="font-medium text-slate-800">Receiver:</span> {order.deliveryDetails?.fullName || 'N/A'}</p>
-                          <p><span className="font-medium text-slate-800">Phone:</span> {order.deliveryDetails?.phone || 'N/A'}</p>
-                          <p><span className="font-medium text-slate-800">Address:</span> {order.deliveryDetails?.address || 'N/A'}</p>
-                          {order.deliveryDetails?.instructions && (
-                            <div className="border-t border-slate-200/60 pt-2 mt-2">
-                              <p><span className="font-medium text-slate-800">Instructions:</span> {order.deliveryDetails.instructions}</p>
-                            </div>
-                          )}
-                          <div className="border-t border-slate-200 pt-2 mt-2">
-                            <p><span className="font-medium text-slate-800">Payment Method:</span> {order.paymentMethod || 'Cash on Delivery'}</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => handlePrint(order)}
-                          className="mt-4 w-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-indigo-600 px-4 py-2 rounded-lg text-sm font-bold flex items-center justify-center transition-colors shadow-sm"
-                        >
-                          <Printer className="w-4 h-4 mr-2" />
-                          Download / Print PDF Receipt
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}

@@ -5,6 +5,8 @@ import { useStore } from '../store';
 import { ArrowLeftRight, Check, Eye, X, ShoppingCart, Share2, TrendingDown, TrendingUp, Trash2, Loader2, ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { api } from '../lib/api';
+import TakaIcon from './TakaIcon';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 interface ProductCardProps {
   product: Product;
@@ -20,6 +22,9 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
   const { compareIds, toggleCompare, addToCart, removeFromCart, addToBuilder, token, cart, user, updateUser, addToast } = useStore();
   const [toastMessage, setToastMessage] = React.useState('');
   const [showQuickView, setShowQuickView] = React.useState(false);
+  
+  useScrollLock(showQuickView);
+  
   const [isAdded, setIsAdded] = React.useState(false);
   const [isAdding, setIsAdding] = React.useState(false);
   const [activeImageIndex, setActiveImageIndex] = React.useState(0);
@@ -105,7 +110,7 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
     >
       {saveAmount > 0 && (
          <div className="absolute top-0 left-0 bg-rose-600 text-white text-[11px] sm:text-xs px-3 py-1 rounded-br-2xl font-medium z-10">
-            Save: {Number(saveAmount || 0).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}৳
+            Save: <TakaIcon className="w-3.5 h-3.5 inline mr-[1px]" />{Number(saveAmount || 0).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}
          </div>
       )}
 
@@ -200,9 +205,9 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
         )}
         
         <div className="mt-auto pt-3 border-t border-slate-200 flex flex-col justify-between gap-3 grow-0 shrink-0">
-          <div className="flex flex-row items-center justify-between">
-             <div className="flex flex-col">
-                <span className="text-sm sm:text-lg font-normal text-indigo-700 bg-indigo-50/70 px-2 py-0.5 rounded-md mt-auto w-fit">৳{Number(displayPrice).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 w-full">
+             <div className="flex shrink-0">
+                <span className="text-[13px] sm:text-[15px] font-medium tracking-tight text-indigo-700 bg-indigo-50/70 px-2 sm:px-2.5 py-1 rounded-md flex items-center"><TakaIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-[1px]" strokeWidth={1.5} />{Number(displayPrice).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
              </div>
              
              {isBuilderMode ? (
@@ -212,12 +217,12 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
                     addToBuilder(product.categoryId, product);
                     navigate('/builder');
                   }}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold shadow-sm transition-colors shrink-0"
                >
                   Select
                </button>
              ) : (
-                <div className="flex items-center gap-1.5 z-10 relative">
+                <div className="flex items-center gap-1.5 z-10 relative shrink-0">
                    {isAdded && (
                      <motion.div
                        initial={{ opacity: 0, y: 10 }}
@@ -247,24 +252,24 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
                            setTimeout(() => setIsAdded(false), 2000);
                         }, 400); // 400ms simulated loading before adding
                       }}
-                      className={`px-3 py-1.5 h-8 rounded-lg text-[11px] font-bold flex flex-1 sm:flex-none items-center justify-center transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-95 ${isAdded ? 'bg-emerald-500 text-white' : isInCart ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-indigo-700 shadow-sm border border-transparent'}`}
+                      className={`px-2 py-1.5 sm:px-3 h-8 rounded-lg text-[11px] font-bold flex items-center justify-center transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-95 shrink-0 ${isAdded ? 'bg-emerald-500 text-white' : isInCart ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-slate-200 text-indigo-700 shadow-sm border border-transparent'}`}
                       title={isInCart ? "Remove from Cart" : "Add to Cart"}
                       disabled={isAdding}
                    >
                       {isAdding ? (
                          <div className="flex items-center space-x-1.5">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Adding...</span>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                            <span className="whitespace-nowrap hidden sm:inline">Adding...</span>
                          </div>
                       ) : isAdded ? (
                          <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center space-x-1.5">
-                            <Check className="w-4 h-4" />
-                            <span>Added</span>
+                            <Check className="w-3.5 h-3.5 shrink-0" />
+                            <span className="whitespace-nowrap hidden sm:inline">Added</span>
                          </motion.div>
                       ) : (
                         <div className="flex items-center space-x-1.5">
-                           <ShoppingCart className="w-4 h-4" fill={isInCart ? "currentColor" : "none"} />
-                           <span>{isInCart ? 'Remove from Cart' : 'Add to Cart'}</span>
+                           <ShoppingCart className="w-3.5 h-3.5 shrink-0" fill={isInCart ? "currentColor" : "none"} />
+                           <span className="whitespace-nowrap">{isInCart ? 'Remove' : 'Add to Cart'}</span>
                         </div>
                       )}
                    </button>
@@ -361,9 +366,9 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
               <h2 className="text-2xl font-bold text-slate-900 mb-4 leading-tight">{product.title}</h2>
               
               <div className="flex items-center gap-3 mb-6">
-                <span className="text-2xl font-normal text-indigo-700 bg-indigo-50/70 px-3 py-1 rounded-lg">৳{Number(displayPrice || 0).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+                <span className="text-2xl font-normal text-indigo-700 bg-indigo-50/70 px-3 py-1 rounded-lg flex items-center w-fit"><TakaIcon className="w-5 h-5 sm:w-6 sm:h-6 mr-1" strokeWidth={1} />{Number(displayPrice || 0).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
                 {hasDiscount && (
-                  <span className="text-lg text-slate-400 line-through">৳{Number(product.price || 0).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+                  <span className="text-lg text-slate-400 line-through flex items-center"><TakaIcon className="w-4 h-4 mr-0.5" strokeWidth={1} />{Number(product.price || 0).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
                 )}
               </div>
               

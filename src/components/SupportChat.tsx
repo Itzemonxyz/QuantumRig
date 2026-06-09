@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Cpu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLocation } from 'react-router-dom';
 
 interface Message {
   id: string;
@@ -9,6 +10,7 @@ interface Message {
 }
 
 export default function SupportChat() {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { id: '1', text: 'Hi! QuantumRig Support here. How can I help you build your dream machine today?', sender: 'agent' }
@@ -46,6 +48,10 @@ export default function SupportChat() {
       }]);
     }, 1200);
   };
+
+  if (location.pathname !== '/') {
+    return null;
+  }
 
   return (
     <div className="fixed bottom-24 sm:bottom-6 right-4 sm:right-6 z-[60] flex flex-col items-end">

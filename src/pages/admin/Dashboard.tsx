@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useStore } from '../../store';
 import { useNavigate, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { Package, FolderTree, ShoppingCart, Settings as SettingsIcon, Ticket, Zap, LogOut, AreaChart, HelpCircle, RefreshCw, Link as LinkIcon, Menu, X, Box } from 'lucide-react';
+import { Package, FolderTree, ShoppingCart, Settings as SettingsIcon, Ticket, Zap, LogOut, AreaChart, HelpCircle, RefreshCw, Link as LinkIcon, Menu, X, Box, Bell, ClipboardList } from 'lucide-react';
 import { api } from '../../lib/api';
 import AnalyticsTab from './AnalyticsTab';
 import ProductsTab from './ProductsTab';
@@ -14,10 +14,104 @@ import OffersTab from './OffersTab';
 import SupportTab from './SupportTab';
 import SocialLinksTab from './SocialLinksTab';
 import RestockRequestsTab from './RestockRequestsTab';
+import UsersTab from './UsersTab';
+import StockLogsTab from './StockLogsTab';
+import { useScrollLock } from '../../hooks/useScrollLock';
+
+function AdminNotificationsDropdown() {
+  const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const { token } = useStore();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const fetchNotifs = async () => {
+    try {
+      const data = await api.get('/admin/notifications', token);
+      if (Array.isArray(data)) setNotifications(data);
+    } catch(e) {}
+  };
+
+  useEffect(() => {
+    fetchNotifs();
+    const interval = setInterval(fetchNotifs, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const markRead = async (id: string) => {
+    try {
+      await api.put(`/admin/notifications/${id}/read`, {}, token);
+      fetchNotifs();
+    } catch(e) {}
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button 
+        onClick={() => setOpen(!open)}
+        className="relative p-2 text-slate-600 hover:bg-slate-200 rounded-full transition-colors"
+      >
+        <Bell className="w-5 h-5" />
+        {unreadCount > 0 && (
+          <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-slate-50"></span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden z-50">
+          <div className="p-3 border-b border-slate-100 bg-slate-50 font-bold text-slate-800 text-sm flex justify-between items-center">
+            Notifications
+            <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">{unreadCount} New</span>
+          </div>
+          <div className="max-h-[60vh] overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="p-6 text-center text-slate-500 text-sm">No notifications</div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {notifications.slice().reverse().map(n => (
+                  <div key={n.id} className={`p-4 text-sm \${n.read ? 'bg-white opacity-60' : 'bg-indigo-50/30'}`}>
+                    <div className="flex gap-3">
+                      <div className="mt-0.5">
+                        <div className={`w-2 h-2 rounded-full \${n.read ? 'bg-slate-300' : 'bg-indigo-500'}`}></div>
+                      </div>
+                      <div className="flex-1">
+                        <p className={`\${n.read ? 'text-slate-600' : 'text-slate-900 font-medium'}`}>
+                          {n.message}
+                        </p>
+                        <p className="text-[10px] text-slate-500 mt-1 font-mono">
+                          {new Date(n.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      {!n.read && (
+                        <button onClick={() => markRead(n.id)} className="text-[10px] text-indigo-600 hover:underline shrink-0">
+                          Mark Read
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const boardOptions = [
   { to: '/admin/analytics', icon: <AreaChart className="w-5 h-5 flex-shrink-0" />, label: 'Analytics' },
   { to: '/admin/products', icon: <Package className="w-5 h-5 flex-shrink-0" />, label: 'Products' },
+  { to: '/admin/stock-logs', icon: <ClipboardList className="w-5 h-5 flex-shrink-0" />, label: 'Stock Logs' },
   { to: '/admin/categories', icon: <FolderTree className="w-5 h-5 flex-shrink-0" />, label: 'Categories' },
   { to: '/admin/brands', icon: <Box className="w-5 h-5 flex-shrink-0" />, label: 'Brands' },
   { to: '/admin/orders', icon: <ShoppingCart className="w-5 h-5 flex-shrink-0" />, label: 'Orders' },
@@ -34,6 +128,8 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  useScrollLock(mobileMenuOpen);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -51,11 +147,10 @@ export default function AdminDashboard() {
   const SidebarContent = () => (
     <>
       <div className="p-6">
-        <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center mr-3 font-bold text-sm">QR</div>
-          QuantumRig
-        </h2>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Admin Panel</p>
+        <Link to="/" className="flex items-center text-indigo-600">
+           <img src="/logo-primary.svg" alt="QuantumRig" className="h-8 sm:h-10 w-auto" />
+        </Link>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-3">Admin Panel</p>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-1">
@@ -121,11 +216,20 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className="flex-1 w-full bg-slate-50 p-4 md:p-8 min-w-0">
+         
+         <div className="flex justify-between items-center mb-6">
+           <h1 className="text-2xl font-bold text-slate-800 tracking-tight hidden md:block">Admin Workspace</h1>
+           <div className="flex items-center gap-4 ml-auto">
+             <AdminNotificationsDropdown />
+           </div>
+         </div>
+
          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[600px]">
            <Routes>
              <Route path="/" element={<Navigate to="analytics" replace />} />
              <Route path="analytics" element={<AnalyticsTab />} />
              <Route path="products" element={<ProductsTab />} />
+             <Route path="stock-logs" element={<StockLogsTab />} />
              <Route path="categories" element={<CategoriesTab />} />
              <Route path="brands" element={<BrandsTab />} />
              <Route path="orders" element={<OrdersTab />} />
@@ -133,6 +237,7 @@ export default function AdminDashboard() {
              <Route path="offers" element={<OffersTab />} />
              <Route path="support" element={<SupportTab />} />
              <Route path="restock" element={<RestockRequestsTab />} />
+             <Route path="users" element={<UsersTab />} />
              <Route path="social-links" element={<SocialLinksTab />} />
              <Route path="settings" element={<SettingsTab />} />
            </Routes>

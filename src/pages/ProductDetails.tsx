@@ -2,9 +2,10 @@ import React, { useState, useRef } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useStore } from '../store';
 import { api } from '../lib/api';
-import { ShoppingCart, ArrowLeft, Check, AlertTriangle, Heart, Share2, CheckCircle2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, HelpCircle, X, Scale, Zap, Bell, TrendingUp, TrendingDown, Copy, Loader2 } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, Check, AlertTriangle, Heart, Share2, CheckCircle2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, HelpCircle, X, Scale, Zap, Bell, TrendingUp, TrendingDown, Copy, Loader2, Trash2 } from 'lucide-react';
 import Breadcrumbs from '../components/Breadcrumbs';
 import ScrollToTopButton from '../components/ScrollToTopButton';
+import { useScrollLock } from '../hooks/useScrollLock';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function ProductDetails() {
@@ -60,6 +61,8 @@ function ProductDetailsInner({ product }: { product: any }) {
   const [activeImage, setActiveImage] = useState(product.imageUrl);
   const [showImageModal, setShowImageModal] = useState(false);
   const [modalImageIndex, setModalImageIndex] = useState(0);
+  
+  useScrollLock(showQuickBuyModal || showSupportModal || showImageModal);
 
   const [zoomStyle, setZoomStyle] = useState({});
   const imageContainerRef = useRef<HTMLDivElement>(null);
@@ -86,6 +89,19 @@ function ProductDetailsInner({ product }: { product: any }) {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!user || user.role !== 'admin') return;
+    try {
+      await api.delete(`/products/${product.id}/reviews/${reviewId}`, token);
+      const p = await api.get(`/products/${product.id}`);
+      useStore.getState().setProducts(useStore.getState().products.map(pr => pr.id === p.id ? p : pr));
+      addToast('Review deleted successfully', 'success');
+    } catch(err) {
+      console.error(err);
+      addToast('Failed to delete review', 'error');
+    }
+  };
 
   // Set activeImage back when product changes
   React.useEffect(() => {
@@ -380,18 +396,18 @@ function ProductDetailsInner({ product }: { product: any }) {
               <span className="text-3xl font-medium text-slate-800">৳{Number(product.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
             )}
             {isOutOfStock ? (
-              <span className="px-3 py-1 bg-rose-50 text-rose-500 rounded-full text-sm font-bold flex items-center border border-rose-200">
-                <AlertTriangle className="w-4 h-4 mr-1" />
+              <span className="px-3 py-1 bg-rose-50 text-rose-500 rounded-full text-sm font-bold flex items-center border border-rose-200 shrink-0 whitespace-nowrap">
+                <AlertTriangle className="w-4 h-4 mr-1 shrink-0" />
                 Out of Stock
               </span>
             ) : stockTrend === 'depleting' ? (
-              <span className="px-3 py-1 bg-amber-50 text-amber-500 rounded-full text-sm font-bold flex items-center border border-amber-200">
-                <TrendingDown className="w-4 h-4 mr-1" />
+              <span className="px-3 py-1 bg-amber-50 text-amber-500 rounded-full text-sm font-bold flex items-center border border-amber-200 shrink-0 whitespace-nowrap">
+                <TrendingDown className="w-4 h-4 mr-1 shrink-0" />
                 Only {product.inventoryCount} Left
               </span>
             ) : (
-              <span className="px-3 py-1 bg-emerald-50 text-emerald-500 rounded-full text-sm font-bold flex items-center border border-emerald-200">
-                <TrendingUp className="w-4 h-4 mr-1" />
+              <span className="px-3 py-1 bg-emerald-50 text-emerald-500 rounded-full text-sm font-bold flex items-center border border-emerald-200 shrink-0 whitespace-nowrap">
+                <TrendingUp className="w-4 h-4 mr-1 shrink-0" />
                 In Stock
               </span>
             )}
@@ -655,10 +671,21 @@ function ProductDetailsInner({ product }: { product: any }) {
               <p className="text-slate-500 italic">No reviews yet. Be the first to review this product!</p>
             ) : (
               product.reviews.map(review => (
-                <div key={review.id} className="border-b border-slate-100 pb-6">
+                <div key={review.id} className="border-b border-slate-100 pb-6 relative group">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-bold text-slate-900">{review.userName}</span>
-                    <span className="text-sm text-slate-500">{new Date(review.createdAt).toLocaleDateString()}</span>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-slate-500">{new Date(review.createdAt).toLocaleDateString()}</span>
+                      {user && user.role === 'admin' && (
+                        <button 
+                          onClick={() => handleDeleteReview(review.id)}
+                          className="text-slate-400 hover:text-rose-600 transition-colors opacity-0 group-hover:opacity-100 p-1"
+                          title="Delete review"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="text-amber-400 mb-3 flex">
                     {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}

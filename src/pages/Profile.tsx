@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useStore } from '../store';
 import { api } from '../lib/api';
 import { Order } from '../types';
-import { Package, MapPin, ChevronDown, ChevronUp, CheckCircle2, Heart, Printer, Star, Gift, Search, Settings, LogOut, TrendingUp, BarChart3, Clock, Calendar, PieChart as PieIcon, AlertTriangle, ShieldAlert, ArrowRight, CalendarRange, X } from 'lucide-react';
+import { Package, MapPin, ChevronDown, ChevronUp, CheckCircle2, Heart, Printer, Star, Gift, Search, Settings, LogOut, TrendingUp, BarChart3, Clock, Calendar, PieChart as PieIcon, AlertTriangle, ShieldAlert, ArrowRight, CalendarRange, X, LifeBuoy, MessageSquare, ChevronLeft, ChevronRight, History } from 'lucide-react';
 import TakaIcon from '../components/TakaIcon';
 import { useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
@@ -11,6 +11,7 @@ import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCre
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell, PieChart, Pie } from 'recharts';
 import PastOrdersList from '../components/PastOrdersList';
+import { useScrollLock } from '../hooks/useScrollLock';
 import { motion, AnimatePresence } from 'motion/react';
 
 const SpendingTooltip = ({ active, payload, label }: any) => {
@@ -41,14 +42,270 @@ const COLORS = [
   '#f43f5e', // rose-500
 ];
 
+function SupportTicketsView({ user, addToast, products, token }: any) {
+  const [question, setQuestion] = useState('');
+  const [productId, setProductId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tickets, setTickets] = useState(user?.tickets || []);
+
+  const loadTickets = async () => {
+    try {
+      const data = await api.get('/users/me', token);
+      if (data && data.tickets) {
+        setTickets(data.tickets);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!question.trim()) return;
+    setIsSubmitting(true);
+    try {
+      await api.post('/support-tickets', {
+        productId: productId || 'General Inquiry',
+        email: user?.email,
+        question
+      });
+      addToast('Support ticket filed successfully.', 'success');
+      setQuestion('');
+      setProductId('');
+      await loadTickets();
+    } catch (err) {
+      addToast('Failed to submit ticket', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-300">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <MessageSquare className="w-5 h-5 text-indigo-600" /> File a New Request
+        </h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1">Related Product (Optional)</label>
+            <select
+              value={productId}
+              onChange={(e) => setProductId(e.target.value)}
+              className="w-full sm:w-80 bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+            >
+              <option value="">General Support Inquiry</option>
+              {products.map((p: any) => (
+                <option key={p.id} value={p.id}>{p.title} ({p.id})</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1">How can we help?</label>
+            <textarea
+              required
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Describe your issue or question..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm h-28 resize-none focus:ring-2 focus:ring-indigo-500 outline-none"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-lg transition-colors text-sm shadow-sm disabled:opacity-50"
+          >
+            {isSubmitting ? 'Sending...' : 'Submit Ticket'}
+          </button>
+        </form>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-sm">
+        <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="font-bold text-slate-800">Your Past Tickets</h3>
+          <button onClick={loadTickets} className="text-xs font-bold text-indigo-600 hover:underline">Refresh</button>
+        </div>
+        {!tickets || tickets.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 font-medium">No previous support tickets found.</div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {tickets.map((t: any) => (
+              <div key={t.id} className="p-4 hover:bg-slate-50">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="font-bold text-slate-900 border border-slate-200 px-2 py-0.5 rounded text-xs">
+                     {t.productId !== 'General Inquiry' ? (
+                       <a href={`/products/${t.productId}`} className="text-indigo-600 hover:underline">Product: {t.productId}</a>
+                     ) : 'General Inquiry'}
+                  </div>
+                  <span className={`px-2 py-1 rounded text-xs font-bold ${
+                    t.status === 'Answered' ? 'bg-emerald-100 text-emerald-800' :
+                    t.status === 'Open' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {t.status}
+                  </span>
+                </div>
+                <div className="text-slate-700 font-medium leading-relaxed mb-3">
+                  <span className="text-xs text-slate-400 block mb-1">Your Question:</span>
+                  {t.question}
+                </div>
+                {t.answer && (
+                  <div className="bg-slate-100 p-3 rounded-lg border border-slate-200">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1 flex items-center gap-1">
+                      <LifeBuoy className="w-3 h-3" /> Support Answer:
+                    </span>
+                    <div className="text-slate-800 leading-relaxed font-medium">
+                      {t.answer}
+                    </div>
+                  </div>
+                )}
+                <div className="text-[10px] text-slate-400 font-bold mt-2 text-right">
+                  {new Date(t.createdAt).toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function CustomDateInput({ label, value, onChange }: { label: string, value: string, onChange: (v: string) => void }) {
+  const parts = value ? value.split('-') : ['', '', ''];
+  const [year, setYear] = useState(parts[0] || new Date().getFullYear().toString());
+  const [month, setMonth] = useState(parts[1] || String(new Date().getMonth() + 1).padStart(2, '0'));
+  const [day, setDay] = useState(parts[2] || String(new Date().getDate()).padStart(2, '0'));
+
+  useEffect(() => {
+    if (year && month && day) {
+      const y = parseInt(year);
+      const m = parseInt(month);
+      const d = parseInt(day);
+      if (y > 1900 && y < 2100 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+        onChange(`${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+      } else {
+        onChange('');
+      }
+    } else {
+      onChange('');
+    }
+  }, [year, month, day, onChange]);
+
+  const monthInt = parseInt(month) || 1;
+  const yearInt = parseInt(year) || new Date().getFullYear();
+  const dayInt = parseInt(day) || 1;
+
+  const daysInCurrentMonth = new Date(yearInt, monthInt, 0).getDate();
+
+  return (
+    <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col h-full hover:border-indigo-200 transition-colors">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</label>
+        <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg text-sm font-bold font-mono tracking-tight border border-indigo-100 min-w-[110px] text-center">
+          {year}-{String(monthInt).padStart(2, '0')}-{String(dayInt).padStart(2, '0')}
+        </div>
+      </div>
+      
+      <div className="space-y-6 flex-1 flex flex-col">
+        
+        {/* Year Input */}
+        <div className="flex flex-col gap-2">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Year</label>
+          <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden p-1 w-full justify-between">
+             <button 
+               onClick={() => setYear(String(yearInt - 1))}
+               className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-colors shadow-sm"
+             >
+               <ChevronLeft className="w-5 h-5" />
+             </button>
+             <input 
+               type="number" 
+               min="2000" max="2100"
+               value={yearInt} 
+               onChange={e => setYear(e.target.value)}
+               className="w-full bg-transparent text-center font-mono font-bold text-base text-slate-800 outline-none"
+             />
+             <button 
+               onClick={() => setYear(String(yearInt + 1))}
+               className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-colors shadow-sm"
+             >
+               <ChevronRight className="w-5 h-5" />
+             </button>
+          </div>
+        </div>
+
+        {/* Month Selection Grid */}
+        <div className="flex flex-col gap-2">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Month</label>
+          <div className="grid grid-cols-4 gap-1.5">
+            {MONTHS.map((m, i) => {
+              const mNum = i + 1;
+              const isActive = mNum === monthInt;
+              return (
+                <button
+                  key={m}
+                  onClick={() => setMonth(String(mNum).padStart(2, '0'))}
+                  className={`py-1.5 px-1 rounded-lg text-[11px] font-bold transition-all ${
+                    isActive 
+                      ? 'bg-indigo-600 text-white shadow-md' 
+                      : 'bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-100 hover:border-indigo-200'
+                  }`}
+                >
+                  {m}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Date Selection Grid */}
+        <div className="flex flex-col gap-2 mt-auto">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
+            <span>Selected Day</span>
+            <span className="text-indigo-600 font-bold bg-white px-2 py-0.5 rounded shadow-sm border border-slate-200">
+              {dayInt} <span className="text-slate-400 font-normal">/ {daysInCurrentMonth}</span>
+            </span>
+          </label>
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: daysInCurrentMonth }).map((_, i) => {
+              const dNum = i + 1;
+              const isActive = dNum === dayInt;
+              return (
+                <button
+                  key={dNum}
+                  onClick={() => setDay(String(dNum).padStart(2, '0'))}
+                  className={`h-9 rounded flex items-center justify-center text-[11px] font-mono transition-all ${
+                    isActive 
+                      ? 'bg-indigo-600 text-white font-bold scale-110 z-10 shadow-md rounded-md' 
+                      : 'bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-100 hover:border-indigo-200'
+                  }`}
+                >
+                  {dNum}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 export default function Profile() {
   const { user, login: setLoginData, token, products, categories, logout, updateUser, addToast } = useStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<'orders' | 'saved' | 'rewards' | 'settings' | 'analytics'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'saved' | 'rewards' | 'settings' | 'analytics' | 'support'>('orders');
   const [showMobileMenu, setShowMobileMenu] = useState(true);
   const [showEnlargedAvatar, setShowEnlargedAvatar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showDatePickerModal, setShowDatePickerModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  useScrollLock(showMobileMenu || showEnlargedAvatar || showDatePickerModal || showDeleteConfirm);
 
   const getLocalDateString = (dateInput: Date | string) => {
     const dateObj = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
@@ -72,14 +329,16 @@ export default function Profile() {
     addToast('Monthly budget threshold updated successfully!', 'success');
   };
 
-  const handleApplyPreset = (preset: '30days' | '90days' | 'thisyear' | 'clear') => {
+  const handleApplyPreset = (preset: 'last-week' | '30days' | '90days' | 'thisyear' | 'clear') => {
     if (preset === 'clear') {
       setStartDateStr('');
       setEndDateStr('');
     } else {
       const end = new Date();
       const start = new Date();
-      if (preset === '30days') {
+      if (preset === 'last-week') {
+        start.setDate(end.getDate() - 7);
+      } else if (preset === '30days') {
         start.setDate(end.getDate() - 30);
       } else if (preset === '90days') {
         start.setDate(end.getDate() - 90);
@@ -171,31 +430,8 @@ export default function Profile() {
   };
 
   const baseAnalyticsOrders = React.useMemo(() => {
-    if (orders.length > 0) return orders;
-    const today = new Date();
-    const d1 = new Date(today); d1.setDate(d1.getDate() - 2);
-    const d2 = new Date(today); d2.setDate(d2.getDate() - 5);
-    return [
-      {
-        id: "mock_1", userId: user?.id || "u",
-        totalAmount: 42000, status: "Delivered",
-        createdAt: d1.toISOString(),
-        items: [
-          { productId: "p1", title: "Intel Core i7", price: 32000, quantity: 1 },
-          { productId: "p2", title: "Corsair RAM 16GB", price: 10000, quantity: 1 }
-        ]
-      },
-      {
-        id: "mock_2", userId: user?.id || "u",
-        totalAmount: 65000, status: "Delivered",
-        createdAt: d2.toISOString(),
-        items: [
-          { productId: "p3", title: "ASUS RTX 4060", price: 50000, quantity: 1 },
-          { productId: "p4", title: "NZXT Case", price: 15000, quantity: 1 }
-        ]
-      }
-    ] as Order[];
-  }, [orders, user]);
+    return orders;
+  }, [orders]);
 
   const filteredOrdersForAnalytics = React.useMemo(() => {
     const valid = baseAnalyticsOrders.filter(o => o.status !== 'Cancelled');
@@ -382,15 +618,6 @@ export default function Profile() {
     }
     
     let baseOrders = orders;
-    if (orders.length === 0) {
-      const today = new Date();
-      const d1 = new Date(today); d1.setDate(d1.getDate() - 2);
-      const d2 = new Date(today); d2.setDate(d2.getDate() - 5);
-      baseOrders = [
-        { totalAmount: 42000, status: "Delivered", createdAt: d1.toISOString() },
-        { totalAmount: 65000, status: "Delivered", createdAt: d2.toISOString() }
-      ] as Order[];
-    }
 
     let cutoff = new Date();
     if (spendingSegment === 'weekly') {
@@ -764,18 +991,6 @@ export default function Profile() {
           </button>
           
           <button 
-             onClick={() => { setActiveTab('rewards'); setShowMobileMenu(false); }}
-             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
-               activeTab === 'rewards' 
-                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-             }`}
-          >
-             <Gift className={`w-5 h-5 ${activeTab === 'rewards' ? 'text-indigo-600' : 'text-slate-400'}`} />
-             <span>Rewards History</span>
-          </button>
-          
-          <button 
              onClick={() => { setActiveTab('settings'); setShowMobileMenu(false); }}
              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
                activeTab === 'settings' 
@@ -789,7 +1004,7 @@ export default function Profile() {
           
           <button 
              onClick={() => { setActiveTab('analytics'); setShowMobileMenu(false); }}
-             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium mb-1 ${
                activeTab === 'analytics' 
                 ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
                 : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -798,17 +1013,38 @@ export default function Profile() {
              <TrendingUp className={`w-5 h-5 ${activeTab === 'analytics' ? 'text-indigo-600' : 'text-slate-400'}`} />
              <span>Spending Analytics</span>
           </button>
+          
+          <button 
+             onClick={() => { setActiveTab('support'); setShowMobileMenu(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+               activeTab === 'support' 
+                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+             }`}
+          >
+             <LifeBuoy className={`w-5 h-5 ${activeTab === 'support' ? 'text-indigo-600' : 'text-slate-400'}`} />
+             <span>Support Tickets</span>
+          </button>
         </div>
 
         <div className="p-4 border-t border-slate-200">
-           <div className="bg-slate-50 rounded-xl p-3 mb-4 border border-slate-200">
-             <h3 className="font-bold text-slate-800 text-xs mb-1 flex items-center">
-               <Star className="w-3.5 h-3.5 text-amber-500 mr-1" />
-               {tier} Tier
-             </h3>
-             <div className="text-[10px] text-slate-500 mb-2 flex justify-between">
-               <span>Spend</span>
-               <span className="font-bold">৳{lifetimeSpend.toLocaleString("en-BD", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+           <div className="bg-slate-50 rounded-xl p-3 mb-4 border border-slate-200 relative group">
+             <div className="flex justify-between items-start">
+               <h3 className="font-bold text-slate-800 text-xs mb-1 flex items-center">
+                 <Star className="w-3.5 h-3.5 text-amber-500 mr-1" />
+                 {tier} Tier
+               </h3>
+               <button 
+                 onClick={() => { setActiveTab('rewards'); setShowMobileMenu(false); }}
+                 className="text-slate-400 hover:text-indigo-600 transition-colors p-1 -mt-1 -mr-1 rounded-md hover:bg-slate-200/50"
+                 title="View Rewards History"
+               >
+                 <History className="w-4 h-4" />
+               </button>
+             </div>
+             <div className="text-[10px] text-slate-500 mb-2 flex justify-between tracking-wide">
+               <span className="uppercase">Spend</span>
+               <span className="font-bold text-slate-700">৳{lifetimeSpend.toLocaleString("en-BD", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
              </div>
              <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
                <div className={`h-full ${progressColor} transition-all duration-500`} style={{ width: `${Math.min(progress, 100)}%` }} />
@@ -834,16 +1070,22 @@ export default function Profile() {
                activeTab === 'saved' ? 'Saved Products' :
                activeTab === 'rewards' ? 'Rewards History' :
                activeTab === 'settings' ? 'Edit Profile & Address' :
-               activeTab === 'analytics' ? 'Spending Analytics' : 'My Profile'}
+               activeTab === 'analytics' ? 'Spending Analytics' : 
+               activeTab === 'support' ? 'Support Tickets' : 'My Profile'}
             </h1>
             <p className="text-slate-500 mt-1">
               {activeTab === 'orders' ? 'View and track your previous purchases.' : 
                activeTab === 'saved' ? 'Products you have saved for later.' :
                activeTab === 'rewards' ? 'Track your point-earning transactions.' :
                activeTab === 'settings' ? 'Update your personal information and preferences.' :
-               activeTab === 'analytics' ? 'Understand your hardware investments over time.' : ''}
+               activeTab === 'analytics' ? 'Understand your hardware investments over time.' : 
+               activeTab === 'support' ? 'View and file support requests regarding specific products.' : ''}
             </p>
           </div>
+
+          {activeTab === 'support' && (
+            <SupportTicketsView user={user} addToast={addToast} products={products} token={token} />
+          )}
 
           {activeTab === 'orders' && (
             <div>
@@ -980,136 +1222,84 @@ export default function Profile() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 {/* 1. Date Range Picker Component */}
-                <div id="analytics-date-range-picker" className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <CalendarRange className="w-5 h-5 text-indigo-600" />
-                        <h3 className="font-bold text-slate-900 text-sm">Filter Custom Time Period</h3>
-                      </div>
-                      {(startDateStr || endDateStr) && (
-                        <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full px-2 py-0.5 font-bold flex items-center gap-1 select-none animate-pulse">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          Filter Active
-                        </span>
-                      )}
+                <div id="analytics-date-range-picker" className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-center">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <CalendarRange className="w-5 h-5 text-indigo-600" />
+                      <h3 className="font-bold text-slate-900 text-sm">Time Period Filter</h3>
                     </div>
-                    <p className="text-xs text-slate-500 mb-4 md:h-8">
-                      Select start and end points manually or apply instant range presets to dynamically isolate hardware spending.
-                    </p>
+                    {(startDateStr || endDateStr) && (
+                      <button
+                        onClick={() => handleApplyPreset('clear')}
+                        className="text-[10px] text-slate-500 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 px-2 py-1 rounded-md font-bold transition-colors"
+                      >
+                        Clear Range
+                      </button>
+                    )}
                   </div>
 
-                  <div className="space-y-4">
-                    {/* Native date pickers wrapped inside unified high-fidelity dashboard containers */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                      <div className="flex-1 relative group">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors pointer-events-none">
-                          <Calendar className="w-3.5 h-3.5" />
+                  <button
+                    onClick={() => setShowDatePickerModal(true)}
+                    className="w-full relative group overflow-hidden rounded-xl border border-indigo-100 bg-indigo-50/50 hover:bg-indigo-50 transition-colors p-3 text-left"
+                  >
+                      <div className="flex items-center justify-between relative z-10">
+                        <div>
+                          <div className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-1">
+                            Selected Period
+                          </div>
+                          <div className="text-sm font-medium text-slate-700">
+                            {startDateStr && endDateStr ? (
+                              `${new Date(startDateStr).toLocaleDateString()} — ${new Date(endDateStr).toLocaleDateString()}`
+                            ) : startDateStr ? (
+                              `From ${new Date(startDateStr).toLocaleDateString()}`
+                            ) : endDateStr ? (
+                              `Until ${new Date(endDateStr).toLocaleDateString()}`
+                            ) : (
+                              'All Time'
+                            )}
+                          </div>
                         </div>
-                        <span className="absolute right-3 top-1 text-[9px] font-extrabold text-slate-400 uppercase tracking-widest pointer-events-none select-none">Start</span>
-                        <input 
-                          id="analytics-start-date"
-                          type="date" 
-                          value={startDateStr}
-                          onChange={(e) => setStartDateStr(e.target.value)}
-                          className="w-full bg-white border border-slate-200/80 hover:border-slate-300 text-slate-800 rounded-xl pl-9 pr-3 pt-3.5 pb-1.5 text-xs font-bold outline-none ring-offset-white focus:ring-2 focus:ring-indigo-500/15 focus:border-indigo-500 transition-all cursor-pointer"
-                        />
+                        <div className="bg-white p-2 rounded-lg shadow-sm group-hover:shadow border border-slate-100 transition-all group-hover:-translate-y-0.5">
+                          <Calendar className="w-4 h-4 text-indigo-600" />
+                        </div>
                       </div>
                       
-                      <div className="flex items-center justify-center shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200/50 flex items-center justify-center text-slate-400 rotate-90 sm:rotate-0 shadow-sm">
-                          <ArrowRight className="w-4 h-4" />
-                        </div>
+                      {/* Decorative background element */}
+                      <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none transform translate-x-1/4 translate-y-1/4">
+                        <CalendarRange className="w-24 h-24 text-indigo-600" />
                       </div>
-
-                      <div className="flex-1 relative group">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors pointer-events-none">
-                          <Calendar className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="absolute right-3 top-1 text-[9px] font-extrabold text-slate-400 uppercase tracking-widest pointer-events-none select-none">End</span>
-                        <input 
-                          id="analytics-end-date"
-                          type="date" 
-                          value={endDateStr}
-                          onChange={(e) => setEndDateStr(e.target.value)}
-                          className="w-full bg-white border border-slate-200/80 hover:border-slate-300 text-slate-800 rounded-xl pl-9 pr-3 pt-3.5 pb-1.5 text-xs font-bold outline-none ring-offset-white focus:ring-2 focus:ring-indigo-500/15 focus:border-indigo-500 transition-all cursor-pointer"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Invalid Date Range Warning */}
-                    {startDateStr && endDateStr && new Date(startDateStr) > new Date(endDateStr) && (
-                      <div className="p-2.5 bg-rose-50 border border-rose-100 rounded-xl text-[11px] font-bold text-rose-700 flex items-center gap-1.5">
-                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                        <span>Invalid range: start date must precede end date.</span>
-                      </div>
-                    )}
-
-                    {/* Real-time Human Readable Formatting Feedback */}
-                    {startDateStr && endDateStr && !(new Date(startDateStr) > new Date(endDateStr)) && (
-                      <div className="bg-indigo-50/40 border border-indigo-100/50 rounded-xl px-3 py-1.5 text-center flex items-center justify-center gap-2">
-                        <span className="text-[10px] font-bold text-indigo-700 font-mono tracking-wide uppercase">Active Range:</span>
-                        <span className="text-[11px] font-bold text-slate-700 font-sans">
-                          {new Date(startDateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </span>
-                        <ArrowRight className="w-3 h-3 text-indigo-400" />
-                        <span className="text-[11px] font-bold text-slate-700 font-sans">
-                          {new Date(endDateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Match-Highlighting Preset Pills Selection Area */}
-                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                      <button
-                        id="btn-preset-30days"
-                        onClick={() => handleApplyPreset('30days')}
-                        className={`text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                          activePreset === '30days'
-                            ? 'bg-indigo-600 text-white shadow-md border border-indigo-700'
-                            : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                        }`}
-                      >
-                        Last 30 Days
-                      </button>
-                      <button
-                        id="btn-preset-90days"
-                        onClick={() => handleApplyPreset('90days')}
-                        className={`text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                          activePreset === '90days'
-                            ? 'bg-indigo-600 text-white shadow-md border border-indigo-700'
-                            : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                        }`}
-                      >
-                        Last 90 Days
-                      </button>
-                      <button
-                        id="btn-preset-year"
-                        onClick={() => handleApplyPreset('thisyear')}
-                        className={`text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                          activePreset === 'thisyear'
-                            ? 'bg-indigo-600 text-white shadow-md border border-indigo-700'
-                            : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                        }`}
-                      >
-                        This Year
-                      </button>
-                      {(startDateStr || endDateStr) && (
-                        <button
-                          id="btn-preset-reset"
-                          onClick={() => handleApplyPreset('clear')}
-                          className="bg-rose-50 hover:bg-rose-100 text-rose-600 text-[10px] font-bold px-3 py-1.5 rounded-lg transition ml-auto flex items-center gap-1.5 cursor-pointer border border-rose-100 active:scale-95"
-                        >
-                          <X className="w-3 h-3" />
-                          Reset
-                        </button>
-                      )}
-                    </div>
+                    </button>
+                    
+                  <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-100">
+                    <button 
+                      onClick={() => handleApplyPreset('last-week')}
+                      className="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-bold rounded-lg transition-colors flex-1 text-center"
+                    >
+                      Last 7 Days
+                    </button>
+                    <button 
+                      onClick={() => handleApplyPreset('30days')}
+                      className="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-bold rounded-lg transition-colors flex-1 text-center"
+                    >
+                      Last 30 Days
+                    </button>
+                    <button 
+                      onClick={() => handleApplyPreset('90days')}
+                      className="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-bold rounded-lg transition-colors flex-1 text-center"
+                    >
+                      Last 90 Days
+                    </button>
+                    <button 
+                      onClick={() => handleApplyPreset('thisyear')}
+                      className="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-bold rounded-lg transition-colors flex-1 text-center whitespace-nowrap"
+                    >
+                      This Year
+                    </button>
                   </div>
                 </div>
 
                 {/* 2. Monthly Budget Threshold Card */}
-                <div id="analytics-budget-tracker" className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+                <div id="analytics-budget-tracker" className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-center">
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
@@ -1641,11 +1831,80 @@ export default function Profile() {
               </form>
             </div>
           )}
+
+          {activeTab === 'settings' && (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mt-6 border-t-[3px] border-t-rose-500">
+              <h2 className="text-xl font-bold text-slate-900 mb-2">Danger Zone</h2>
+              <p className="text-sm text-slate-600 mb-6">Once you request account deletion, an administrator will review it. If approved, your account will be permanently deleted and cannot be recovered.</p>
+              
+              <button
+                onClick={() => {
+                  if (user?.deletionRequested) {
+                    addToast('Deletion request is already pending.', 'info');
+                    return;
+                  }
+                  setShowDeleteConfirm(true);
+                }}
+                disabled={user?.deletionRequested}
+                className="bg-white border border-rose-300 text-rose-600 hover:bg-rose-50 px-6 py-2.5 rounded-lg font-bold transition-colors disabled:opacity-50 text-sm flex items-center"
+              >
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                {user?.deletionRequested ? 'Deletion Pending Approval' : 'Request Account Deletion'}
+              </button>
+            </div>
+          )}
         </div>
       </main>
 
       {/* Enlarged Avatar Modal */}
       <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-md p-6 max-h-[90vh] flex flex-col items-center text-center"
+            >
+              <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mb-6">
+                <AlertTriangle className="w-8 h-8 text-rose-600" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2 mt-4 text-center">Confirm Deletion Request</h3>
+              <p className="text-slate-600 mb-8 mt-2 text-center text-sm px-4">
+                Are you absolutely sure you want to request account deletion? This action will go to an administrator for approval. If approved, your account will be permanently deleted.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await api.post('/users/me/request-deletion', {}, token);
+                      if (updateUser) updateUser({ ...user, deletionRequested: true });
+                      addToast('Deletion request submitted to admin.', 'success');
+                      setShowDeleteConfirm(false);
+                    } catch (e) {
+                      addToast('Failed to submit deletion request.', 'error');
+                    }
+                  }}
+                  className="flex-1 px-4 py-3 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-colors shadow-sm cursor-pointer"
+                >
+                  Request Deletion
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
         {showEnlargedAvatar && (
           <motion.div 
             initial={{ opacity: 0 }}
@@ -1679,6 +1938,62 @@ export default function Profile() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+
+        {/* Date Picker Modal */}
+        {showDatePickerModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300">
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+                  <CalendarRange className="w-5 h-5 text-indigo-600" />
+                  Select Date Range
+                </h3>
+                <button 
+                  onClick={() => setShowDatePickerModal(false)}
+                  className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-8 space-y-6">
+                <div className="flex flex-col md:flex-row gap-8">
+                  <div className="flex-1">
+                    <CustomDateInput label="Start Date" value={startDateStr} onChange={setStartDateStr} />
+                  </div>
+                  <div className="flex-1">
+                    <CustomDateInput label="End Date" value={endDateStr} onChange={setEndDateStr} />
+                  </div>
+                </div>
+                
+                {startDateStr && endDateStr && new Date(startDateStr) > new Date(endDateStr) && (
+                  <div className="p-3 border border-rose-200 text-rose-600 bg-rose-50 rounded-xl text-sm font-medium flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    Start date cannot be after end date.
+                  </div>
+                )}
+
+                <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+                  <button
+                    onClick={() => {
+                      setStartDateStr('');
+                      setEndDateStr('');
+                      setShowDatePickerModal(false);
+                    }}
+                    className="px-5 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors text-sm"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={() => setShowDatePickerModal(false)}
+                    className="px-5 py-2.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm text-sm"
+                  >
+                    Apply Range
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
     </div>

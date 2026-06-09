@@ -23,6 +23,9 @@ export interface User {
   loyaltyPoints?: number;
   notifications?: UserNotification[];
   cart?: UserCartItem[];
+  deletionRequested?: boolean;
+  createdAt?: string;
+  lastVisited?: string;
 }
 
 export interface RestockRequest {
@@ -32,7 +35,7 @@ export interface RestockRequest {
   userEmail: string;
   productId: string;
   productTitle: string;
-  status: 'pending' | 'fulfilled';
+  status: 'pending' | 'accepted' | 'fulfilled';
   createdAt: string;
 }
 
@@ -54,6 +57,7 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
+  order?: number;
 }
 
 export interface Review {
@@ -68,6 +72,7 @@ export interface Review {
 export interface Product {
   id: string;
   code?: string;
+  order?: number;
   title: string;
   slug: string;
   categoryId: string;
@@ -159,7 +164,8 @@ export interface SupportTicket {
   productId: string;
   email: string;
   question: string;
-  status: 'Open' | 'Closed';
+  status: 'Open' | 'Closed' | 'Answered';
+  answer?: string;
   createdAt: string;
 }
 
@@ -167,4 +173,16 @@ export interface ToastMessage {
   id: string;
   message: string;
   type: 'success' | 'error' | 'info';
+}
+
+export interface StockAdjustmentLog {
+  id: string;
+  productId: string;
+  productTitle: string;
+  productSlug: string;
+  userEmail: string;
+  userName: string;
+  amountChanged: number;
+  newQuantity: number;
+  createdAt: string;
 }

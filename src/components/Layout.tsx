@@ -8,6 +8,8 @@ import CompareWidget from './CompareWidget';
 import { api } from '../lib/api';
 import SupportChat from './SupportChat';
 import ToastContainer from './ToastContainer';
+import TakaIcon from './TakaIcon';
+import SocialIcon from './SocialIcon';
 
 export default function Layout() {
   const { user, cart, settings, socialLinks, logout, products, categories, token, notifications, setNotifications, markNotificationRead } = useStore();
@@ -73,7 +75,7 @@ export default function Layout() {
         e.preventDefault();
         setIsSearchOpen(true);
         searchInputRef.current?.focus();
-      } else if (key === 'c') {
+      } else if (e.ctrlKey && key === 'c') {
         e.preventDefault();
         navigate('/cart');
       }
@@ -287,8 +289,8 @@ export default function Layout() {
                                 <h4 className="text-sm font-bold text-slate-900 truncate group-hover:text-indigo-600 transition-colors">{product.title}</h4>
                                 <p className="text-xs text-slate-500 truncate">{product.categoryId ? categories.find(c => c.id === product.categoryId)?.name : ''}</p>
                               </div>
-                              <div className="text-sm font-bold text-slate-900">
-                                ৳{Number(product.price || 0).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                              <div className="text-sm font-bold text-slate-900 flex items-center">
+                                <TakaIcon className="w-3.5 h-3.5 mr-[1px]" />{Number(product.price || 0).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                               </div>
                             </div>
                           ))}
@@ -332,7 +334,7 @@ export default function Layout() {
                 onMouseEnter={() => setShowMiniCart(true)}
                 onMouseLeave={() => setShowMiniCart(false)}
               >
-                <Link to="/cart" title="Cart (Press 'C')" className="relative text-slate-600 hover:text-indigo-600 transition-colors flex items-center h-full py-4">
+                <Link to="/cart" title="Cart (Press 'Ctrl+C')" className="relative text-slate-600 hover:text-indigo-600 transition-colors flex items-center h-full py-4">
                   <motion.div animate={isShaking ? { rotate: [0, -15, 15, -15, 15, 0], scale: [1, 1.2, 1] } : {}} transition={{ duration: 0.4 }}>
                     <ShoppingCart className="w-6 h-6" />
                   </motion.div>
@@ -384,7 +386,7 @@ export default function Layout() {
                             <div className="flex-1 min-w-0">
                               <h5 className="text-sm font-bold text-slate-900 truncate" title={item.product.title}>{item.product.title}</h5>
                               <p className="text-xs text-slate-500 mt-1">Qty: {item.quantity}</p>
-                              <p className="text-sm font-bold text-slate-700 mt-1">৳{(item.product.price * item.quantity).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                              <p className="text-sm font-bold text-slate-700 mt-1 flex items-center"><TakaIcon className="w-3 h-3 mr-[1px]" />{(item.product.price * item.quantity).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                             </div>
                           </div>
                         ))}
@@ -393,8 +395,8 @@ export default function Layout() {
                       <div className="p-4 bg-slate-50 border-t border-slate-100">
                         <div className="flex items-center justify-between mb-4">
                           <span className="text-sm text-slate-600 font-medium">Subtotal</span>
-                          <span className="text-lg font-bold text-slate-900">
-                            ৳{cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                          <span className="text-lg font-bold text-slate-900 flex items-center">
+                            <TakaIcon className="w-4 h-4 mr-[1px]" />{cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
@@ -464,9 +466,8 @@ export default function Layout() {
               {user ? (
                 <div className="flex items-center space-x-4">
                   {user.role === 'admin' && (
-                    <Link to="/admin" className="flex items-center space-x-1 text-slate-600 hover:text-indigo-600 transition-colors mr-1">
-                      <Shield className="w-5 h-5 animate-pulse" />
-                      <span className="text-xs font-bold bg-slate-100 text-slate-700 px-2 py-1 rounded-md hidden sm:block">Admin</span>
+                    <Link to="/admin" className="relative p-2 flex items-center justify-center text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors" title="Admin Workspace">
+                      <Shield className="w-5 h-5" />
                     </Link>
                   )}
                   
@@ -483,16 +484,33 @@ export default function Layout() {
                       )}
                     </Link>
                     
-                    {/* User Info Hover Popup */}
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none translate-y-2 group-hover:translate-y-0">
+                    {/* User Panel Dropdown */}
+                    <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 translate-y-2 group-hover:translate-y-0 pb-1">
                       <div className="p-4 border-b border-slate-100">
                         <p className="font-bold text-slate-900 truncate">{user.name}</p>
                         <p className="text-xs text-slate-500 truncate">{user.email}</p>
                       </div>
-                      <div className="p-2">
-                        <p className="text-xs text-indigo-600 font-medium px-2 py-1 bg-indigo-50 rounded-md inline-block">
-                          {user.role === 'admin' ? 'Admin Account' : 'Customer Account'}
-                        </p>
+                      <div className="px-2 py-2">
+                        <Link to="/profile" className="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors">
+                          <UserIcon className="w-4 h-4" />
+                          <span>My Profile</span>
+                        </Link>
+                        <Link to="/profile?tab=orders" className="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors">
+                          <Package className="w-4 h-4" />
+                          <span>My Orders</span>
+                        </Link>
+                      </div>
+                      <div className="border-t border-slate-100 px-2 py-2">
+                        <button 
+                          onClick={() => {
+                            logout();
+                            window.location.href = '/login';
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 rounded-lg transition-colors font-medium"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span>Logout</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -556,19 +574,41 @@ export default function Layout() {
           </div>
           <div>
             <h3 className="text-white font-medium mb-4">Connect With Us</h3>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-3 text-sm">
               {socialLinks.map(link => (
                 <li key={link.id}>
-                  <a href={link.url} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
-                    {link.name}
+                  <a href={link.url} target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:text-white transition-colors group">
+                    <SocialIcon link={link} className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
+                    <span>{link.name}</span>
                   </a>
                 </li>
               ))}
               {socialLinks.length === 0 && (
                 <>
-                  {settings?.facebookUrl && <li><a href={settings.facebookUrl} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Facebook</a></li>}
-                  {settings?.whatsappUrl && <li><a href={settings.whatsappUrl} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">WhatsApp</a></li>}
-                  {settings?.instagramUrl && <li><a href={settings.instagramUrl} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Instagram</a></li>}
+                  {settings?.facebookUrl && (
+                    <li>
+                      <a href={settings.facebookUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:text-white transition-colors group">
+                        <SocialIcon link={{ id: '1', name: 'Facebook', url: settings.facebookUrl, icon: 'facebook' }} className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
+                        <span>Facebook</span>
+                      </a>
+                    </li>
+                  )}
+                  {settings?.whatsappUrl && (
+                    <li>
+                      <a href={settings.whatsappUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:text-white transition-colors group">
+                        <SocialIcon link={{ id: '2', name: 'WhatsApp', url: settings.whatsappUrl, icon: 'whatsapp' }} className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
+                        <span>WhatsApp</span>
+                      </a>
+                    </li>
+                  )}
+                  {settings?.instagramUrl && (
+                    <li>
+                      <a href={settings.instagramUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:text-white transition-colors group">
+                        <SocialIcon link={{ id: '3', name: 'Instagram', url: settings.instagramUrl, icon: 'instagram' }} className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
+                        <span>Instagram</span>
+                      </a>
+                    </li>
+                  )}
                 </>
               )}
             </ul>

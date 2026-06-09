@@ -82,6 +82,21 @@ export default function App() {
       }
     };
     boot();
+    
+    // Poll user notifications
+    const pollInterval = setInterval(async () => {
+       const activeToken = localStorage.getItem('token');
+       if (activeToken) {
+          try {
+            const u = await api.get('/users/me', activeToken);
+            if (u) login(u as any, activeToken);
+          } catch (e) {
+            // Ignore background polling errors
+          }
+       }
+    }, 10000);
+    
+    return () => clearInterval(pollInterval);
   }, [setCategories, setBrands, setProducts, setOffers, setSettings, setSocialLinks, login, logout, setIsLoading]);
 
   if (isLoading) {
@@ -132,6 +147,7 @@ export default function App() {
           <Route path="admin-login" element={<AdminLogin />} />
           <Route path="profile" element={<Profile />} />
           <Route path="track-order" element={<TrackOrder />} />
+          <Route path="track-order/:id" element={<TrackOrder />} />
           <Route path="offers" element={<Offers />} />
           <Route path="admin/*" element={<AdminDashboard />} />
         </Route>

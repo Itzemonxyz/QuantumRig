@@ -9,6 +9,7 @@ import ScrollToTopButton from '../components/ScrollToTopButton';
 import { Product } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 export default function Products() {
   const { products, categories, isLoading, compareIds, toggleCompare, clearCompare } = useStore();
@@ -20,6 +21,9 @@ export default function Products() {
   const [sortBy, setSortBy] = useState('newest');
   
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  
+  useScrollLock(showMobileFilters);
+
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
 
   // New filter states
