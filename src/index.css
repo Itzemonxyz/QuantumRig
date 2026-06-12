@@ -1,9 +1,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Outfit", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  :root {
+    --chart-grid: var(--color-slate-200);
+    --chart-text: var(--color-slate-500);
+    --chart-tooltip-bg: #ffffff;
+    --chart-tooltip-border: var(--color-slate-200);
+  }
+  .dark {
+    --chart-grid: var(--color-slate-700);
+    --chart-text: var(--color-slate-400);
+    --chart-tooltip-bg: var(--color-slate-900);
+    --chart-tooltip-border: var(--color-slate-700);
+  }
 }
 
 html, body {
@@ -22,12 +39,16 @@ button {
   font-family: "Outfit", ui-sans-serif, system-ui, sans-serif !important;
 }
 
+.mono-spec-text {
+  font-family: "Outfit", ui-sans-serif, system-ui, sans-serif !important;
+}
+
 @keyframes marquee {
-  0% { transform: translateX(100vw); }
-  100% { transform: translateX(-100%); }
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
 }
 .animate-marquee {
-  display: inline-block;
+  display: inline-flex;
   animation: marquee 20s linear infinite;
   white-space: nowrap;
 }
@@ -41,4 +62,22 @@ button {
 * {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
+}
+
+/* Recharts Dark Mode Support */
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: var(--chart-tooltip-bg) !important;
+  border-color: var(--chart-tooltip-border) !important;
+}
+.recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-item-name, 
+.recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-item-separator {
+  color: var(--color-slate-500) !important;
+}
+.dark .recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-item-name, 
+.dark .recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-item-separator,
+.dark .recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-item-value {
+  color: var(--color-slate-300) !important;
+}
+.dark .recharts-tooltip-wrapper .recharts-default-tooltip {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
 }

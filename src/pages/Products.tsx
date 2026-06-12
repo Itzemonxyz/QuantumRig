@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import ProductSkeleton from '../components/ProductSkeleton';
 import Breadcrumbs from '../components/Breadcrumbs';
+import RecentlyViewed from '../components/RecentlyViewed';
 import ScrollToTopButton from '../components/ScrollToTopButton';
 import { Product } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -37,6 +38,21 @@ export default function Products() {
     const timer = setTimeout(() => setIsFiltering(false), 300);
     return () => clearTimeout(timer);
   }, [activeCategory, searchQuery, sortBy, selectedBrands, stockFilter, priceRange]);
+
+  React.useEffect(() => {
+    if (searchQuery && searchQuery.trim()) {
+      const q = searchQuery.trim();
+      try {
+        const stored = localStorage.getItem('recentSearches');
+        let list: string[] = stored ? JSON.parse(stored) : [];
+        list = [q, ...list.filter(item => item.toLowerCase() !== q.toLowerCase())].slice(0, 10);
+        localStorage.setItem('recentSearches', JSON.stringify(list));
+        window.dispatchEvent(new Event('recentlyViewedUpdated'));
+      } catch (e) {
+        console.error('Failed to update recent searches', e);
+      }
+    }
+  }, [searchQuery]);
 
   React.useEffect(() => {
     setLocalPriceRange(priceRange);
@@ -158,7 +174,7 @@ export default function Products() {
   const filterSidebarContent = (
     <div className="space-y-6">
       <div>
-        <h3 className="font-bold text-sm mb-3 text-slate-900 uppercase tracking-wider">Availability</h3>
+        <h3 className="font-bold text-sm mb-3 text-slate-900 dark:text-white uppercase tracking-wider">Availability</h3>
         <ul className="space-y-2 text-sm">
           {['all', 'in-stock', 'out-of-stock'].map(status => (
             <li key={status}>
@@ -171,7 +187,7 @@ export default function Products() {
                    onChange={(e) => setStockFilter(e.target.value)}
                    className="w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-slate-300"
                  />
-                 <span className="text-slate-700 font-medium">
+                 <span className="text-slate-700 dark:text-slate-300 font-medium">
                    {status === 'all' ? 'All Items' : status === 'in-stock' ? 'In Stock' : 'Out of Stock'}
                  </span>
                </label>
@@ -181,7 +197,7 @@ export default function Products() {
       </div>
 
       <div className="border-t border-slate-200 pt-6">
-        <h3 className="font-bold text-sm mb-3 text-slate-900 uppercase tracking-wider">Price Range</h3>
+        <h3 className="font-bold text-sm mb-3 text-slate-900 dark:text-white uppercase tracking-wider">Price Range</h3>
         <div className="flex items-center gap-2 mb-4">
           <input 
             type="number" 
@@ -222,7 +238,7 @@ export default function Products() {
           />
         </div>
         
-        <div className="flex flex-col gap-1 bg-slate-50 border border-slate-100 p-4 rounded-xl shadow-sm">
+        <div className="flex flex-col gap-1 bg-slate-50 dark:bg-slate-950 border border-slate-100 p-4 rounded-xl shadow-sm">
            <style>{`
              .dual-range-inputs {
                position: absolute;
@@ -279,20 +295,20 @@ export default function Products() {
              }
            `}</style>
            
-           <div className="flex justify-between items-center text-xs text-slate-500 mb-1">
+           <div className="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400 mb-1">
              <span className="flex flex-col">
-               <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Min Price</span>
-               <span className="font-mono text-slate-700 font-bold text-sm">৳{localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min)}</span>
+               <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Min Price</span>
+               <span className="font-mono text-slate-700 dark:text-slate-300 font-bold text-sm">৳{localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min)}</span>
              </span>
              <span className="flex flex-col items-end">
-               <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Max Price</span>
-               <span className="font-mono text-slate-700 font-bold text-sm">৳{localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max)}</span>
+               <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Max Price</span>
+               <span className="font-mono text-slate-700 dark:text-slate-300 font-bold text-sm">৳{localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max)}</span>
              </span>
            </div>
 
            <div className="relative w-full h-6 mt-1 flex items-center">
              {/* Background Track */}
-             <div className="absolute w-full h-1.5 bg-slate-200 rounded-lg pointer-events-none" />
+             <div className="absolute w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg pointer-events-none" />
              
              {/* Highlighted Active Range */}
              <div 
@@ -357,7 +373,7 @@ export default function Products() {
 
       {allBrands.length > 0 && (
         <div className="border-t border-slate-200 pt-6">
-          <h3 className="font-bold text-sm mb-3 text-slate-900 uppercase tracking-wider">Brands</h3>
+          <h3 className="font-bold text-sm mb-3 text-slate-900 dark:text-white uppercase tracking-wider">Brands</h3>
           <ul className="space-y-2 text-sm max-h-48 overflow-y-auto pr-2">
             {allBrands.map(brand => (
               <li key={brand}>
@@ -374,7 +390,7 @@ export default function Products() {
                      }}
                      className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                    />
-                   <span className="text-slate-700 font-medium">{brand}</span>
+                   <span className="text-slate-700 dark:text-slate-300 font-medium">{brand}</span>
                  </label>
               </li>
             ))}
@@ -386,7 +402,7 @@ export default function Products() {
         <div className="border-t border-slate-200 pt-4">
           <button 
             onClick={clearFilters}
-            className="w-full py-2 text-sm text-slate-600 font-medium bg-slate-100 rounded md:hover:bg-slate-200 transition-colors"
+            className="w-full py-2 text-sm text-slate-600 dark:text-slate-400 font-medium bg-slate-100 dark:bg-slate-800 rounded md:hover:bg-slate-200 dark:bg-slate-700 transition-colors"
           >
             Clear All Filters
           </button>
@@ -396,20 +412,20 @@ export default function Products() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative text-slate-900">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative text-slate-900 dark:text-white">
       <Breadcrumbs items={breadcrumbItems} />
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
          <div>
-           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 mb-2">
+           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-2">
              {searchQuery ? `Search Results for "${searchQuery}"` : activeCategory ? categories.find(c => c.id === activeCategory)?.name || 'Products' : 'All Products'}
            </h1>
-           <p className="text-sm text-slate-500">Showing {sortedProducts.length} results</p>
+           <p className="text-sm text-slate-500 dark:text-slate-400">Showing {sortedProducts.length} results</p>
          </div>
          
          <div className="flex items-center gap-4">
            <button 
              onClick={() => setShowMobileFilters(true)}
-             className="md:hidden flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-lg text-sm font-medium focus:ring-indigo-500"
+             className="md:hidden flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 px-4 py-2 rounded-lg text-sm font-medium focus:ring-indigo-500"
            >
              <Filter className="w-4 h-4" /> Filters
            </button>
@@ -418,7 +434,7 @@ export default function Products() {
                 id="sort"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg focus:ring-2 focus:ring-indigo-500 block p-2 w-full md:w-auto outline-none cursor-pointer"
+                className="bg-white dark:bg-slate-900 border border-slate-200 text-slate-900 dark:text-white text-sm font-medium rounded-lg focus:ring-2 focus:ring-indigo-500 block p-2 w-full md:w-auto outline-none cursor-pointer"
              >
                 {sortOptions.map(opt => (
                    <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -430,7 +446,7 @@ export default function Products() {
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Desktop Sidebar */}
-        <div className="hidden md:block col-span-1 border border-slate-200 bg-white p-5 rounded-xl h-fit sticky top-24 shadow-sm">
+        <div className="hidden md:block col-span-1 border border-slate-200 bg-white dark:bg-slate-900 p-5 rounded-xl h-fit sticky top-24 shadow-sm">
           {filterSidebarContent}
         </div>
         
@@ -448,10 +464,10 @@ export default function Products() {
                 animate={{ y: 0 }} 
                 exit={{ y: '100%' }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="w-full bg-white h-[85vh] max-h-[85vh] rounded-t-3xl shadow-2xl flex flex-col overflow-hidden"
+                className="w-full bg-white dark:bg-slate-900 h-[85vh] max-h-[85vh] rounded-t-3xl shadow-2xl flex flex-col overflow-hidden"
               >
-                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10 shrink-0">
-                  <h2 className="font-bold text-lg text-slate-900">Filters</h2>
+                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-white dark:bg-slate-900 sticky top-0 z-10 shrink-0">
+                  <h2 className="font-bold text-lg text-slate-900 dark:text-white">Filters</h2>
                   <div className="flex items-center space-x-4">
                     <button 
                       onClick={() => {
@@ -467,7 +483,7 @@ export default function Products() {
                     </button>
                     <button 
                       onClick={() => setShowMobileFilters(false)}
-                      className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors"
+                      className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-full transition-colors"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -476,9 +492,9 @@ export default function Products() {
                 <div className="p-5 overflow-y-auto flex-1 bg-slate-50/50">
                   {filterSidebarContent}
                 </div>
-                <div className="p-4 border-t border-slate-200 bg-white sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <div className="p-4 border-t border-slate-200 bg-white dark:bg-slate-900 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                   <div className="flex items-center justify-between mb-3 text-sm font-bold">
-                    <span className="text-slate-500">Products found:</span>
+                    <span className="text-slate-500 dark:text-slate-400">Products found:</span>
                     <span className="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">{sortedProducts.length}</span>
                   </div>
                   <button onClick={() => setShowMobileFilters(false)} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-transform active:scale-95">
@@ -499,10 +515,10 @@ export default function Products() {
               ))}
             </div>
           ) : sortedProducts.length === 0 ? (
-            <div className="text-center py-16 px-4 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
+            <div className="text-center py-16 px-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
               <Search className="w-12 h-12 text-slate-300 mb-4" />
-              <h3 className="text-lg font-bold text-slate-900 mb-1">No products found</h3>
-              <p className="text-slate-500 mb-4">Try adjusting your filters or search criteria.</p>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No products found</h3>
+              <p className="text-slate-500 dark:text-slate-400 mb-4">Try adjusting your filters or search criteria.</p>
               <button onClick={clearFilters} className="text-indigo-600 font-medium hover:underline">Clear all filters</button>
             </div>
           ) : (
@@ -522,6 +538,9 @@ export default function Products() {
           )}
         </div>
       </div>
+
+      {/* Recently Viewed & Searches Section */}
+      <RecentlyViewed />
 
       <ScrollToTopButton />
     </div>

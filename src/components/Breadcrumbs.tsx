@@ -21,7 +21,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
       
       {items.map((item, index) => (
         <React.Fragment key={index}>
-          <ChevronRight className="w-4 h-4 mx-2 flex-shrink-0 text-slate-600" />
+          <ChevronRight className="w-4 h-4 mx-2 flex-shrink-0 text-slate-600 dark:text-slate-400" />
           {item.path && index < items.length - 1 ? (
             <Link to={item.path} className="hover:text-orange-500 transition-colors">
               {item.label}

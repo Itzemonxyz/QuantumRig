@@ -83,7 +83,7 @@ export default function CouponsTab() {
   if (isEditing) {
     return (
       <div className="p-6">
-        <h2 className="text-xl font-bold text-slate-900 mb-6">{form.id ? 'Edit Coupon' : 'New Coupon'}</h2>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">{form.id ? 'Edit Coupon' : 'New Coupon'}</h2>
         <form onSubmit={handleSave} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -103,9 +103,9 @@ export default function CouponsTab() {
             
             <div className="col-span-2 mt-4">
               <label className="block text-sm font-medium mb-2">Applicable Products (Leave empty for all products)</label>
-              <div className="h-64 overflow-y-auto border border-slate-200 rounded p-4 space-y-2 bg-slate-50">
+              <div className="h-64 overflow-y-auto border border-slate-200 rounded p-4 space-y-2 bg-slate-50 dark:bg-slate-950">
                 {products.map(p => (
-                  <label key={p.id} className="flex items-center space-x-3 bg-white p-2 rounded shadow-sm border border-slate-100 cursor-pointer">
+                  <label key={p.id} className="flex items-center space-x-3 bg-white dark:bg-slate-900 p-2 rounded shadow-sm border border-slate-100 cursor-pointer">
                     <input 
                       type="checkbox" 
                       checked={(form.applicableProductIds || []).includes(p.id)}
@@ -113,14 +113,14 @@ export default function CouponsTab() {
                       className="rounded"
                     />
                     <img src={p.imageUrl} alt={p.title} className="w-8 h-8 object-contain" />
-                    <span className="text-sm text-slate-700 flex-1 truncate">{p.title}</span>
+                    <span className="text-sm text-slate-700 dark:text-slate-300 flex-1 truncate">{p.title}</span>
                   </label>
                 ))}
               </div>
             </div>
           </div>
           <div className="flex justify-end space-x-4">
-            <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded">Cancel</button>
+            <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 rounded">Cancel</button>
             <button type="submit" disabled={loading} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">Save</button>
           </div>
         </form>
@@ -131,7 +131,7 @@ export default function CouponsTab() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-slate-900 flex items-center">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
           <Ticket className="w-5 h-5 mr-2" />
           Coupons
         </h2>
@@ -143,7 +143,7 @@ export default function CouponsTab() {
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm whitespace-nowrap">
-          <thead className="bg-slate-50 text-slate-500 border-y border-slate-200">
+          <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 border-y border-slate-200">
             <tr>
               <th className="px-6 py-3 font-medium">Code</th>
               <th className="px-6 py-3 font-medium">Discount</th>
@@ -152,14 +152,14 @@ export default function CouponsTab() {
               <th className="px-6 py-3 font-medium text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-slate-700">
+          <tbody className="divide-y divide-slate-100 text-slate-700 dark:text-slate-300">
             {coupons.map(c => (
               <tr key={c.id}>
-                <td className="px-6 py-4 font-bold text-slate-900">{c.code}</td>
+                <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{c.code}</td>
                 <td className="px-6 py-4">{c.discountPercentage}%</td>
-                <td className="px-6 py-4 text-slate-500">{c.applicableProductIds.length === 0 ? 'All Products' : `${c.applicableProductIds.length} Products`}</td>
+                <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{c.applicableProductIds.length === 0 ? 'All Products' : `${c.applicableProductIds.length} Products`}</td>
                 <td className="px-6 py-4">
-                  <span className={`px-2.5 py-0.5 rounded text-xs font-medium ${c.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-800'}`}>
+                  <span className={`px-2.5 py-0.5 rounded text-xs font-medium ${c.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200'}`}>
                     {c.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </td>
@@ -173,7 +173,7 @@ export default function CouponsTab() {
             ))}
             {coupons.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">No coupons found.</td>
+                <td colSpan={5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">No coupons found.</td>
               </tr>
             )}
           </tbody>

@@ -45,24 +45,24 @@ export default function CompareWidget() {
             exit={{ y: 100, opacity: 0, x: "-50%" }}
             className="fixed bottom-20 sm:bottom-8 left-1/2 z-50 w-full px-4 sm:px-0 sm:w-auto"
           >
-            <div className="bg-white rounded-2xl shadow-2xl border border-indigo-100 p-3 flex flex-col sm:flex-row items-center gap-4 max-w-[calc(100vw-2rem)] sm:max-w-xl">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-indigo-100 p-3 flex flex-col sm:flex-row items-center gap-4 max-w-[calc(100vw-2rem)] sm:max-w-xl">
               <div className="flex gap-2 items-center shrink-0">
                 <div className="px-3 py-1 font-bold text-sm text-indigo-600 bg-indigo-50 rounded-full shadow-sm whitespace-nowrap border border-indigo-100">
                   {compareIds.length} / 4
                 </div>
                 {comparedProducts.map((p, i) => (
-                  <div key={p.id} className="relative group shrink-0 w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm ring-1 ring-slate-100 bg-slate-50">
+                  <div key={p.id} className="relative group shrink-0 w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm ring-1 ring-slate-100 bg-slate-50 dark:bg-slate-950">
                     <img 
                       src={p.imageUrl} 
                       alt="" 
                       className="w-full h-full object-cover transition-all duration-200 group-hover:blur-[2px] group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 bg-black/5 cursor-pointer"
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 bg-slate-950/5 cursor-pointer"
                          onClick={(e) => {
                            e.stopPropagation();
                            toggleCompare(p.id);
                          }}>
-                      <div className="bg-white text-rose-500 rounded-full p-1 shadow-sm hover:bg-rose-50 hover:text-rose-600 transition-colors">
+                      <div className="bg-white dark:bg-slate-900 text-rose-500 rounded-full p-1 shadow-sm hover:bg-rose-50 hover:text-rose-600 transition-colors">
                         <X className="w-3.5 h-3.5" />
                       </div>
                     </div>
@@ -77,7 +77,7 @@ export default function CompareWidget() {
                   className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${
                     compareIds.length >= 2 
                     ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg hover:shadow-indigo-500/25 whitespace-nowrap' 
-                    : 'bg-slate-100 text-slate-400 cursor-not-allowed whitespace-nowrap'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed whitespace-nowrap'
                   }`}
                 >
                   <BarChart2 className="w-4 h-4" />
@@ -109,10 +109,10 @@ export default function CompareWidget() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200"
+              className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200"
             >
-              <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-slate-50">
-                <h2 className="text-xl font-bold text-slate-900 flex items-center">
+              <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-slate-50 dark:bg-slate-950">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
                   <Scale className="w-5 h-5 mr-2 text-indigo-600" />
                   Compare Products ({comparedProducts.length})
                 </h2>
@@ -125,17 +125,17 @@ export default function CompareWidget() {
                   </button>
                   <button 
                     onClick={() => setShowCompareModal(false)}
-                    className="text-slate-400 hover:text-slate-900 bg-white hover:bg-slate-100 rounded-full p-2 transition-colors border border-slate-200 shadow-sm"
+                    className="text-slate-400 hover:text-slate-900 dark:text-white bg-white dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800 rounded-full p-2 transition-colors border border-slate-200 shadow-sm"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
               </div>
               
-              <div className="p-6 overflow-y-auto bg-white flex-1">
+              <div className="p-6 overflow-y-auto bg-white dark:bg-slate-900 flex-1">
                 <div className={`grid ${comparedProducts.length === 4 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4' : comparedProducts.length === 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'} gap-6 relative`}>
                    {comparedProducts.map((p, idx) => (
-                     <div key={p.id} className="flex flex-col relative bg-slate-50 border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                     <div key={p.id} className="flex flex-col relative bg-slate-50 dark:bg-slate-950 border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                        <button
                           onClick={() => {
                             if (comparedProducts.length <= 2) {
@@ -143,52 +143,52 @@ export default function CompareWidget() {
                             }
                             toggleCompare(p.id);
                           }}
-                          className="absolute top-3 right-3 p-1.5 bg-white text-rose-500 hover:bg-rose-50 rounded-full shadow-sm border border-slate-200 z-10"
+                          className="absolute top-3 right-3 p-1.5 bg-white dark:bg-slate-900 text-rose-500 hover:bg-rose-50 rounded-full shadow-sm border border-slate-200 z-10"
                           title="Remove from comparison"
                        >
                           <X className="w-4 h-4" />
                        </button>
-                       <div className="aspect-video bg-white rounded-xl p-4 mb-4 flex items-center justify-center border border-slate-100 shadow-inner group">
+                       <div className="aspect-video bg-white dark:bg-slate-900 rounded-xl p-4 mb-4 flex items-center justify-center border border-slate-100 shadow-inner group">
                          <img src={p.imageUrl} alt={p.title} className="max-h-36 object-contain mix-blend-multiply group-hover:scale-105 transition-transform" />
                        </div>
-                       <h3 className="font-bold text-base text-slate-900 mb-2 line-clamp-2 min-h-[3rem]">{p.title}</h3>
+                       <h3 className="font-bold text-base text-slate-900 dark:text-white mb-2 line-clamp-2 min-h-[3rem]">{p.title}</h3>
                        <div className="mb-4 flex flex-wrap items-center gap-2">
                          {p.discountPrice ? (
                            <>
-                             <span className="text-xl font-bold text-slate-600">৳{Number(p.discountPrice).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+                             <span className="text-xl font-bold text-slate-600 dark:text-slate-400">৳{Number(p.discountPrice).toLocaleString("en-IN", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
                              <span className="text-xs font-medium text-slate-400 line-through">৳{Number(p.price).toLocaleString("en-BD", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
                            </>
                          ) : (
-                           <span className="text-xl font-bold text-slate-700">৳{Number(p.price).toLocaleString("en-BD", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
+                           <span className="text-xl font-bold text-slate-700 dark:text-slate-300">৳{Number(p.price).toLocaleString("en-BD", {minimumFractionDigits: 0, maximumFractionDigits: 0})}</span>
                          )}
                        </div>
                        
                        <div className="space-y-4">
                          <div>
-                           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Stock Status</h4>
-                           <p className="font-medium text-slate-700">{p.stockStatus}</p>
+                           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Stock Status</h4>
+                           <p className="font-medium text-slate-700 dark:text-slate-300">{p.stockStatus}</p>
                          </div>
                          
                          {p.socket && (
                           <div>
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Socket</h4>
-                            <p className="font-medium text-slate-700">{p.socket}</p>
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Socket</h4>
+                            <p className="font-medium text-slate-700 dark:text-slate-300">{p.socket}</p>
                           </div>
                          )}
 
                          {p.wattage !== undefined && p.wattage > 0 && (
                           <div>
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Wattage</h4>
-                            <p className="font-medium text-slate-700">{p.wattage}W</p>
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Wattage</h4>
+                            <p className="font-medium text-slate-700 dark:text-slate-300">{p.wattage}W</p>
                           </div>
                          )}
 
                          {allSpecKeys.map((key: string) => (
                            <div key={key}>
-                             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
                                {key.replace(/([A-Z])/g, ' $1').trim()}
                              </h4>
-                             <p className="font-medium text-slate-700">
+                             <p className="font-medium text-slate-700 dark:text-slate-300">
                                {(p.specs as any)[key] || '-'}
                              </p>
                            </div>
@@ -235,19 +235,19 @@ export default function CompareWidget() {
 
                   if (chartData.length === 0) return null;
 
-                  const CompareTooltip = ({ active, payload, label }: any) => {
+                   const CompareTooltip = ({ active, payload, label }: any) => {
                     if (active && payload && payload.length) {
                       return (
-                        <div className="bg-white border border-slate-200 p-3 shadow-xl rounded-xl text-xs font-sans text-slate-800 z-50 min-w-[220px] select-none">
-                          <p className="font-bold text-slate-500 mb-2 tracking-wider uppercase text-[10px]">{label}</p>
+                        <div className="bg-[#111827] border border-slate-800/80 p-3 shadow-2xl shadow-slate-950/50 rounded-xl text-xs font-sans text-slate-200 z-50 min-w-[220px] select-none">
+                          <p className="font-bold text-slate-400 mb-2 tracking-wider uppercase text-[10px]">{label}</p>
                           <div className="space-y-1.5">
                             {payload.map((p: any, idx: number) => (
                               <div key={idx} className="flex items-center justify-between gap-4">
-                                <span className="flex items-center gap-1.5 text-slate-600 font-medium">
+                                <span className="flex items-center gap-1.5 text-slate-300 font-medium">
                                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.fill || p.color }} />
                                   {p.name}:
                                 </span>
-                                <span className="font-mono font-bold text-slate-900">{p.value}</span>
+                                <span className="font-mono font-bold text-slate-100">{p.value}</span>
                               </div>
                             ))}
                           </div>
@@ -259,16 +259,16 @@ export default function CompareWidget() {
 
                   return (
                     <div className="mt-12 border-t border-slate-200 pt-8">
-                      <h3 className="text-lg font-bold text-slate-900 mb-6 text-center">Hardware Metrics Comparison</h3>
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 text-center">Hardware Metrics Comparison</h3>
                       <div className="h-80 w-full">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
                             data={chartData}
                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                           >
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                            <XAxis dataKey="name" tick={{fill: '#64748b', fontSize: 12}} tickLine={false} axisLine={false} />
-                            <YAxis tick={{fill: '#64748b', fontSize: 12}} tickLine={false} axisLine={false} />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
+                            <XAxis dataKey="name" tick={{fill: 'var(--chart-text)', fontSize: 12}} tickLine={false} axisLine={false} />
+                            <YAxis tick={{fill: 'var(--chart-text)', fontSize: 12}} tickLine={false} axisLine={false} />
                             <Tooltip 
                               cursor={{fill: '#f1f5f9'}}
                               content={<CompareTooltip />}

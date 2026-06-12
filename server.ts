@@ -4,7 +4,7 @@ import path from "path";
 import cors from "cors";
 import { createServer as createViteServer } from "vite";
 import fs from "fs";
-import { User, Category, Brand, Product, Order, Settings, Coupon, Offer, RestockRequest, UserNotification, SocialLink, StockAdjustmentLog } from "./src/types";
+import { User, Category, Brand, Product, Order, Settings, Coupon, Offer, Banner, RestockRequest, UserNotification, SocialLink, StockAdjustmentLog, FAQItem } from "./src/types";
 
 
 const app = express();
@@ -20,7 +20,8 @@ console.error = (...args) => {
 };
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 app.use((req, res, next) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -97,6 +98,72 @@ let coupons: Coupon[] = [];
 
 let offers: Offer[] = [];
 
+let banners: Banner[] = [
+  {
+    id: "b1",
+    title: "Dream PC Build Highlight",
+    imageUrl: "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=1400&q=80",
+    description: "Ultimate Neon Rig Setup",
+    active: true,
+    linkUrl: "/builder",
+    type: "main"
+  },
+  {
+    id: "b2",
+    title: "Next-Gen Thermal Challenge",
+    imageUrl: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?auto=format&fit=crop&w=1400&q=80",
+    description: "Extreme Performance Assemblies",
+    active: true,
+    linkUrl: "/products",
+    type: "main"
+  },
+  {
+    id: "b3",
+    title: "Top Right Static Promo",
+    imageUrl: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=600&q=80",
+    description: "Gaming Peripherals Collection",
+    active: true,
+    linkUrl: "/products?category=accessories",
+    type: "fixed-1"
+  },
+  {
+    id: "b4",
+    title: "Bottom Right Static Promo",
+    imageUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80",
+    description: "Next-Gen Processor Architecture",
+    active: true,
+    linkUrl: "/products?category=processors",
+    type: "fixed-2"
+  }
+];
+
+let faqs: FAQItem[] = [
+  {
+    id: "faq_1",
+    question: "How long does it take to assemble and ship a custom PC?",
+    answer: "Custom PCs are specifically built, meticulously stress-tested, and performance-optimized within 2 to 3 business days. Shipping usually takes an additional 1 to 2 days inside Dhaka, and 3 to 4 days for deliveries outside. Rest assured, we pride ourselves on speed without sacrificing build safety.",
+    order: 1
+  },
+  {
+    id: "faq_2",
+    question: "Are all components brand new and covered by official warranties?",
+    answer: "Absolutely! At QuantumRig, we only use 100% genuine, factory-sealed components sourced directly from official authorized brand distributors. Every component maintains its full original manufacturer's warranty, which spans anywhere from 1 up to 10 years depending on the specific model and manufacturer.",
+    order: 2
+  },
+  {
+    id: "faq_3",
+    question: "Do you perform stress testing and temperature optimization before shipping?",
+    answer: "Yes, standard for every single machine. Each custom build undergoes a rigorous 24-hour diagnostic phase including dedicated processor and GPU stress tests. We tune custom fan speed profiles to sustain low noise levels and cool temperatures inside our deep, sleek enclosures for high-load gaming or production.",
+    order: 3
+  },
+  {
+    id: "faq_4",
+    question: "What shipping protocols do you follow, and is my shipment protected?",
+    answer: "We use premium domestic couriers and enforce safe, thick internal expand-wrap foam packaging to securely brace heavy graphic cards and massive air-cooler heatsinks during transit. Every dynamic shipment is fully insured by us, ensuring a seamless replacement policy in the unlikely event of arrival damage.",
+    order: 4
+  }
+];
+
 let socialLinks: SocialLink[] = [
   { id: "sl1", name: "Facebook", url: "https://facebook.com" },
   { id: "sl2", name: "WhatsApp", url: "https://whatsapp.com" },
@@ -106,7 +173,7 @@ let socialLinks: SocialLink[] = [
 let orders: Order[] = [];
 
 let settings: Settings = {
-  announcementText: "🚀 Free shipping on all PC Builds over ৳2000! Use code QUANTUM24",
+  announcementText: "Free shipping on all PC Builds over ৳2000! Use code QUANTUM24",
   facebookUrl: "https://facebook.com",
   whatsappUrl: "https://whatsapp.com",
   instagramUrl: "https://instagram.com"
@@ -234,6 +301,12 @@ async function syncDatabase() {
       offers = ofSnap.docs.map((d: any) => d.data() as Offer);
     }
 
+    // 8b. Sync Banners
+    const bnSnap = await db.collection("banners").get();
+    if (!bnSnap.empty) {
+      banners = bnSnap.docs.map((d: any) => d.data() as Banner);
+    }
+
     // 9. Sync Restock Requests
     const rrSnap = await db.collection("restocks").get();
     if (!rrSnap.empty) {
@@ -287,6 +360,17 @@ async function syncDatabase() {
     if (!slgsSnap.empty) {
       stockLogs = slgsSnap.docs.map((d: any) => d.data() as StockAdjustmentLog);
       stockLogs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+
+    // 14. Sync FAQs
+    const faqSnap = await db.collection("faqs").get();
+    if (!faqSnap.empty) {
+      faqs = faqSnap.docs.map((d: any) => d.data() as FAQItem);
+      faqs.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    } else {
+      for (const f of faqs) {
+        await db.collection("faqs").doc(f.id).set(JSON.parse(JSON.stringify(f))).catch(console.error);
+      }
     }
 
   } catch (error: any) {
@@ -1003,6 +1087,28 @@ app.delete("/api/offers/:id", async (req, res) => {
   res.sendStatus(204);
 });
 
+// Banners
+app.get("/api/banners", (req, res) => res.json(banners));
+app.post("/api/banners", async (req, res) => {
+  const b: Banner = { id: `ban${Date.now()}`, ...req.body };
+  if (db) await db.collection("banners").doc(b.id).set(JSON.parse(JSON.stringify(b))).catch(console.error);
+  banners.push(b);
+  res.json(b);
+});
+app.put("/api/banners/:id", async (req, res) => {
+  const idx = banners.findIndex(b => b.id === req.params.id);
+  if (idx > -1) {
+    banners[idx] = { ...banners[idx], ...req.body };
+    if (db) await db.collection("banners").doc(banners[idx].id).set(JSON.parse(JSON.stringify(banners[idx]))).catch(console.error);
+    res.json(banners[idx]);
+  } else res.status(404).json({ error: "Not found" });
+});
+app.delete("/api/banners/:id", async (req, res) => {
+  banners = banners.filter(b => b.id !== req.params.id);
+  if (db) await db.collection("banners").doc(req.params.id).delete().catch(console.error);
+  res.sendStatus(204);
+});
+
 // Coupons
 app.get("/api/coupons", (req, res) => res.json(coupons));
 app.post("/api/coupons", async (req, res) => {
@@ -1022,6 +1128,30 @@ app.put("/api/coupons/:id", async (req, res) => {
 app.delete("/api/coupons/:id", async (req, res) => {
   coupons = coupons.filter(c => c.id !== req.params.id);
   if (db) await db.collection("coupons").doc(req.params.id).delete().catch(console.error);
+  res.sendStatus(204);
+});
+
+// FAQs
+app.get("/api/faqs", (req, res) => res.json(faqs));
+app.post("/api/faqs", async (req, res) => {
+  const f: FAQItem = { id: `faq_${Date.now()}`, ...req.body };
+  if (db) await db.collection("faqs").doc(f.id).set(JSON.parse(JSON.stringify(f))).catch(console.error);
+  faqs.push(f);
+  faqs.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  res.json(f);
+});
+app.put("/api/faqs/:id", async (req, res) => {
+  const idx = faqs.findIndex(f => f.id === req.params.id);
+  if (idx > -1) {
+    faqs[idx] = { ...faqs[idx], ...req.body };
+    if (db) await db.collection("faqs").doc(faqs[idx].id).set(JSON.parse(JSON.stringify(faqs[idx]))).catch(console.error);
+    faqs.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    res.json(faqs[idx]);
+  } else res.status(404).json({ error: "Not found" });
+});
+app.delete("/api/faqs/:id", async (req, res) => {
+  faqs = faqs.filter(f => f.id !== req.params.id);
+  if (db) await db.collection("faqs").doc(req.params.id).delete().catch(console.error);
   res.sendStatus(204);
 });
 app.get("/api/coupons/validate/:code", (req, res) => {

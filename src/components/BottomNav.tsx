@@ -33,14 +33,14 @@ export default function BottomNav() {
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      className="fixed bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md border border-slate-200 z-50 px-2 py-2 flex justify-between items-center sm:hidden shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-2xl pb-safe"
+      className="fixed bottom-4 left-4 right-4 bg-white dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 z-50 px-2 py-2 flex justify-between items-center sm:hidden shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-2xl pb-safe"
     >
-      <Link to="/products" className={`flex flex-col items-center justify-center p-2 w-16 ${location.pathname.startsWith('/products') ? 'text-indigo-600' : 'text-slate-500 hover:text-indigo-600'}`}>
+      <Link to="/products" className={`flex flex-col items-center justify-center p-2 w-16 ${location.pathname.startsWith('/products') ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600'}`}>
         <LayoutGrid className="w-5 h-5 mb-1" />
         <span className="text-[11px] font-semibold">Products</span>
       </Link>
       
-      <Link to="/offers" className={`flex flex-col items-center justify-center p-2 w-16 ${isActive('/offers') ? 'text-indigo-600' : 'text-slate-500 hover:text-indigo-600'}`}>
+      <Link to="/offers" className={`flex flex-col items-center justify-center p-2 w-16 ${isActive('/offers') ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600'}`}>
         <Zap className="w-5 h-5 mb-1" />
         <span className="text-[11px] font-semibold">Offers</span>
       </Link>
@@ -48,13 +48,13 @@ export default function BottomNav() {
       <div className="relative w-16 h-full flex justify-center">
         <Link 
           to="/" 
-          className="absolute -top-7 flex flex-col items-center justify-center w-14 h-14 bg-white rounded-full shadow-[0_0_20px_rgba(0,0,0,0.15)] hover:bg-slate-50 transition-colors border-[3px] border-indigo-50"
+          className="absolute -top-7 flex flex-col items-center justify-center w-14 h-14 bg-white dark:bg-slate-900 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.15)] hover:bg-slate-50 dark:bg-slate-950 transition-colors border-[3px] border-indigo-50"
         >
           <img src="/favicon.svg" alt="Home" className="w-7 h-7 object-contain" />
         </Link>
       </div>
       
-      <Link to="/cart" className={`flex flex-col items-center justify-center p-2 w-16 relative ${isActive('/cart') ? 'text-indigo-600' : 'text-slate-500 hover:text-indigo-600'}`}>
+      <Link to="/cart" className={`flex flex-col items-center justify-center p-2 w-16 relative ${isActive('/cart') ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600'}`}>
         <div className="relative">
           <motion.div animate={isShaking ? { rotate: [0, -15, 15, -15, 15, 0], scale: [1, 1.2, 1] } : {}} transition={{ duration: 0.4 }}>
             <ShoppingBag className="w-5 h-5 mb-1" />
@@ -76,7 +76,7 @@ export default function BottomNav() {
         <span className="text-[11px] font-semibold">Cart</span>
       </Link>
       
-      <Link to={dest} className={`flex flex-col items-center justify-center p-2 w-16 ${isMenu ? 'text-indigo-600' : 'text-slate-500 hover:text-indigo-600'}`}>
+      <Link to={dest} className={`flex flex-col items-center justify-center p-2 w-16 ${isMenu ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600'}`}>
         <User className="w-5 h-5 mb-1" />
         <span className="text-[11px] font-semibold">Menu</span>
       </Link>

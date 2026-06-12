@@ -1,6 +1,6 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store';
-import { Monitor, ShoppingCart, User as UserIcon, LogOut, Package, Shield, Search, Bell, Tag } from 'lucide-react';
+import { Monitor, ShoppingCart, User as UserIcon, LogOut, Package, Shield, Search, Bell, Tag, Moon, Sun } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import BottomNav from './BottomNav';
@@ -12,7 +12,7 @@ import TakaIcon from './TakaIcon';
 import SocialIcon from './SocialIcon';
 
 export default function Layout() {
-  const { user, cart, settings, socialLinks, logout, products, categories, token, notifications, setNotifications, markNotificationRead } = useStore();
+  const { user, cart, settings, socialLinks, logout, products, categories, token, notifications, setNotifications, markNotificationRead, theme, setTheme } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,12 +32,32 @@ export default function Layout() {
     }
   });
 
+  // Sync state if localStorage changes globally
+  useEffect(() => {
+    const syncSearches = () => {
+      try {
+        const stored = localStorage.getItem('recentSearches');
+        setRecentSearches(stored ? JSON.parse(stored) : []);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    window.addEventListener('recentlyViewedUpdated', syncSearches);
+    window.addEventListener('storage', syncSearches);
+    return () => {
+      window.removeEventListener('recentlyViewedUpdated', syncSearches);
+      window.removeEventListener('storage', syncSearches);
+    };
+  }, []);
+
   const saveRecentSearch = (query: string) => {
     const trimmed = query.trim();
     if (!trimmed) return;
     setRecentSearches(prev => {
-      const updated = [trimmed, ...prev.filter(q => q.toLowerCase() !== trimmed.toLowerCase())].slice(0, 3);
+      const updated = [trimmed, ...prev.filter(q => q.toLowerCase() !== trimmed.toLowerCase())].slice(0, 10);
       localStorage.setItem('recentSearches', JSON.stringify(updated));
+      // Notify other components
+      window.dispatchEvent(new Event('recentlyViewedUpdated'));
       return updated;
     });
   };
@@ -65,19 +85,34 @@ export default function Layout() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
-      const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
-
-      if (isInputFocused) return;
+      const isInputFocused = activeEl && (
+        activeEl.tagName === 'INPUT' || 
+        activeEl.tagName === 'TEXTAREA' || 
+        (activeEl as HTMLElement).isContentEditable
+      );
 
       const key = e.key.toLowerCase();
-      
+
+      // Alt + C opens the cart
+      if (e.altKey && key === 'c') {
+        e.preventDefault();
+        navigate('/cart');
+        return;
+      }
+
+      // If user is focused on an input, ignore single-character shortcuts
+      if (isInputFocused) return;
+
       if (key === 's') {
         e.preventDefault();
         setIsSearchOpen(true);
         searchInputRef.current?.focus();
-      } else if (e.ctrlKey && key === 'c') {
+      } else if (key === 'p') {
         e.preventDefault();
-        navigate('/cart');
+        navigate('/profile');
+      } else if (key === 'b') {
+        e.preventDefault();
+        navigate('/builder');
       }
     };
 
@@ -178,8 +213,8 @@ export default function Layout() {
     : [];
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-900">
-      <header className="hidden md:block bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-white">
+      <header className="hidden md:block bg-white dark:bg-slate-900 border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-24">
             <Link to="/" className="flex items-center space-x-2 text-indigo-600 shrink-0">
@@ -210,7 +245,7 @@ export default function Layout() {
                     }
                   }}
                   onFocus={() => setIsSearchOpen(true)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-100 border-slate-200 text-slate-900 focus:bg-white focus:border-indigo-500 rounded-xl text-sm transition-colors outline-none border focus:ring-2 focus:ring-indigo-500/50"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800 border-slate-200 text-slate-900 dark:text-white focus:bg-white dark:bg-slate-900 focus:border-indigo-500 rounded-xl text-sm transition-colors outline-none border focus:ring-2 focus:ring-indigo-500/50"
                 />
               </div>
               
@@ -220,7 +255,7 @@ export default function Layout() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-14 left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-2xl shadow-indigo-900/10 overflow-hidden z-50"
+                    className="absolute top-14 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 rounded-xl shadow-2xl shadow-indigo-900/10 overflow-hidden z-50"
                   >
                     <div className="max-h-[28rem] overflow-y-auto overflow-x-hidden">
                       {searchQuery.trim() === '' && recentSearches.length > 0 && (
@@ -243,7 +278,7 @@ export default function Layout() {
                               <button
                                 key={idx}
                                 onClick={() => handleSearchSubmit(rs)}
-                                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 hover:border-indigo-300 hover:text-indigo-600 transition-colors shadow-sm"
+                                className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:border-indigo-300 hover:text-indigo-600 transition-colors shadow-sm"
                               >
                                 {rs}
                               </button>
@@ -262,7 +297,7 @@ export default function Layout() {
                                 setSearchQuery('');
                                 setIsSearchOpen(false);
                               }}
-                              className="px-2 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg cursor-pointer flex items-center transition-colors"
+                              className="px-2 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-950 hover:text-indigo-600 rounded-lg cursor-pointer flex items-center transition-colors"
                             >
                               <Search className="w-4 h-4 mr-2 text-slate-400" />
                               {cat.name}
@@ -282,21 +317,21 @@ export default function Layout() {
                                 setSearchQuery('');
                                 setIsSearchOpen(false);
                               }}
-                              className="flex items-center space-x-4 p-3 hover:bg-slate-50 cursor-pointer rounded-xl transition-colors group"
+                              className="flex items-center space-x-4 p-3 hover:bg-slate-50 dark:bg-slate-950 cursor-pointer rounded-xl transition-colors group"
                             >
-                              <img src={product.imageUrl} alt={product.title} className="w-12 h-12 object-contain bg-white rounded-lg border border-slate-100 group-hover:border-indigo-100" />
+                              <img src={product.imageUrl} alt={product.title} className="w-12 h-12 object-contain bg-white dark:bg-slate-900 rounded-lg border border-slate-100 group-hover:border-indigo-100" />
                               <div className="flex-1 min-w-0">
-                                <h4 className="text-sm font-bold text-slate-900 truncate group-hover:text-indigo-600 transition-colors">{product.title}</h4>
-                                <p className="text-xs text-slate-500 truncate">{product.categoryId ? categories.find(c => c.id === product.categoryId)?.name : ''}</p>
+                                <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 transition-colors">{product.title}</h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{product.categoryId ? categories.find(c => c.id === product.categoryId)?.name : ''}</p>
                               </div>
-                              <div className="text-sm font-bold text-slate-900 flex items-center">
+                              <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center">
                                 <TakaIcon className="w-3.5 h-3.5 mr-[1px]" />{Number(product.price || 0).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                               </div>
                             </div>
                           ))}
                         </div>
                       ) : searchQuery.trim() !== '' && categoryResults.length === 0 ? (
-                        <div className="p-8 text-center text-slate-500 flex flex-col items-center justify-center">
+                        <div className="p-8 text-center text-slate-500 dark:text-slate-400 flex flex-col items-center justify-center">
                           <Package className="w-8 h-8 text-slate-300 mb-2" />
                           <p className="text-sm font-medium">No results found for "{searchQuery}"</p>
                           <p className="text-xs text-slate-400 mt-1">Try a different keyword or check for typos.</p>
@@ -304,14 +339,14 @@ export default function Layout() {
                       ) : null}
                       
                       {(searchResults.length > 0 || categoryResults.length > 0) && (
-                        <div className="p-2 border-t border-slate-100 bg-slate-50 sticky bottom-0">
+                        <div className="p-2 border-t border-slate-100 bg-slate-50 dark:bg-slate-950 sticky bottom-0">
                           <button
                             onClick={() => {
                               navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
                               setSearchQuery('');
                               setIsSearchOpen(false);
                             }}
-                            className="w-full py-2 text-sm font-bold text-indigo-600 hover:text-indigo-700 hover:bg-slate-100 rounded-lg transition-colors"
+                            className="w-full py-2 text-sm font-bold text-indigo-600 hover:text-indigo-700 hover:bg-slate-100 dark:bg-slate-800 rounded-lg transition-colors"
                           >
                             View all results
                           </button>
@@ -324,7 +359,14 @@ export default function Layout() {
             </div>
 
             <div className="hidden md:flex items-center space-x-6">
-              <Link to="/offers" className="flex items-center space-x-1 text-slate-600 hover:text-indigo-600 font-medium transition-colors">
+              <button 
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                className="p-2 text-slate-600 dark:text-slate-400 hover:text-indigo-600 transition-colors rounded-full hover:bg-slate-100 dark:bg-slate-800"
+                title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              >
+                {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+              </button>
+              <Link to="/offers" className="flex items-center space-x-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 font-medium transition-colors">
                 <Tag className="w-5 h-5" />
                 <span>Offers</span>
               </Link>
@@ -334,7 +376,7 @@ export default function Layout() {
                 onMouseEnter={() => setShowMiniCart(true)}
                 onMouseLeave={() => setShowMiniCart(false)}
               >
-                <Link to="/cart" title="Cart (Press 'Ctrl+C')" className="relative text-slate-600 hover:text-indigo-600 transition-colors flex items-center h-full py-4">
+                <Link to="/cart" title="Cart (Press 'Alt+C')" className="relative text-slate-600 dark:text-slate-400 hover:text-indigo-600 transition-colors flex items-center h-full py-4">
                   <motion.div animate={isShaking ? { rotate: [0, -15, 15, -15, 15, 0], scale: [1, 1.2, 1] } : {}} transition={{ duration: 0.4 }}>
                     <ShoppingCart className="w-6 h-6" />
                   </motion.div>
@@ -361,10 +403,10 @@ export default function Layout() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute right-0 top-full mt-1 w-80 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden"
+                      className="absolute right-0 top-full mt-1 w-80 bg-white dark:bg-slate-900 border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden"
                     >
-                      <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                        <h4 className="font-bold text-slate-900 flex items-center gap-2">
+                      <div className="p-4 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 flex items-center justify-between">
+                        <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                           <ShoppingCart className="w-4 h-4 text-indigo-600" />
                           Your Cart
                         </h4>
@@ -376,7 +418,7 @@ export default function Layout() {
                       <div className="max-h-80 overflow-y-auto p-4 space-y-4">
                         {cart.map((item) => (
                           <div key={item.product.id} className="flex gap-3">
-                            <div className="w-16 h-16 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
+                            <div className="w-16 h-16 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
                               {item.product.imageUrl ? (
                                 <img src={item.product.imageUrl} alt={item.product.title} className="w-full h-full object-cover" />
                               ) : (
@@ -384,25 +426,25 @@ export default function Layout() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h5 className="text-sm font-bold text-slate-900 truncate" title={item.product.title}>{item.product.title}</h5>
-                              <p className="text-xs text-slate-500 mt-1">Qty: {item.quantity}</p>
-                              <p className="text-sm font-bold text-slate-700 mt-1 flex items-center"><TakaIcon className="w-3 h-3 mr-[1px]" />{(item.product.price * item.quantity).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                              <h5 className="text-sm font-bold text-slate-900 dark:text-white truncate" title={item.product.title}>{item.product.title}</h5>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Qty: {item.quantity}</p>
+                              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mt-1 flex items-center"><TakaIcon className="w-3 h-3 mr-[1px]" />{(item.product.price * item.quantity).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                             </div>
                           </div>
                         ))}
                       </div>
                       
-                      <div className="p-4 bg-slate-50 border-t border-slate-100">
+                      <div className="p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-100">
                         <div className="flex items-center justify-between mb-4">
-                          <span className="text-sm text-slate-600 font-medium">Subtotal</span>
-                          <span className="text-lg font-bold text-slate-900 flex items-center">
+                          <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">Subtotal</span>
+                          <span className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
                             <TakaIcon className="w-4 h-4 mr-[1px]" />{cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <Link 
                             to="/cart" 
-                            className="text-center py-2 px-4 rounded-lg bg-white border border-slate-300 text-slate-700 font-medium text-sm hover:bg-slate-50 transition-colors"
+                            className="text-center py-2 px-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 text-slate-700 dark:text-slate-300 font-medium text-sm hover:bg-slate-50 dark:bg-slate-950 transition-colors"
                           >
                             View Cart
                           </Link>
@@ -421,7 +463,7 @@ export default function Layout() {
               
               {user && (
                 <div className="relative" ref={notifRef}>
-                  <button onClick={() => setShowNotifications(!showNotifications)} className="relative text-slate-600 hover:text-indigo-600 transition-colors">
+                  <button onClick={() => setShowNotifications(!showNotifications)} className="relative text-slate-600 dark:text-slate-400 hover:text-indigo-600 transition-colors">
                     <Bell className="w-6 h-6" />
                     {unreadCount > 0 && (
                       <span className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white font-mono">
@@ -435,23 +477,23 @@ export default function Layout() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50 text-slate-900"
+                        className="absolute right-0 mt-3 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50 text-slate-900 dark:text-white"
                       >
-                        <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                        <div className="p-4 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 flex items-center justify-between">
                           <h3 className="font-bold">Notifications</h3>
                           {unreadCount > 0 && <span className="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded-full">{unreadCount} New</span>}
                         </div>
                         <div className="max-h-80 overflow-y-auto">
                            {(!notifications || notifications.length === 0) ? (
-                            <div className="p-6 text-center text-slate-500 text-sm">You have no notifications</div>
+                            <div className="p-6 text-center text-slate-500 dark:text-slate-400 text-sm">You have no notifications</div>
                           ) : (
                             notifications.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((n) => (
                               <button
                                 key={n.id}
                                 onClick={() => handleNotifClick(n)}
-                                className={`w-full text-left p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors ${!n.read ? 'bg-indigo-50/50' : ''}`}
+                                className={`w-full text-left p-4 border-b border-slate-50 hover:bg-slate-50 dark:bg-slate-950 transition-colors ${!n.read ? 'bg-indigo-50/50' : ''}`}
                               >
-                                <p className={`text-sm ${!n.read ? 'font-bold text-slate-900' : 'text-slate-600'}`}>{n.message}</p>
+                                <p className={`text-sm ${!n.read ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>{n.message}</p>
                                 <p className="text-xs text-slate-400 mt-1">{new Date(n.createdAt).toLocaleDateString()}</p>
                               </button>
                             ))
@@ -472,7 +514,7 @@ export default function Layout() {
                   )}
                   
                   <div className="relative group">
-                    <Link to="/profile" className="flex items-center transition-transform hover:scale-105" title="User Profile">
+                    <Link to="/profile" className="flex items-center transition-transform hover:scale-105" title="User Profile (Press 'P')">
                       {user.avatar ? (
                         <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-indigo-600 shadow-sm relative shrink-0">
                           <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
@@ -485,17 +527,17 @@ export default function Layout() {
                     </Link>
                     
                     {/* User Panel Dropdown */}
-                    <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 translate-y-2 group-hover:translate-y-0 pb-1">
+                    <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-xl shadow-slate-200/50 border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 translate-y-2 group-hover:translate-y-0 pb-1">
                       <div className="p-4 border-b border-slate-100">
-                        <p className="font-bold text-slate-900 truncate">{user.name}</p>
-                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                        <p className="font-bold text-slate-900 dark:text-white truncate">{user.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
                       </div>
                       <div className="px-2 py-2">
-                        <Link to="/profile" className="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors">
+                        <Link to="/profile" className="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:bg-slate-50 dark:bg-slate-950 rounded-lg transition-colors">
                           <UserIcon className="w-4 h-4" />
                           <span>My Profile</span>
                         </Link>
-                        <Link to="/profile?tab=orders" className="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors">
+                        <Link to="/profile?tab=orders" className="flex items-center gap-3 px-3 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:bg-slate-50 dark:bg-slate-950 rounded-lg transition-colors">
                           <Package className="w-4 h-4" />
                           <span>My Orders</span>
                         </Link>
@@ -516,7 +558,7 @@ export default function Layout() {
                   </div>
                 </div>
               ) : (
-                <Link to="/login" className="flex items-center space-x-1 text-slate-600 hover:text-indigo-600 font-medium transition-colors">
+                <Link to="/login" className="flex items-center space-x-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 font-medium transition-colors">
                   <UserIcon className="w-5 h-5" />
                   <span>Login</span>
                 </Link>
@@ -527,11 +569,20 @@ export default function Layout() {
       </header>
       
       {/* Mobile Sticky Header */}
-      <header className="md:hidden bg-slate-900 border-b border-indigo-900 sticky top-0 z-50 p-4 shadow-md">
-        <div className="flex items-center space-x-3">
+      <header className="md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 sticky top-0 z-50 p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
           <Link to="/" className="shrink-0">
-            <img src="/favicon.svg" alt="QuantumRig" className="h-8 w-auto brightness-0 invert" />
+            <img src="/favicon.svg" alt="QuantumRig" className="h-8 w-auto" />
           </Link>
+          <button 
+            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            className="p-2 text-slate-600 dark:text-slate-400 hover:text-indigo-600 transition-colors rounded-full hover:bg-slate-100 dark:bg-slate-800"
+            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+          >
+            {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+          </button>
+        </div>
+        <div className="flex items-center space-x-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -544,7 +595,7 @@ export default function Layout() {
                   handleSearchSubmit(searchQuery);
                 }
               }}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border-[transparent] text-white placeholder:text-slate-400 focus:bg-slate-700 focus:border-indigo-500 rounded-full text-sm outline-none border focus:ring-2 focus:ring-indigo-500/50"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border-slate-200 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:bg-slate-900 focus:border-indigo-500 rounded-full text-sm outline-none border focus:ring-2 focus:ring-indigo-500/50"
             />
           </div>
         </div>
@@ -556,7 +607,7 @@ export default function Layout() {
         </div>
       </main>
 
-      <footer className="bg-slate-900 text-slate-400 py-12 pb-24 sm:pb-12">
+      <footer className="bg-[#111827] text-slate-400 py-12 pb-24 sm:pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
             <Link to="/" className="flex items-center space-x-2 text-white mb-4 shrink-0">
@@ -616,7 +667,7 @@ export default function Layout() {
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-slate-800 text-sm flex flex-col md:flex-row items-center justify-between">
           <span className="text-center md:text-left mb-2 md:mb-0">&copy; {new Date().getFullYear()} QuantumRig Tech. All rights reserved.</span>
-          <Link to="/admin-login" className="text-slate-800 hover:text-slate-600 transition-colors text-xs cursor-text">Internal Access</Link>
+          <Link to="/admin-login" className="text-slate-800 dark:text-slate-200 hover:text-slate-600 dark:text-slate-400 transition-colors text-xs cursor-text">Internal Access</Link>
         </div>
       </footer>
       <SupportChat />

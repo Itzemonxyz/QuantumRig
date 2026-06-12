@@ -26,10 +26,10 @@ export default class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center bg-slate-50 border border-slate-200 rounded-2xl mx-auto my-8 max-w-2xl">
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">Oops, something went wrong</h2>
-          <p className="text-slate-500 mb-6">The framework encountered an unexpected error. Please refresh the page to try again.</p>
-          <div className="bg-white p-4 rounded-lg border border-rose-200 text-left w-full overflow-auto max-h-[200px] mb-6 shadow-inner">
+        <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-2xl mx-auto my-8 max-w-2xl">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2">Oops, something went wrong</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-6">The framework encountered an unexpected error. Please refresh the page to try again.</p>
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-rose-200 text-left w-full overflow-auto max-h-[200px] mb-6 shadow-inner">
             <code className="text-xs text-rose-600 font-mono">
               {this.state.error && this.state.error.toString()}
             </code>

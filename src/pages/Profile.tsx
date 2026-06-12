@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '../store';
-import { api } from '../lib/api';
+import { api, compressImage } from '../lib/api';
 import { Order } from '../types';
 import { Package, MapPin, ChevronDown, ChevronUp, CheckCircle2, Heart, Printer, Star, Gift, Search, Settings, LogOut, TrendingUp, BarChart3, Clock, Calendar, PieChart as PieIcon, AlertTriangle, ShieldAlert, ArrowRight, CalendarRange, X, LifeBuoy, MessageSquare, ChevronLeft, ChevronRight, History } from 'lucide-react';
 import TakaIcon from '../components/TakaIcon';
@@ -16,13 +16,66 @@ import { motion, AnimatePresence } from 'motion/react';
 
 const SpendingTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
+    const val = Number(payload[0].value);
     return (
-      <div className="bg-white border border-slate-200/80 p-3 shadow-lg rounded-xl text-xs font-sans text-slate-800 z-50 select-none">
-        <p className="font-bold text-slate-400 mb-1 tracking-wider uppercase text-[10px]">{label}</p>
-        <p className="font-mono text-sm font-bold text-indigo-600 flex items-center gap-1.5 mt-1">
-          <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-          Spent: ৳{Number(payload[0].value).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </p>
+      <div 
+        className="bg-[#111827] border border-slate-800/80 p-4 shadow-2xl shadow-slate-950/50 rounded-xl text-xs z-50 select-none backdrop-blur-sm min-w-[200px] text-left border-l-[4px] border-l-indigo-500 font-sans animate-in fade-in zoom-in-95 duration-150"
+      >
+        <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+          <span className="font-bold text-slate-400 tracking-wider text-[10px] uppercase">{label}</span>
+          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[9px] font-bold text-indigo-400 tracking-widest uppercase">
+            Expenses
+          </span>
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-slate-800 text-indigo-400">
+              <TakaIcon className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Total Spent</p>
+              <p className="text-sm font-bold text-slate-100">
+                ৳{val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const ComponentAllocationTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    const bulletColor = data.payload?.fill || data.color || '#6366f1';
+    return (
+      <div 
+        className="bg-[#111827] border border-slate-800/80 p-4 shadow-2xl shadow-slate-950/50 rounded-xl text-xs z-50 select-none backdrop-blur-sm min-w-[190px] text-left border-l-[4px] font-sans animate-in fade-in zoom-in-95 duration-150"
+        style={{ borderLeftColor: bulletColor }}
+      >
+        <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+          <span className="font-bold text-slate-400 tracking-wider text-[10px] uppercase truncate max-w-[110px]">
+            {data.name}
+          </span>
+          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[9px] font-bold text-indigo-400 uppercase tracking-widest">
+            Part Share
+          </span>
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-slate-800 text-indigo-400 animate-pulse">
+              <TakaIcon className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Allocated Investment</p>
+              <p className="text-sm font-bold text-slate-100">
+                ৳{Number(data.value).toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -82,17 +135,17 @@ function SupportTicketsView({ user, addToast, products, token }: any) {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-indigo-600" /> File a New Request
         </h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">Related Product (Optional)</label>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Related Product (Optional)</label>
             <select
               value={productId}
               onChange={(e) => setProductId(e.target.value)}
-              className="w-full sm:w-80 bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full sm:w-80 bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
             >
               <option value="">General Support Inquiry</option>
               {products.map((p: any) => (
@@ -101,13 +154,13 @@ function SupportTicketsView({ user, addToast, products, token }: any) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">How can we help?</label>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">How can we help?</label>
             <textarea
               required
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Describe your issue or question..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm h-28 resize-none focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-lg p-3 text-sm h-28 resize-none focus:ring-2 focus:ring-indigo-500 outline-none"
             />
           </div>
           <button
@@ -120,40 +173,40 @@ function SupportTicketsView({ user, addToast, products, token }: any) {
         </form>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-sm">
-        <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="font-bold text-slate-800">Your Past Tickets</h3>
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-sm">
+        <div className="p-4 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="font-bold text-slate-800 dark:text-slate-200">Your Past Tickets</h3>
           <button onClick={loadTickets} className="text-xs font-bold text-indigo-600 hover:underline">Refresh</button>
         </div>
         {!tickets || tickets.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 font-medium">No previous support tickets found.</div>
+          <div className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">No previous support tickets found.</div>
         ) : (
           <div className="divide-y divide-slate-100">
             {tickets.map((t: any) => (
-              <div key={t.id} className="p-4 hover:bg-slate-50">
+              <div key={t.id} className="p-4 hover:bg-slate-50 dark:bg-slate-950">
                 <div className="flex justify-between items-start mb-2">
-                  <div className="font-bold text-slate-900 border border-slate-200 px-2 py-0.5 rounded text-xs">
+                  <div className="font-bold text-slate-900 dark:text-white border border-slate-200 px-2 py-0.5 rounded text-xs">
                      {t.productId !== 'General Inquiry' ? (
                        <a href={`/products/${t.productId}`} className="text-indigo-600 hover:underline">Product: {t.productId}</a>
                      ) : 'General Inquiry'}
                   </div>
                   <span className={`px-2 py-1 rounded text-xs font-bold ${
                     t.status === 'Answered' ? 'bg-emerald-100 text-emerald-800' :
-                    t.status === 'Open' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-600'
+                    t.status === 'Open' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                   }`}>
                     {t.status}
                   </span>
                 </div>
-                <div className="text-slate-700 font-medium leading-relaxed mb-3">
+                <div className="text-slate-700 dark:text-slate-300 font-medium leading-relaxed mb-3">
                   <span className="text-xs text-slate-400 block mb-1">Your Question:</span>
                   {t.question}
                 </div>
                 {t.answer && (
-                  <div className="bg-slate-100 p-3 rounded-lg border border-slate-200">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1 flex items-center gap-1">
+                  <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded-lg border border-slate-200">
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
                       <LifeBuoy className="w-3 h-3" /> Support Answer:
                     </span>
-                    <div className="text-slate-800 leading-relaxed font-medium">
+                    <div className="text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
                       {t.answer}
                     </div>
                   </div>
@@ -200,7 +253,7 @@ function CustomDateInput({ label, value, onChange }: { label: string, value: str
   const daysInCurrentMonth = new Date(yearInt, monthInt, 0).getDate();
 
   return (
-    <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col h-full hover:border-indigo-200 transition-colors">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col h-full hover:border-indigo-200 transition-colors">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
         <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</label>
         <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg text-sm font-bold font-mono tracking-tight border border-indigo-100 min-w-[110px] text-center">
@@ -213,10 +266,10 @@ function CustomDateInput({ label, value, onChange }: { label: string, value: str
         {/* Year Input */}
         <div className="flex flex-col gap-2">
           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Year</label>
-          <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden p-1 w-full justify-between">
+          <div className="flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-xl overflow-hidden p-1 w-full justify-between">
              <button 
                onClick={() => setYear(String(yearInt - 1))}
-               className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-colors shadow-sm"
+               className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 hover:bg-white dark:bg-slate-900 rounded-lg transition-colors shadow-sm"
              >
                <ChevronLeft className="w-5 h-5" />
              </button>
@@ -225,11 +278,11 @@ function CustomDateInput({ label, value, onChange }: { label: string, value: str
                min="2000" max="2100"
                value={yearInt} 
                onChange={e => setYear(e.target.value)}
-               className="w-full bg-transparent text-center font-mono font-bold text-base text-slate-800 outline-none"
+               className="w-full bg-transparent text-center font-mono font-bold text-base text-slate-800 dark:text-slate-200 outline-none"
              />
              <button 
                onClick={() => setYear(String(yearInt + 1))}
-               className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-colors shadow-sm"
+               className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 hover:bg-white dark:bg-slate-900 rounded-lg transition-colors shadow-sm"
              >
                <ChevronRight className="w-5 h-5" />
              </button>
@@ -250,7 +303,7 @@ function CustomDateInput({ label, value, onChange }: { label: string, value: str
                   className={`py-1.5 px-1 rounded-lg text-[11px] font-bold transition-all ${
                     isActive 
                       ? 'bg-indigo-600 text-white shadow-md' 
-                      : 'bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-100 hover:border-indigo-200'
+                      : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-100 hover:border-indigo-200'
                   }`}
                 >
                   {m}
@@ -262,9 +315,9 @@ function CustomDateInput({ label, value, onChange }: { label: string, value: str
 
         {/* Date Selection Grid */}
         <div className="flex flex-col gap-2 mt-auto">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex justify-between items-center bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-100">
             <span>Selected Day</span>
-            <span className="text-indigo-600 font-bold bg-white px-2 py-0.5 rounded shadow-sm border border-slate-200">
+            <span className="text-indigo-600 font-bold bg-white dark:bg-slate-900 px-2 py-0.5 rounded shadow-sm border border-slate-200">
               {dayInt} <span className="text-slate-400 font-normal">/ {daysInCurrentMonth}</span>
             </span>
           </label>
@@ -279,7 +332,7 @@ function CustomDateInput({ label, value, onChange }: { label: string, value: str
                   className={`h-9 rounded flex items-center justify-center text-[11px] font-mono transition-all ${
                     isActive 
                       ? 'bg-indigo-600 text-white font-bold scale-110 z-10 shadow-md rounded-md' 
-                      : 'bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-100 hover:border-indigo-200'
+                      : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-100 hover:border-indigo-200'
                   }`}
                 >
                   {dNum}
@@ -394,7 +447,7 @@ export default function Profile() {
     }
     
     // Heuristic matching for custom/mock items:
-    const titleLower = item.title.toLowerCase();
+    const titleLower = (item?.title || '').toLowerCase();
     if (titleLower.includes('core') || titleLower.includes('ryzen') || titleLower.includes('processor') || titleLower.includes('cpu') || titleLower.includes('intel') || titleLower.includes('amd')) {
       return 'Processors';
     }
@@ -466,21 +519,22 @@ export default function Profile() {
     })).sort((a, b) => b.value - a.value);
   }, [filteredOrdersForAnalytics, products, categories]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      addToast('Image size should be less than 2MB', 'error');
-      return;
+    try {
+      const compressed = await compressImage(file, 250, 0.8);
+      if (compressed) {
+        setEditAvatar(compressed);
+        addToast('Profile picture loaded: Remember to click "Save Changes" below to submit!', 'info');
+      } else {
+        addToast('Failed to process image', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to compress avatar:', err);
+      addToast('Failed to process image', 'error');
     }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setEditAvatar(reader.result as string);
-      addToast('Profile picture loaded: Remember to click "Save Changes" below to submit!', 'info');
-    };
-    reader.readAsDataURL(file);
   };
 
   const [spendingSegment, setSpendingSegment] = React.useState<'weekly' | 'monthly' | 'yearly'>('weekly');
@@ -879,7 +933,7 @@ export default function Profile() {
     nextTier = 'Max Tier';
     nextTierThreshold = 0;
     rewardRate = '5%';
-    tierColor = 'text-slate-700 bg-slate-100 border border-slate-300';
+    tierColor = 'text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-300';
     progressColor = 'bg-slate-700';
   } else if (lifetimeSpend >= 50000) {
     tier = 'Gold';
@@ -893,7 +947,7 @@ export default function Profile() {
     nextTier = 'Gold';
     nextTierThreshold = 50000;
     rewardRate = '2%';
-    tierColor = 'text-slate-500 bg-slate-50 border border-slate-200';
+    tierColor = 'text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 border border-slate-200';
     progressColor = 'bg-slate-400';
   }
 
@@ -902,15 +956,15 @@ export default function Profile() {
   const savedProducts = products.filter(p => user.savedProductIds?.includes(p.id));
 
   return (
-    <div className="bg-slate-50 min-h-[calc(100vh-4rem)] flex flex-col md:flex-row max-w-[1600px] mx-auto">
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-[calc(100vh-4rem)] flex flex-col md:flex-row max-w-[1600px] mx-auto">
       {/* Mobile Top Bar */}
-      <div className="md:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20">
+      <div className="md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20">
          <div className="flex items-center">
-            <h2 className="text-lg font-bold text-slate-900">My Profile</h2>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">My Profile</h2>
          </div>
          <button 
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+            className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 rounded-lg"
          >
             {showMobileMenu ? <X className="w-6 h-6" /> : <Settings className="w-6 h-6" />}
          </button>
@@ -923,7 +977,7 @@ export default function Profile() {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-20 w-64 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:h-auto
+        fixed inset-y-0 left-0 z-20 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:h-auto
         ${showMobileMenu ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="p-6">
@@ -944,8 +998,8 @@ export default function Profile() {
               </div>
             )}
             <div className="overflow-hidden">
-              <h2 className="font-bold text-slate-900 text-base truncate">{editName}</h2>
-              <p className="text-xs text-slate-500 truncate">{user.email}</p>
+              <h2 className="font-bold text-slate-900 dark:text-white text-base truncate">{editName}</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
             </div>
           </div>
           
@@ -962,7 +1016,7 @@ export default function Profile() {
             </div>
           </div>
 
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1 mb-2">Account Menu</p>
+          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1 mb-2">Account Menu</p>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-1">
@@ -971,7 +1025,7 @@ export default function Profile() {
              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
                activeTab === 'orders' 
                 ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-900 dark:text-white'
              }`}
           >
              <Package className={`w-5 h-5 ${activeTab === 'orders' ? 'text-indigo-600' : 'text-slate-400'}`} />
@@ -983,7 +1037,7 @@ export default function Profile() {
              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
                activeTab === 'saved' 
                 ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-900 dark:text-white'
              }`}
           >
              <Heart className={`w-5 h-5 ${activeTab === 'saved' ? 'text-indigo-600' : 'text-slate-400'}`} />
@@ -995,7 +1049,7 @@ export default function Profile() {
              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
                activeTab === 'settings' 
                 ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-900 dark:text-white'
              }`}
           >
              <Settings className={`w-5 h-5 ${activeTab === 'settings' ? 'text-indigo-600' : 'text-slate-400'}`} />
@@ -1007,7 +1061,7 @@ export default function Profile() {
              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium mb-1 ${
                activeTab === 'analytics' 
                 ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-900 dark:text-white'
              }`}
           >
              <TrendingUp className={`w-5 h-5 ${activeTab === 'analytics' ? 'text-indigo-600' : 'text-slate-400'}`} />
@@ -1019,7 +1073,7 @@ export default function Profile() {
              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
                activeTab === 'support' 
                 ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-900 dark:text-white'
              }`}
           >
              <LifeBuoy className={`w-5 h-5 ${activeTab === 'support' ? 'text-indigo-600' : 'text-slate-400'}`} />
@@ -1028,9 +1082,9 @@ export default function Profile() {
         </div>
 
         <div className="p-4 border-t border-slate-200">
-           <div className="bg-slate-50 rounded-xl p-3 mb-4 border border-slate-200 relative group">
+           <div className="bg-slate-50 dark:bg-slate-950 rounded-xl p-3 mb-4 border border-slate-200 relative group">
              <div className="flex justify-between items-start">
-               <h3 className="font-bold text-slate-800 text-xs mb-1 flex items-center">
+               <h3 className="font-bold text-slate-800 dark:text-slate-200 text-xs mb-1 flex items-center">
                  <Star className="w-3.5 h-3.5 text-amber-500 mr-1" />
                  {tier} Tier
                </h3>
@@ -1042,11 +1096,11 @@ export default function Profile() {
                  <History className="w-4 h-4" />
                </button>
              </div>
-             <div className="text-[10px] text-slate-500 mb-2 flex justify-between tracking-wide">
+             <div className="text-[10px] text-slate-500 dark:text-slate-400 mb-2 flex justify-between tracking-wide">
                <span className="uppercase">Spend</span>
-               <span className="font-bold text-slate-700">৳{lifetimeSpend.toLocaleString("en-BD", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+               <span className="font-bold text-slate-700 dark:text-slate-300">৳{lifetimeSpend.toLocaleString("en-BD", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
              </div>
-             <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+             <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                <div className={`h-full ${progressColor} transition-all duration-500`} style={{ width: `${Math.min(progress, 100)}%` }} />
              </div>
            </div>
@@ -1062,10 +1116,10 @@ export default function Profile() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 w-full bg-slate-50 p-4 md:p-8 min-w-0">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm min-h-[600px] p-6 lg:p-8">
+      <main className="flex-1 w-full bg-slate-50 dark:bg-slate-950 p-4 md:p-8 min-w-0">
+        <div className="bg-[#f9fbfd] rounded-2xl border border-slate-200 shadow-sm min-h-[600px] p-6 lg:p-8 hover:border-slate-300 transition-colors">
           <div className="mb-8">
-            <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
               {activeTab === 'orders' ? 'Order History' : 
                activeTab === 'saved' ? 'Saved Products' :
                activeTab === 'rewards' ? 'Rewards History' :
@@ -1073,7 +1127,7 @@ export default function Profile() {
                activeTab === 'analytics' ? 'Spending Analytics' : 
                activeTab === 'support' ? 'Support Tickets' : 'My Profile'}
             </h1>
-            <p className="text-slate-500 mt-1">
+            <p className="text-slate-500 dark:text-slate-400 mt-1">
               {activeTab === 'orders' ? 'View and track your previous purchases.' : 
                activeTab === 'saved' ? 'Products you have saved for later.' :
                activeTab === 'rewards' ? 'Track your point-earning transactions.' :
@@ -1096,9 +1150,9 @@ export default function Profile() {
           {activeTab === 'saved' && (
             <div>
               {savedProducts.length === 0 ? (
-                <div className="text-center py-12 text-slate-500 bg-slate-50 border border-slate-200 border-dashed rounded-xl">
+                <div className="text-center py-12 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 border border-slate-200 border-dashed rounded-xl">
                   <Heart className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="font-medium text-slate-600">You don't have any saved products.</p>
+                  <p className="font-medium text-slate-600 dark:text-slate-400">You don't have any saved products.</p>
                   <p className="text-sm mt-1">Browse the catalog to add items here.</p>
                 </div>
               ) : (
@@ -1126,9 +1180,9 @@ export default function Profile() {
           {activeTab === 'rewards' && (
             <div>
               {orders.filter(o => o.status !== 'Cancelled').length === 0 ? (
-                <div className="text-center py-12 text-slate-500 bg-slate-50 border border-slate-200 border-dashed rounded-xl">
+                <div className="text-center py-12 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 border border-slate-200 border-dashed rounded-xl">
                   <Gift className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="font-medium text-slate-600">You don't have any point-earning transactions yet.</p>
+                  <p className="font-medium text-slate-600 dark:text-slate-400">You don't have any point-earning transactions yet.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -1149,19 +1203,19 @@ export default function Profile() {
                     })
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                     .map(order => (
-                      <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                      <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 dark:bg-slate-950 transition-colors">
                         <div>
                           <div className="flex items-center space-x-2">
-                            <span className="font-bold text-slate-900">Order #{order.id.slice(0, 8)}</span>
-                            <span className="text-xs text-slate-500 font-medium flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-full border border-slate-200/50">
-                              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                            <span className="font-bold text-slate-900 dark:text-white">Order #{order.id.slice(0, 8)}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200/50">
+                              <Calendar className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                               <span>{new Date(order.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                               <span className="text-slate-300">|</span>
-                              <Clock className="w-3.5 h-3.5 text-slate-500" />
+                              <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                               <span>{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </span>
                           </div>
-                          <p className="text-sm text-slate-600 mt-1">Amount: ৳{order.totalAmount.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="opacity-70">(Earned at {Number((order.rate * 100) || 0).toLocaleString("en-BD", {minimumFractionDigits: 0, maximumFractionDigits: 0})}% rate)</span></p>
+                          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Amount: ৳{order.totalAmount.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="opacity-70">(Earned at {Number((order.rate * 100) || 0).toLocaleString("en-BD", {minimumFractionDigits: 0, maximumFractionDigits: 0})}% rate)</span></p>
                         </div>
                         <div className="mt-3 sm:mt-0 flex items-center bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 shadow-sm">
                           <Gift className="w-4 h-4 text-indigo-600 mr-2" />
@@ -1177,7 +1231,7 @@ export default function Profile() {
             <div className="space-y-6">
               {/* Top Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div id="analytics-summary-total" className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center space-x-4">
+                <div id="analytics-summary-total" className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 p-5 shadow-sm flex items-center space-x-4">
                   <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
                     <TrendingUp className="w-6 h-6" />
                   </div>
@@ -1185,13 +1239,13 @@ export default function Profile() {
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
                       {startDateStr && endDateStr ? "Filtered Period Investment" : "Lifetime Hardware Investment"}
                     </span>
-                    <strong className="text-slate-900 text-xl font-extrabold font-mono mt-0.5 block">
+                    <strong className="text-slate-900 dark:text-white text-xl font-extrabold font-mono mt-0.5 block">
                       ৳{(startDateStr && endDateStr ? filteredOrdersForAnalytics.reduce((acc, o) => acc + o.totalAmount, 0) : lifetimeSpend).toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </strong>
                   </div>
                 </div>
 
-                <div id="analytics-summary-orders" className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center space-x-4">
+                <div id="analytics-summary-orders" className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 p-5 shadow-sm flex items-center space-x-4">
                   <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                     <Package className="w-6 h-6" />
                   </div>
@@ -1199,19 +1253,19 @@ export default function Profile() {
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
                       {startDateStr && endDateStr ? "Filtered Period Orders" : "Total Successful Orders"}
                     </span>
-                    <strong className="text-slate-900 text-xl font-extrabold font-mono mt-0.5 block">
+                    <strong className="text-slate-900 dark:text-white text-xl font-extrabold font-mono mt-0.5 block">
                       {filteredOrdersForAnalytics.length} Orders
                     </strong>
                   </div>
                 </div>
 
-                <div id="analytics-summary-tier" className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center space-x-4">
+                <div id="analytics-summary-tier" className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 p-5 shadow-sm flex items-center space-x-4">
                   <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
                     <Star className="w-6 h-6" />
                   </div>
                   <div>
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Loyalty Tier Status</span>
-                    <strong className="text-slate-900 text-base font-extrabold mt-0.5 block capitalize flex items-center gap-1.5 pt-0.5">
+                    <strong className="text-slate-900 dark:text-white text-base font-extrabold mt-0.5 block capitalize flex items-center gap-1.5 pt-0.5">
                       <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${tierColor}`}>{tier} Tier</span>
                     </strong>
                   </div>
@@ -1222,16 +1276,16 @@ export default function Profile() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 {/* 1. Date Range Picker Component */}
-                <div id="analytics-date-range-picker" className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-center">
+                <div id="analytics-date-range-picker" className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-center">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <CalendarRange className="w-5 h-5 text-indigo-600" />
-                      <h3 className="font-bold text-slate-900 text-sm">Time Period Filter</h3>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-sm">Time Period Filter</h3>
                     </div>
                     {(startDateStr || endDateStr) && (
                       <button
                         onClick={() => handleApplyPreset('clear')}
-                        className="text-[10px] text-slate-500 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 px-2 py-1 rounded-md font-bold transition-colors"
+                        className="text-[10px] text-slate-500 dark:text-slate-400 hover:text-rose-600 bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 px-2 py-1 rounded-md font-bold transition-colors"
                       >
                         Clear Range
                       </button>
@@ -1247,7 +1301,7 @@ export default function Profile() {
                           <div className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-1">
                             Selected Period
                           </div>
-                          <div className="text-sm font-medium text-slate-700">
+                          <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
                             {startDateStr && endDateStr ? (
                               `${new Date(startDateStr).toLocaleDateString()} — ${new Date(endDateStr).toLocaleDateString()}`
                             ) : startDateStr ? (
@@ -1259,7 +1313,7 @@ export default function Profile() {
                             )}
                           </div>
                         </div>
-                        <div className="bg-white p-2 rounded-lg shadow-sm group-hover:shadow border border-slate-100 transition-all group-hover:-translate-y-0.5">
+                        <div className="bg-white dark:bg-slate-900 p-2 rounded-lg shadow-sm group-hover:shadow border border-slate-100 transition-all group-hover:-translate-y-0.5">
                           <Calendar className="w-4 h-4 text-indigo-600" />
                         </div>
                       </div>
@@ -1273,25 +1327,25 @@ export default function Profile() {
                   <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-100">
                     <button 
                       onClick={() => handleApplyPreset('last-week')}
-                      className="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-bold rounded-lg transition-colors flex-1 text-center"
+                      className="px-2 py-1.5 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:bg-slate-800 border border-slate-200 text-slate-600 dark:text-slate-400 text-[11px] font-bold rounded-lg transition-colors flex-1 text-center"
                     >
                       Last 7 Days
                     </button>
                     <button 
                       onClick={() => handleApplyPreset('30days')}
-                      className="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-bold rounded-lg transition-colors flex-1 text-center"
+                      className="px-2 py-1.5 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:bg-slate-800 border border-slate-200 text-slate-600 dark:text-slate-400 text-[11px] font-bold rounded-lg transition-colors flex-1 text-center"
                     >
                       Last 30 Days
                     </button>
                     <button 
                       onClick={() => handleApplyPreset('90days')}
-                      className="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-bold rounded-lg transition-colors flex-1 text-center"
+                      className="px-2 py-1.5 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:bg-slate-800 border border-slate-200 text-slate-600 dark:text-slate-400 text-[11px] font-bold rounded-lg transition-colors flex-1 text-center"
                     >
                       Last 90 Days
                     </button>
                     <button 
                       onClick={() => handleApplyPreset('thisyear')}
-                      className="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-bold rounded-lg transition-colors flex-1 text-center whitespace-nowrap"
+                      className="px-2 py-1.5 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:bg-slate-800 border border-slate-200 text-slate-600 dark:text-slate-400 text-[11px] font-bold rounded-lg transition-colors flex-1 text-center whitespace-nowrap"
                     >
                       This Year
                     </button>
@@ -1299,19 +1353,19 @@ export default function Profile() {
                 </div>
 
                 {/* 2. Monthly Budget Threshold Card */}
-                <div id="analytics-budget-tracker" className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-center">
+                <div id="analytics-budget-tracker" className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-center">
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <TakaIcon className="w-5 h-5 text-indigo-600" />
-                        <h3 className="font-bold text-slate-900 text-sm">Monthly Spend Budget</h3>
+                        <h3 className="font-bold text-slate-900 dark:text-white text-sm">Monthly Spend Budget</h3>
                       </div>
                       <div className="flex items-center space-x-1.5">
                         <span className="text-[10px] font-bold text-slate-400">Limit:</span>
-                        <span className="text-xs font-extrabold font-mono text-slate-800">৳{monthlyBudget.toLocaleString()}</span>
+                        <span className="text-xs font-extrabold font-mono text-slate-800 dark:text-slate-200">৳{monthlyBudget.toLocaleString()}</span>
                       </div>
                     </div>
-                    <p className="text-xs text-slate-500 mb-3 md:h-8">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 md:h-8">
                       Set a monthly electronics budget to safeguard against hardware enthusiast impulse buys.
                     </p>
                   </div>
@@ -1355,7 +1409,7 @@ export default function Profile() {
                               <span>Month Spend: ৳{currentMonthSpending.toLocaleString()}</span>
                               <span>{formattedPercent}%</span>
                             </div>
-                            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/50">
+                            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-200/50">
                               <div 
                                 className={`h-full rounded-full transition-all duration-500 ${progressBg}`} 
                                 style={{ width: `${Math.min(100, budgetPercent)}%` }} 
@@ -1381,7 +1435,7 @@ export default function Profile() {
                             setMonthlyBudget(val);
                             localStorage.setItem('monthly_spending_budget', String(val));
                           }}
-                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl pl-6 pr-3 py-1.5 text-xs font-mono font-bold focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                          className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 text-slate-800 dark:text-slate-200 rounded-xl pl-6 pr-3 py-1.5 text-xs font-mono font-bold focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                         />
                       </div>
                       <button
@@ -1401,14 +1455,14 @@ export default function Profile() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* 1. Main Time Series Component (Spans 2 cols on wide screens) */}
-                <div id="analytics-area-chart-card" className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                <div id="analytics-area-chart-card" className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 p-6 shadow-sm">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                     <div>
-                      <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                      <h3 className="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
                         <TrendingUp className="w-5 h-5 text-indigo-600" />
                         <span>Spending Trend over Time</span>
                       </h3>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                         Track your hardware custom configurations and components spending curve.
                       </p>
                     </div>
@@ -1420,7 +1474,7 @@ export default function Profile() {
                           Custom Range Active
                         </span>
                       ) : (
-                        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/50">
+                        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/50">
                           {(['weekly', 'monthly', 'yearly'] as const).map((segment) => (
                             <button
                               key={segment}
@@ -1429,7 +1483,7 @@ export default function Profile() {
                               className={`px-3 py-1 text-xs font-bold rounded-lg transition-all capitalize cursor-pointer ${
                                 spendingSegment === segment
                                   ? 'bg-indigo-600 text-white shadow-sm'
-                                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-slate-50 dark:bg-slate-950'
                               }`}
                             >
                               {segment}
@@ -1458,7 +1512,7 @@ export default function Profile() {
                             <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
                         <XAxis 
                           dataKey="name" 
                           stroke="#94a3b8" 
@@ -1490,13 +1544,13 @@ export default function Profile() {
                 </div>
 
                 {/* 2. Hardware Allocation Pie Chart (Spans 1 col) */}
-                <div id="analytics-pie-chart-card" className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
+                <div id="analytics-pie-chart-card" className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
                   <div>
-                    <h3 className="font-bold text-slate-900 text-base flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2 mb-1">
                       <PieIcon className="w-5 h-5 text-indigo-600" />
                       <span>Investment Share</span>
                     </h3>
-                    <p className="text-xs text-slate-500 mb-4">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
                       Breakdown of total spendings by PC components.
                     </p>
                   </div>
@@ -1523,7 +1577,7 @@ export default function Profile() {
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                               ))}
                             </Pie>
-                            <Tooltip formatter={(value) => [`৳${Number(value).toLocaleString()}`, 'Spent']} />
+                            <Tooltip content={<ComponentAllocationTooltip />} />
                           </PieChart>
                         </ResponsiveContainer>
                         <div className="absolute inset-0 flex flex-col justify-center items-center pointer-events-none">
@@ -1540,7 +1594,7 @@ export default function Profile() {
                           <div key={item.name} className="flex items-center justify-between text-xs select-none">
                             <div className="flex items-center space-x-2 truncate">
                               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                              <span className="text-slate-600 font-medium truncate">{item.name}</span>
+                              <span className="text-slate-600 dark:text-slate-400 font-medium truncate">{item.name}</span>
                             </div>
                             <span className="font-mono text-slate-950 font-bold shrink-0">
                               ৳{item.value.toLocaleString()}
@@ -1558,13 +1612,13 @@ export default function Profile() {
                 </div>
 
                 {/* 3. Hardware Category Bar Chart (Spans 2 cols) */}
-                <div id="analytics-bar-chart-card" className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                <div id="analytics-bar-chart-card" className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 p-6 shadow-sm">
                   <div>
-                    <h3 className="font-bold text-slate-900 text-base flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2 mb-1">
                       <BarChart3 className="w-5 h-5 text-indigo-600" />
                       <span>PC Component Breakdown</span>
                     </h3>
-                    <p className="text-xs text-slate-500 mb-6">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
                       Compare total spent across different computer hardware categories.
                     </p>
                   </div>
@@ -1580,7 +1634,7 @@ export default function Profile() {
                           data={categorySpendingData}
                           margin={{ top: 5, right: 10, left: 15, bottom: 20 }}
                         >
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
                           <XAxis 
                             dataKey="name" 
                             stroke="#94a3b8" 
@@ -1597,7 +1651,7 @@ export default function Profile() {
                             tickLine={false}
                             axisLine={false}
                           />
-                          <Tooltip formatter={(value) => [`৳${Number(value).toLocaleString()}`, 'Total Spent']} />
+                          <Tooltip content={<ComponentAllocationTooltip />} />
                           <Bar 
                             dataKey="value" 
                             radius={[6, 6, 0, 0]}
@@ -1614,24 +1668,24 @@ export default function Profile() {
                 </div>
 
                 {/* 4. Customer Custom Insights Card (Spans 1 col) */}
-                <div id="analytics-insights-card" className="bg-slate-900 text-white rounded-xl p-6 shadow-md flex flex-col justify-between border border-slate-800">
+                <div id="analytics-insights-card" className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between border border-slate-200">
                   <div className="space-y-4">
-                    <div className="inline-flex bg-indigo-500/10 text-indigo-300 font-mono text-[10px] tracking-widest font-bold uppercase rounded-lg px-2.5 py-1 border border-indigo-400/20">
+                    <div className="inline-flex bg-indigo-50 text-indigo-700 font-mono text-[10px] tracking-widest font-bold uppercase rounded-lg px-2.5 py-1 border border-indigo-100">
                       By Gamers, For Gamers
                     </div>
                     <div>
                       <h4 className="text-lg font-extrabold tracking-tight">QuantumRig Profiler</h4>
-                      <p className="text-xs text-slate-400 mt-1 select-none">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 select-none">
                         Analyzing your PC component composition:
                       </p>
                     </div>
 
                     <div className="space-y-3.5 pt-2">
                       <div className="flex items-start space-x-3">
-                        <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full mt-1.5 shrink-0" />
+                        <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full mt-1.5 shrink-0" />
                         <div>
-                          <p className="text-xs font-bold text-slate-200">Enthusiast Scale Index</p>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
+                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Enthusiast Scale Index</p>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
                             {lifetimeSpend >= 100000 
                               ? "Extreme Build Spec: Configured for bleeding-edge high FPS 4K rendering and compiling."
                               : lifetimeSpend >= 50000
@@ -1642,10 +1696,10 @@ export default function Profile() {
                       </div>
 
                       <div className="flex items-start space-x-3">
-                        <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full mt-1.5 shrink-0" />
+                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1.5 shrink-0" />
                         <div>
-                          <p className="text-xs font-bold text-slate-200">Prime Category Focus</p>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
+                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Prime Category Focus</p>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
                             {categorySpendingData[0] 
                               ? `You have allocated your maximum capital into ${categorySpendingData[0].name} (৳${categorySpendingData[0].value.toLocaleString()}).`
                               : "Assemble your custom computer components in our interactive PC Builder to start tracking."}
@@ -1667,8 +1721,8 @@ export default function Profile() {
             </div>
           )}
           {activeTab === 'settings' && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <h2 className="text-xl font-bold text-slate-900 mb-6 border-b border-slate-100 pb-4">Edit Profile</h2>
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 p-6">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 border-b border-slate-100 pb-4">Edit Profile</h2>
               
               {editError && (
                 <div className="bg-rose-50 text-rose-600 p-3 rounded-lg text-sm mb-6 border border-rose-100">
@@ -1687,7 +1741,7 @@ export default function Profile() {
                   {/* Left Column: Avatar & Basic Information */}
                   <div className="lg:col-span-7 space-y-6">
                     {/* Profile Avatar Upload Component */}
-                    <div className="flex flex-col sm:flex-row items-center gap-6 bg-slate-50 border border-slate-200/60 p-6 rounded-2xl">
+                    <div className="flex flex-col sm:flex-row items-center gap-6 bg-slate-50 dark:bg-slate-950 border border-slate-200/60 p-6 rounded-2xl">
                       <div className="relative group shrink-0">
                         {editAvatar ? (
                           <img src={editAvatar} alt="Profile Preview" className="w-24 h-24 rounded-full object-cover border-4 border-indigo-100 shadow-md transition-transform group-hover:scale-105" />
@@ -1708,8 +1762,8 @@ export default function Profile() {
                         )}
                       </div>
                       <div className="flex-1 space-y-1.5 text-center sm:text-left">
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Choose Profile Picture</label>
-                        <p className="text-xs text-slate-500">JPEG, PNG or B64. Max file size: 2MB.</p>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Choose Profile Picture</label>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">JPEG, PNG or B64. Max file size: 2MB.</p>
                         <div className="relative mt-3">
                           <input 
                             type="file" 
@@ -1720,7 +1774,7 @@ export default function Profile() {
                           />
                           <label 
                             htmlFor="avatar-file-upload-input"
-                            className="inline-block bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300 font-sans font-bold text-xs px-4 py-2 rounded-xl shadow-sm cursor-pointer transition-colors"
+                            className="inline-block bg-white dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white border border-slate-300 font-sans font-bold text-xs px-4 py-2 rounded-xl shadow-sm cursor-pointer transition-colors"
                           >
                             Upload Picture
                           </label>
@@ -1730,19 +1784,19 @@ export default function Profile() {
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
-                        <input type="email" value={user.email} disabled className="w-full border border-slate-300 rounded-lg px-4 py-2.5 bg-slate-50 text-slate-500 cursor-not-allowed" />
-                        <p className="text-xs text-slate-500 mt-1">Email address cannot be changed.</p>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
+                        <input type="email" value={user.email} disabled className="w-full border border-slate-300 rounded-lg px-4 py-2.5 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 cursor-not-allowed" />
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Email address cannot be changed.</p>
                       </div>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
                           <input required type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" />
                         </div>
                         
                         <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
                           <input required type="tel" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" />
                         </div>
                       </div>
@@ -1751,11 +1805,11 @@ export default function Profile() {
 
                   {/* Right Column: Password Control (Optional) */}
                   <div className="lg:col-span-5">
-                    <div className="bg-slate-50 border border-slate-200/60 p-6 rounded-2xl h-full space-y-4">
-                      <h3 className="text-sm font-bold text-slate-900 border-b border-indigo-100 pb-3">Change Password (Optional)</h3>
+                    <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/60 p-6 rounded-2xl h-full space-y-4">
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white border-b border-indigo-100 pb-3">Change Password (Optional)</h3>
                       
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">New Password</label>
                         <input 
                           type="password" 
                           value={newPassword} 
@@ -1764,15 +1818,15 @@ export default function Profile() {
                             if (!e.target.value) setConfirmPassword('');
                           }} 
                           placeholder="Leave blank to keep current password" 
-                          className="w-full border border-slate-300 bg-white rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
+                          className="w-full border border-slate-300 bg-white dark:bg-slate-900 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
                         />
-                        <p className="text-xs text-slate-500 mt-1">If you registered via Google, setting a password here will allow you to login with email next time.</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">If you registered via Google, setting a password here will allow you to login with email next time.</p>
                       </div>
 
                       {newPassword && (
                         <div className="animate-in fade-in duration-200 space-y-4">
                           <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                               Re-enter New Password <span className="text-rose-500">*</span>
                             </label>
                             <input 
@@ -1780,7 +1834,7 @@ export default function Profile() {
                               type="password" 
                               value={confirmPassword} 
                               onChange={(e) => setConfirmPassword(e.target.value)} 
-                              className="w-full border border-slate-300 bg-white rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
+                              className="w-full border border-slate-300 bg-white dark:bg-slate-900 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
                               placeholder="Re-enter new password to verify"
                             />
                             {confirmPassword && newPassword !== confirmPassword && (
@@ -1795,7 +1849,7 @@ export default function Profile() {
                       
                       {newPassword && auth.currentUser?.providerData[0]?.providerId === 'password' && (
                         <div className="mt-4 animate-in fade-in duration-200">
-                          <label className="block text-sm font-medium text-slate-700 mb-1">
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Current Password <span className="text-rose-500">*</span>
                           </label>
                           <input 
@@ -1803,7 +1857,7 @@ export default function Profile() {
                             type="password" 
                             value={currentPassword} 
                             onChange={(e) => setCurrentPassword(e.target.value)} 
-                            className="w-full border border-slate-300 bg-white rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
+                            className="w-full border border-slate-300 bg-white dark:bg-slate-900 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
                             placeholder="Required to change your password"
                           />
                         </div>
@@ -1833,9 +1887,9 @@ export default function Profile() {
           )}
 
           {activeTab === 'settings' && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mt-6 border-t-[3px] border-t-rose-500">
-              <h2 className="text-xl font-bold text-slate-900 mb-2">Danger Zone</h2>
-              <p className="text-sm text-slate-600 mb-6">Once you request account deletion, an administrator will review it. If approved, your account will be permanently deleted and cannot be recovered.</p>
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 p-6 mt-6 border-t-[3px] border-t-rose-500">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Danger Zone</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">Once you request account deletion, an administrator will review it. If approved, your account will be permanently deleted and cannot be recovered.</p>
               
               <button
                 onClick={() => {
@@ -1846,7 +1900,7 @@ export default function Profile() {
                   setShowDeleteConfirm(true);
                 }}
                 disabled={user?.deletionRequested}
-                className="bg-white border border-rose-300 text-rose-600 hover:bg-rose-50 px-6 py-2.5 rounded-lg font-bold transition-colors disabled:opacity-50 text-sm flex items-center"
+                className="bg-white dark:bg-slate-900 border border-rose-300 text-rose-600 hover:bg-rose-50 px-6 py-2.5 rounded-lg font-bold transition-colors disabled:opacity-50 text-sm flex items-center"
               >
                 <AlertTriangle className="w-4 h-4 mr-2" />
                 {user?.deletionRequested ? 'Deletion Pending Approval' : 'Request Account Deletion'}
@@ -1869,19 +1923,19 @@ export default function Profile() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-md p-6 max-h-[90vh] flex flex-col items-center text-center"
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden w-full max-w-md p-6 max-h-[90vh] flex flex-col items-center text-center"
             >
               <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mb-6">
                 <AlertTriangle className="w-8 h-8 text-rose-600" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2 mt-4 text-center">Confirm Deletion Request</h3>
-              <p className="text-slate-600 mb-8 mt-2 text-center text-sm px-4">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 mt-4 text-center">Confirm Deletion Request</h3>
+              <p className="text-slate-600 dark:text-slate-400 mb-8 mt-2 text-center text-sm px-4">
                 Are you absolutely sure you want to request account deletion? This action will go to an administrator for approval. If approved, your account will be permanently deleted.
               </p>
               <div className="flex gap-3 w-full">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 dark:bg-slate-700 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1927,7 +1981,7 @@ export default function Profile() {
               >
                 <X className="w-6 h-6" />
               </button>
-              <div className="bg-white rounded-3xl p-2 shadow-2xl overflow-hidden aspect-square flex items-center justify-center">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-2 shadow-2xl overflow-hidden aspect-square flex items-center justify-center">
                 {editAvatar ? (
                   <img src={editAvatar} alt={editName} className="w-full h-full object-cover rounded-2xl" />
                 ) : (
@@ -1943,15 +1997,15 @@ export default function Profile() {
         {/* Date Picker Modal */}
         {showDatePickerModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300">
-              <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300">
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50 dark:bg-slate-950">
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-lg flex items-center gap-2">
                   <CalendarRange className="w-5 h-5 text-indigo-600" />
                   Select Date Range
                 </h3>
                 <button 
                   onClick={() => setShowDatePickerModal(false)}
-                  className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+                  className="text-slate-400 hover:text-slate-600 dark:text-slate-400 transition-colors p-1"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1980,7 +2034,7 @@ export default function Profile() {
                       setEndDateStr('');
                       setShowDatePickerModal(false);
                     }}
-                    className="px-5 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors text-sm"
+                    className="px-5 py-2.5 rounded-xl font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 transition-colors text-sm"
                   >
                     Clear
                   </button>

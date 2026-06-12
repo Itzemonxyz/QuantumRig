@@ -15,13 +15,13 @@ function OrderItemImage({ item, products }: { item: any; products: any[] }) {
     return (
       <div className="w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200 rounded-lg flex flex-col items-center justify-center p-1 text-center select-none shadow-sm shrink-0">
         <Package className="w-5 h-5 text-indigo-500 mb-0.5" strokeWidth={2} />
-        <span className="text-[9px] font-bold font-mono tracking-wider text-slate-700 truncate max-w-full px-1">{initials}</span>
+        <span className="text-[9px] font-bold font-mono tracking-wider text-slate-700 dark:text-slate-300 truncate max-w-full px-1">{initials}</span>
       </div>
     );
   }
 
   return (
-    <div className="w-16 h-16 bg-white border border-slate-200 rounded-lg flex items-center justify-center p-1.5 shrink-0 relative shadow-sm overflow-hidden group font-sans">
+    <div className="w-16 h-16 bg-white dark:bg-slate-900 border border-slate-200 rounded-lg flex items-center justify-center p-1.5 shrink-0 relative shadow-sm overflow-hidden group font-sans">
       <img 
         src={imageUrl} 
         alt={item.title} 
@@ -91,11 +91,11 @@ export default function TrackOrder() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <div className="text-center mb-12">
-        <h1 className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">Track Your Order</h1>
-        <p className="text-slate-500">Enter your order ID below to see the current status and tracking history.</p>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">Track Your Order</h1>
+        <p className="text-slate-500 dark:text-slate-400">Enter your order ID below to see the current status and tracking history.</p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm">
         <form onSubmit={handleTrack} className="flex gap-4 mb-8">
           <input
             type="text"
@@ -129,22 +129,22 @@ export default function TrackOrder() {
           >
             <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
               <div>
-                <h2 className="text-xl font-bold text-slate-900 mb-1 flex items-center">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1 flex items-center">
                   <Package className="w-6 h-6 mr-2 text-indigo-600" />
                   Order Status: <span className="text-indigo-600 ml-2">{orderData.status}</span>
                 </h2>
-                <div className="text-sm font-mono text-slate-500">ID: {orderData.id}</div>
+                <div className="text-sm font-mono text-slate-500 dark:text-slate-400">ID: {orderData.id}</div>
               </div>
               <div className="text-right">
-                <div className="text-slate-500 text-sm mb-1">Total Amount</div>
-                <div className="font-bold text-xl text-slate-900">৳{Number(orderData.totalAmount || 0).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div className="text-slate-500 dark:text-slate-400 text-sm mb-1">Total Amount</div>
+                <div className="font-bold text-xl text-slate-900 dark:text-white">৳{Number(orderData.totalAmount || 0).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
               </div>
             </div>
 
             {/* Live Progress Bar Visual Indicator */}
-            <div className="mb-10 bg-slate-50 border border-slate-200/60 rounded-2xl p-6 md:p-8 shadow-sm">
+            <div className="mb-10 bg-slate-50 dark:bg-slate-950 border border-slate-200/60 rounded-2xl p-6 md:p-8 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">Live Tracking Progress</span>
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider font-mono">Live Tracking Progress</span>
                 {orderData.status === 'Cancelled' ? (
                   <span className="text-xs font-bold bg-rose-100 text-rose-700 px-3 py-1 rounded-full uppercase tracking-wider">Cancelled</span>
                 ) : orderData.status === 'Delivered' ? (
@@ -167,7 +167,7 @@ export default function TrackOrder() {
               ) : (
                 <div className="relative mt-2">
                   {/* Outer connection Track path line */}
-                  <div className="absolute top-[22px] left-[12.5%] right-[12.5%] h-1.5 bg-slate-200 -translate-y-1/2 rounded-full z-0 overflow-hidden shadow-inner">
+                  <div className="absolute top-[22px] left-[12.5%] right-[12.5%] h-1.5 bg-slate-200 dark:bg-slate-700 -translate-y-1/2 rounded-full z-0 overflow-hidden shadow-inner">
                     <motion.div 
                       className="h-full bg-gradient-to-r from-indigo-500 via-indigo-400 to-cyan-400 rounded-full"
                       initial={{ width: 0 }}
@@ -193,7 +193,7 @@ export default function TrackOrder() {
                             className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-500 relative ${
                               isCompleted 
                                 ? 'bg-gradient-to-br from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-600/30 border-2 border-white' 
-                                : 'bg-white border-4 border-slate-100 text-slate-300'
+                                : 'bg-white dark:bg-slate-900 border-4 border-slate-100 text-slate-300'
                             }`}
                           >
                             {isCompleted ? (
@@ -216,11 +216,11 @@ export default function TrackOrder() {
                           {/* Label descriptions */}
                           <div className="mt-4 px-1">
                             <h4 className={`text-sm tracking-tight transition-colors duration-300 ${
-                              isCurrent ? 'text-indigo-600 font-extrabold' : isCompleted ? 'text-slate-800 font-bold' : 'text-slate-400 font-bold'
+                              isCurrent ? 'text-indigo-600 font-extrabold' : isCompleted ? 'text-slate-800 dark:text-slate-200 font-bold' : 'text-slate-400 font-bold'
                             }`}>
                               {step.label}
                             </h4>
-                            <p className={`text-xs mt-1 max-w-[90px] md:max-w-none leading-tight ${isCurrent ? 'text-indigo-500 font-medium' : 'text-slate-500 font-medium'}`}>
+                            <p className={`text-xs mt-1 max-w-[90px] md:max-w-none leading-tight ${isCurrent ? 'text-indigo-500 font-medium' : 'text-slate-500 dark:text-slate-400 font-medium'}`}>
                               {step.desc}
                             </p>
                           </div>
@@ -232,13 +232,13 @@ export default function TrackOrder() {
               )}
             </div>
 
-            <div className="mb-10 bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">
-              <h3 className="font-bold text-slate-900 text-lg mb-8 flex items-center tracking-tight">
+            <div className="mb-10 bg-white dark:bg-slate-900 border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">
+              <h3 className="font-bold text-slate-900 dark:text-white text-lg mb-8 flex items-center tracking-tight">
                 <Navigation className="w-5 h-5 mr-3 text-indigo-500" /> Tracking History
               </h3>
               <div className="relative pl-1 sm:pl-2">
                 {/* Continuous Vertical Line */}
-                <div className="absolute left-[19px] sm:left-[23px] top-6 bottom-6 w-[2px] bg-slate-100 rounded-full" />
+                <div className="absolute left-[19px] sm:left-[23px] top-6 bottom-6 w-[2px] bg-slate-100 dark:bg-slate-800 rounded-full" />
                 
                 <div className="space-y-8">
                   {orderData.trackingHistory?.map((event: any, i: number) => {
@@ -253,12 +253,12 @@ export default function TrackOrder() {
                       >
                         {/* Dot */}
                         <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-4 shrink-0 mr-4 sm:mr-6 transition-all duration-300 shadow-sm ${
-                           isLatest ? 'bg-indigo-600 border-white text-white shadow-indigo-600/30 ring-2 ring-indigo-200' : 'bg-slate-100 border-white text-slate-400 ring-2 ring-slate-100'
+                           isLatest ? 'bg-indigo-600 border-white text-white shadow-indigo-600/30 ring-2 ring-indigo-200' : 'bg-slate-100 dark:bg-slate-800 border-white text-slate-400 ring-2 ring-slate-100'
                         }`}>
                           {isLatest ? (
                              <motion.div 
                                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: i * 0.2 + 0.6, type: "spring" }}
-                               className="w-3 h-3 rounded-full bg-white shadow-sm" 
+                               className="w-3 h-3 rounded-full bg-white dark:bg-slate-900 shadow-sm" 
                              />
                           ) : (
                              <div className="w-2.5 h-2.5 rounded-full bg-slate-300" />
@@ -266,16 +266,16 @@ export default function TrackOrder() {
                         </div>
                         
                         {/* Content */}
-                        <div className={`flex-1 mt-0 p-5 rounded-2xl border transition-all duration-300 ${isLatest ? 'bg-indigo-50/40 border-indigo-100/60 shadow-lg shadow-indigo-100/20' : 'bg-white border-slate-100 shadow-sm hover:border-slate-200'}`}>
+                        <div className={`flex-1 mt-0 p-5 rounded-2xl border transition-all duration-300 ${isLatest ? 'bg-indigo-50/40 border-indigo-100/60 shadow-lg shadow-indigo-100/20' : 'bg-white dark:bg-slate-900 border-slate-100 shadow-sm hover:border-slate-200'}`}>
                           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
-                            <h4 className={`text-base font-bold tracking-tight ${isLatest ? 'text-indigo-900' : 'text-slate-800'}`}>
+                            <h4 className={`text-base font-bold tracking-tight ${isLatest ? 'text-indigo-900' : 'text-slate-800 dark:text-slate-200'}`}>
                               {event.status}
                             </h4>
-                            <div className="flex items-center text-xs font-mono font-medium text-slate-500 bg-slate-100/60 px-2.5 py-1 rounded-md">
+                            <div className="flex items-center text-xs font-mono font-medium text-slate-500 dark:text-slate-400 bg-slate-100/60 px-2.5 py-1 rounded-md">
                               {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • {new Date(event.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                             </div>
                           </div>
-                          <p className={`text-sm leading-relaxed max-w-2xl ${isLatest ? 'text-indigo-700/80 font-medium' : 'text-slate-500'}`}>
+                          <p className={`text-sm leading-relaxed max-w-2xl ${isLatest ? 'text-indigo-700/80 font-medium' : 'text-slate-500 dark:text-slate-400'}`}>
                             {event.description}
                           </p>
                         </div>
@@ -287,14 +287,14 @@ export default function TrackOrder() {
             </div>
 
             <div>
-              <h3 className="font-bold text-slate-900 mb-4">Items in Order</h3>
+              <h3 className="font-bold text-slate-900 dark:text-white mb-4">Items in Order</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {orderData.items.map((item: any, i: number) => (
-                  <div key={i} className="flex items-center gap-4 bg-slate-50 rounded-xl p-4 border border-slate-100">
+                  <div key={i} className="flex items-center gap-4 bg-slate-50 dark:bg-slate-950 rounded-xl p-4 border border-slate-100">
                     <OrderItemImage item={item} products={products} />
                     <div className="flex-1">
-                      <h4 className="font-bold text-slate-900 text-sm line-clamp-2 leading-tight mb-1">{item.title}</h4>
-                      <div className="text-xs text-slate-500">Qty: {item.quantity} × ৳{Number(item.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-2 leading-tight mb-1">{item.title}</h4>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">Qty: {item.quantity} × ৳{Number(item.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                     </div>
                   </div>
                 ))}

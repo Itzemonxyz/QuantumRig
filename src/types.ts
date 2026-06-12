@@ -9,6 +9,7 @@ export interface UserNotification {
 export interface UserCartItem {
   productId: string;
   quantity: number;
+  selectedOptions?: Record<string, string>;
 }
 
 export interface User {
@@ -69,6 +70,11 @@ export interface Review {
   createdAt: string;
 }
 
+export interface ProductVariant {
+  name: string;
+  options: string[];
+}
+
 export interface Product {
   id: string;
   code?: string;
@@ -89,6 +95,8 @@ export interface Product {
   socket?: string; // For CPU/Motherboard
   wattage?: number; // For PSU or general consumption
   reviews?: Review[];
+  variants?: ProductVariant[];
+  warranty?: string;
 }
 
 export interface OrderItem {
@@ -97,6 +105,8 @@ export interface OrderItem {
   price: number;
   quantity: number;
   imageUrl?: string;
+  selectedOptions?: Record<string, string>;
+  warranty?: string;
 }
 
 export interface TrackingStep {
@@ -157,6 +167,19 @@ export interface Offer {
   imageUrl: string;
   description?: string;
   active: boolean;
+  linkUrl?: string;
+  buttonText?: string;
+}
+
+export interface Banner {
+  id: string;
+  title: string;
+  imageUrl: string;
+  description?: string;
+  active: boolean;
+  linkUrl?: string; // Redirect path
+  createdAt?: string;
+  type?: 'main' | 'fixed-1' | 'fixed-2'; // Banner slot/location
 }
 
 export interface SupportTicket {
@@ -186,3 +209,11 @@ export interface StockAdjustmentLog {
   newQuantity: number;
   createdAt: string;
 }
+
+export interface FAQItem {
+  id: string;
+  question: string;
+  answer: string;
+  order: number;
+}
+

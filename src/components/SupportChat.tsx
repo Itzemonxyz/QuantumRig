@@ -62,12 +62,12 @@ export default function SupportChat() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 15, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="mb-4 w-[calc(100vw-2rem)] sm:w-[340px] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[480px] max-h-[75vh]"
+            className="mb-4 w-[calc(100vw-2rem)] sm:w-[340px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[480px] max-h-[75vh]"
           >
             {/* Header */}
             <div className="bg-indigo-600 border-b border-indigo-700 p-4 flex items-center justify-between shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white backdrop-blur-sm">
+                <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-900/20 flex items-center justify-center text-white backdrop-blur-sm">
                   <Cpu className="w-5 h-5" />
                 </div>
                 <div>
@@ -84,13 +84,13 @@ export default function SupportChat() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 p-4 overflow-y-auto bg-slate-50 space-y-4">
+            <div className="flex-1 p-4 overflow-y-auto bg-slate-50 dark:bg-slate-950 space-y-4">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm ${
                     msg.sender === 'user' 
                       ? 'bg-indigo-600 text-white rounded-br-sm' 
-                      : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm'
+                      : 'bg-white dark:bg-slate-900 border border-slate-200 text-slate-700 dark:text-slate-300 rounded-bl-sm'
                   }`}>
                     {msg.text}
                   </div>
@@ -98,7 +98,7 @@ export default function SupportChat() {
               ))}
               {isTyping && (
                 <div className="flex justify-start">
-                  <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-sm px-4 py-3.5 shadow-sm flex gap-1.5 items-center">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 rounded-2xl rounded-bl-sm px-4 py-3.5 shadow-sm flex gap-1.5 items-center">
                     <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></span>
                     <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></span>
                     <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></span>
@@ -109,19 +109,19 @@ export default function SupportChat() {
             </div>
 
             {/* Input */}
-            <div className="p-3 bg-white border-t border-slate-100">
+            <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100">
               <form onSubmit={handleSend} className="flex items-center gap-2 relative">
                 <input
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="Type your message..."
-                  className="flex-1 bg-slate-50 border border-slate-200 rounded-full pl-4 pr-12 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-slate-800 shadow-inner"
+                  className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-full pl-4 pr-12 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-slate-800 dark:text-slate-200 shadow-inner"
                 />
                 <button
                   type="submit"
                   disabled={!inputValue.trim()}
-                  className="absolute right-1.5 w-8 h-8 flex items-center justify-center rounded-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white transition-colors"
+                  className="absolute right-1.5 w-8 h-8 flex items-center justify-center rounded-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 dark:bg-slate-700 disabled:text-slate-400 text-white transition-colors"
                 >
                   <Send className="w-4 h-4 ml-0.5" />
                 </button>

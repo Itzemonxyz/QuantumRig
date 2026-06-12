@@ -14,11 +14,11 @@ export default function Offers() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <Breadcrumbs items={breadcrumbItems} />
-      <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-8">Special Offers</h1>
+      <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-8">Special Offers</h1>
       
       {activeOffers.length === 0 ? (
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-12 text-center">
-          <p className="text-lg text-slate-500 font-medium">No offers available currently</p>
+        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-xl p-12 text-center">
+          <p className="text-lg text-slate-500 dark:text-slate-400 font-medium">No offers available currently</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -28,9 +28,9 @@ export default function Offers() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col group cursor-pointer hover:shadow-md transition-all"
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col group cursor-pointer hover:shadow-md transition-all"
             >
-              <div className="aspect-[4/3] overflow-hidden bg-slate-100 flex items-center justify-center p-4">
+              <div className="aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center p-4">
                 <img 
                   src={offer.imageUrl} 
                   alt={offer.title}
@@ -38,9 +38,9 @@ export default function Offers() {
                 />
               </div>
               <div className="p-6 flex-1 flex flex-col">
-                <h3 className="text-xl font-bold text-slate-900 mb-2">{offer.title}</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{offer.title}</h3>
                 {offer.description && (
-                  <p className="text-slate-600 text-sm">{offer.description}</p>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm">{offer.description}</p>
                 )}
               </div>
             </motion.div>

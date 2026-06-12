@@ -31,7 +31,15 @@ import ErrorBoundary from './components/ErrorBoundary';
 import SupportChat from './components/SupportChat';
 
 export default function App() {
-  const { setCategories, setBrands, setProducts, setOffers, setSettings, setSocialLinks, token, login, logout, isLoading, setIsLoading } = useStore();
+  const { setCategories, setBrands, setProducts, setOffers, setBanners, setFaqs, setSettings, setSocialLinks, token, login, logout, isLoading, setIsLoading, theme } = useStore();
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   useEffect(() => {
     // Ensure no account is left logged in by default upon entering the website
@@ -46,19 +54,23 @@ export default function App() {
     const boot = async () => {
       setIsLoading(true);
       try {
-        const [cats, brnds, prods, ofrs, sets, slinks] = await Promise.all([
+        const [cats, brnds, prods, ofrs, bans, sets, slinks, fqs] = await Promise.all([
           api.get('/categories'),
           api.get('/brands'),
           api.get('/products'),
           api.get('/offers'),
+          api.get('/banners'),
           api.get('/settings'),
-          api.get('/social-links')
+          api.get('/social-links'),
+          api.get('/faqs')
         ]);
         
         setCategories(cats || []);
         setBrands(brnds || []);
         setProducts(prods || []);
         setOffers(ofrs || []);
+        setBanners(bans || []);
+        setFaqs(fqs || []);
         setSettings(sets || null);
         setSocialLinks(slinks || []);
         
@@ -97,26 +109,26 @@ export default function App() {
     }, 10000);
     
     return () => clearInterval(pollInterval);
-  }, [setCategories, setBrands, setProducts, setOffers, setSettings, setSocialLinks, login, logout, setIsLoading]);
+  }, [setCategories, setBrands, setProducts, setOffers, setBanners, setFaqs, setSettings, setSocialLinks, login, logout, setIsLoading]);
 
   if (isLoading) {
     return (
-      <div className="h-screen w-screen flex flex-col bg-slate-50">
-        <div className="h-16 w-full bg-white border-b border-slate-200 animate-pulse flex items-center px-4 sm:px-6 lg:px-8">
-          <div className="w-8 h-8 bg-slate-200 rounded-md"></div>
-          <div className="ml-4 w-32 h-5 bg-slate-200 rounded-md"></div>
+      <div className="h-screen w-screen flex flex-col bg-slate-50 dark:bg-slate-950">
+        <div className="h-16 w-full bg-white dark:bg-slate-900 border-b border-slate-200 animate-pulse flex items-center px-4 sm:px-6 lg:px-8">
+          <div className="w-8 h-8 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
+          <div className="ml-4 w-32 h-5 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
         </div>
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex-1">
-          <div className="w-1/4 h-8 bg-slate-200 rounded-md animate-pulse mb-8"></div>
+          <div className="w-1/4 h-8 bg-slate-200 dark:bg-slate-700 rounded-md animate-pulse mb-8"></div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-              <div key={i} className="bg-white rounded-2xl p-4 shadow-sm h-80 animate-pulse flex flex-col">
-                <div className="w-full h-32 bg-slate-100 rounded-xl mb-4"></div>
-                <div className="w-2/3 h-4 bg-slate-200 rounded-md mb-2"></div>
-                <div className="w-1/2 h-3 bg-slate-100 rounded-md mb-6"></div>
+              <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm h-80 animate-pulse flex flex-col">
+                <div className="w-full h-32 bg-slate-100 dark:bg-slate-800 rounded-xl mb-4"></div>
+                <div className="w-2/3 h-4 bg-slate-200 dark:bg-slate-700 rounded-md mb-2"></div>
+                <div className="w-1/2 h-3 bg-slate-100 dark:bg-slate-800 rounded-md mb-6"></div>
                 <div className="mt-auto flex justify-between items-center">
-                  <div className="w-16 h-5 bg-slate-200 rounded-md"></div>
-                  <div className="w-8 h-8 bg-slate-200 rounded-lg"></div>
+                  <div className="w-16 h-5 bg-slate-200 dark:bg-slate-700 rounded-md"></div>
+                  <div className="w-8 h-8 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
                 </div>
               </div>
             ))}

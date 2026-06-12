@@ -118,8 +118,8 @@ export default function SupportTab() {
     <div className="p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Customer Issues & Logs</h2>
-          <p className="text-sm text-slate-500 mt-1">Manage support tickets and official customer complaints.</p>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Customer Issues & Logs</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage support tickets and official customer complaints.</p>
         </div>
       </div>
 
@@ -130,7 +130,7 @@ export default function SupportTab() {
           className={`pb-3 text-sm font-bold flex items-center gap-2 transition-colors border-b-2 ${
             subTab === 'tickets' 
               ? 'border-indigo-600 text-indigo-600' 
-              : 'text-slate-500 hover:text-slate-900 border-transparent'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white border-transparent'
           }`}
         >
           <LifeBuoy className="w-4 h-4" />
@@ -141,7 +141,7 @@ export default function SupportTab() {
           className={`pb-3 text-sm font-bold flex items-center gap-2 transition-colors border-b-2 ${
             subTab === 'complaints' 
               ? 'border-indigo-600 text-indigo-600' 
-              : 'text-slate-500 hover:text-slate-900 border-transparent'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white border-transparent'
           }`}
         >
           <ClipboardList className="w-4 h-4" />
@@ -151,12 +151,12 @@ export default function SupportTab() {
 
       {subTab === 'tickets' ? (
         loadingTickets ? (
-          <div className="p-4 text-slate-500">Loading tickets...</div>
+          <div className="p-4 text-slate-500 dark:text-slate-400">Loading tickets...</div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 text-slate-800 font-bold uppercase tracking-tight text-xs">
+                <thead className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-bold uppercase tracking-tight text-xs">
                   <tr>
                     <th className="px-6 py-4 whitespace-nowrap text-center">Ticket ID</th>
                     <th className="px-6 py-4 whitespace-nowrap">Email</th>
@@ -166,19 +166,19 @@ export default function SupportTab() {
                     <th className="px-6 py-4 whitespace-nowrap text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 text-slate-900">
+                <tbody className="divide-y divide-slate-200 text-slate-900 dark:text-white">
                   {tickets.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-8 text-center text-slate-500 font-medium">
+                      <td colSpan={6} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400 font-medium">
                         No support tickets found.
                       </td>
                     </tr>
                   ) : tickets.map((ticket) => (
-                    <tr key={ticket.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-mono text-sm text-slate-600 whitespace-nowrap text-center">{ticket.id}</td>
+                    <tr key={ticket.id} className="hover:bg-slate-50 dark:bg-slate-950 transition-colors">
+                      <td className="px-6 py-4 font-mono text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap text-center">{ticket.id}</td>
                       <td className="px-6 py-4 font-medium whitespace-nowrap">{ticket.email}</td>
                       <td className="px-6 py-4 max-w-xs"><div className="truncate" title={ticket.question}>{ticket.question}</div></td>
-                      <td className="px-6 py-4 font-mono text-sm text-slate-600 whitespace-nowrap text-center">
+                      <td className="px-6 py-4 font-mono text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap text-center">
                         {ticket.productId && ticket.productId !== 'General Inquiry' ? (
                           <a href={`/products/${ticket.productId}`} target="_blank" rel="noopener noreferrer" className="font-bold text-indigo-600 hover:text-indigo-800 underline">
                             {ticket.productId}
@@ -191,7 +191,7 @@ export default function SupportTab() {
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
                           ticket.status === 'Open' ? 'bg-indigo-100 text-indigo-700' :
                           ticket.status === 'Answered' ? 'bg-emerald-100 text-emerald-700' :
-                           'bg-slate-100 text-slate-600'
+                           'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                         }`}>
                           {ticket.status}
                         </span>
@@ -208,7 +208,7 @@ export default function SupportTab() {
                             </button>
                             <button 
                               onClick={() => handleUpdateStatus(ticket.id, 'Closed')}
-                              className="font-bold text-slate-600 hover:text-slate-900 transition-colors"
+                              className="font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white transition-colors"
                             >
                               Close
                             </button>
@@ -235,12 +235,12 @@ export default function SupportTab() {
         )
       ) : (
         loadingComplaints ? (
-          <div className="p-4 text-slate-500">Loading complaints...</div>
+          <div className="p-4 text-slate-500 dark:text-slate-400">Loading complaints...</div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 text-slate-800 font-bold uppercase tracking-tight text-xs">
+                <thead className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-bold uppercase tracking-tight text-xs">
                   <tr>
                     <th className="px-6 py-4 whitespace-nowrap text-center">ID</th>
                     <th className="px-6 py-4 whitespace-nowrap">Customer</th>
@@ -251,23 +251,23 @@ export default function SupportTab() {
                     <th className="px-6 py-4 whitespace-nowrap text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 text-slate-900">
+                <tbody className="divide-y divide-slate-200 text-slate-900 dark:text-white">
                   {complaints.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-slate-500 font-medium">
+                      <td colSpan={7} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400 font-medium">
                         No customer complaints found.
                       </td>
                     </tr>
                   ) : complaints.map((complaint) => (
-                    <tr key={complaint.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-mono text-sm text-slate-600 whitespace-nowrap text-center">{complaint.id.startsWith('cmp_') ? complaint.id.replace('cmp_', '') : complaint.id}</td>
+                    <tr key={complaint.id} className="hover:bg-slate-50 dark:bg-slate-950 transition-colors">
+                      <td className="px-6 py-4 font-mono text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap text-center">{complaint.id.startsWith('cmp_') ? complaint.id.replace('cmp_', '') : complaint.id}</td>
                       <td className="px-6 py-4">
-                        <div className="font-bold text-slate-900">{complaint.name}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">{complaint.email}</div>
+                        <div className="font-bold text-slate-900 dark:text-white">{complaint.name}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{complaint.email}</div>
                       </td>
                       <td className="px-6 py-4">
                         {complaint.orderId ? (
-                          <span className="bg-slate-100 text-slate-800 font-mono text-xs px-2 py-1 rounded font-bold">
+                          <span className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-mono text-xs px-2 py-1 rounded font-bold">
                             {complaint.orderId}
                           </span>
                         ) : (
@@ -280,11 +280,11 @@ export default function SupportTab() {
                         </span>
                       </td>
                       <td className="px-6 py-4 max-w-sm">
-                        <div className="whitespace-pre-line text-xs font-medium text-slate-700 leading-relaxed max-h-24 overflow-y-auto pr-2" title={complaint.description}>
+                        <div className="whitespace-pre-line text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed max-h-24 overflow-y-auto pr-2" title={complaint.description}>
                           {complaint.description}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-xs text-slate-600 font-medium">
+                      <td className="px-6 py-4 text-xs text-slate-600 dark:text-slate-400 font-medium">
                         {new Date(complaint.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -313,25 +313,25 @@ export default function SupportTab() {
       {/* Reply Modal */}
       {replyTicketId && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
-            <div className="p-4 bg-slate-50 border-b border-slate-100 font-bold text-slate-800">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div className="p-4 bg-slate-50 dark:bg-slate-950 border-b border-slate-100 font-bold text-slate-800 dark:text-slate-200">
               Reply to Ticket #{replyTicketId}
             </div>
             <form onSubmit={handleReplySubmit} className="p-6 flex flex-col gap-4">
-              <label className="text-sm font-bold text-slate-700">Your Answer</label>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Your Answer</label>
               <textarea
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="Type your response here..."
                 required
                 rows={5}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <div className="flex gap-3 justify-end mt-2">
                 <button
                   type="button"
                   onClick={() => setReplyTicketId(null)}
-                  className="px-4 py-2 font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-sm"
+                  className="px-4 py-2 font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 rounded-lg transition-colors text-sm"
                 >
                   Cancel
                 </button>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useStore } from '../../store';
 import { useNavigate, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { Package, FolderTree, ShoppingCart, Settings as SettingsIcon, Ticket, Zap, LogOut, AreaChart, HelpCircle, RefreshCw, Link as LinkIcon, Menu, X, Box, Bell, ClipboardList } from 'lucide-react';
+import { Package, FolderTree, ShoppingCart, Settings as SettingsIcon, Ticket, Zap, LogOut, AreaChart, HelpCircle, RefreshCw, Link as LinkIcon, Menu, X, Box, Bell, ClipboardList, Image as ImageIcon } from 'lucide-react';
 import { api } from '../../lib/api';
 import AnalyticsTab from './AnalyticsTab';
 import ProductsTab from './ProductsTab';
@@ -11,11 +11,13 @@ import OrdersTab from './OrdersTab';
 import CouponsTab from './CouponsTab';
 import SettingsTab from './SettingsTab';
 import OffersTab from './OffersTab';
+import BannersTab from './BannersTab';
 import SupportTab from './SupportTab';
 import SocialLinksTab from './SocialLinksTab';
 import RestockRequestsTab from './RestockRequestsTab';
 import UsersTab from './UsersTab';
 import StockLogsTab from './StockLogsTab';
+import FAQsTab from './FAQsTab';
 import { useScrollLock } from '../../hooks/useScrollLock';
 
 function AdminNotificationsDropdown() {
@@ -58,7 +60,7 @@ function AdminNotificationsDropdown() {
     <div className="relative" ref={menuRef}>
       <button 
         onClick={() => setOpen(!open)}
-        className="relative p-2 text-slate-600 hover:bg-slate-200 rounded-full transition-colors"
+        className="relative p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 rounded-full transition-colors"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
@@ -67,27 +69,27 @@ function AdminNotificationsDropdown() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden z-50">
-          <div className="p-3 border-b border-slate-100 bg-slate-50 font-bold text-slate-800 text-sm flex justify-between items-center">
+        <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 overflow-hidden z-50">
+          <div className="p-3 border-b border-slate-100 bg-slate-50 dark:bg-slate-950 font-bold text-slate-800 dark:text-slate-200 text-sm flex justify-between items-center">
             Notifications
             <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">{unreadCount} New</span>
           </div>
           <div className="max-h-[60vh] overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="p-6 text-center text-slate-500 text-sm">No notifications</div>
+              <div className="p-6 text-center text-slate-500 dark:text-slate-400 text-sm">No notifications</div>
             ) : (
               <div className="divide-y divide-slate-100">
                 {notifications.slice().reverse().map(n => (
-                  <div key={n.id} className={`p-4 text-sm \${n.read ? 'bg-white opacity-60' : 'bg-indigo-50/30'}`}>
+                  <div key={n.id} className={`p-4 text-sm \${n.read ? 'bg-white dark:bg-slate-900 opacity-60' : 'bg-indigo-50/30'}`}>
                     <div className="flex gap-3">
                       <div className="mt-0.5">
                         <div className={`w-2 h-2 rounded-full \${n.read ? 'bg-slate-300' : 'bg-indigo-500'}`}></div>
                       </div>
                       <div className="flex-1">
-                        <p className={`\${n.read ? 'text-slate-600' : 'text-slate-900 font-medium'}`}>
+                        <p className={`\${n.read ? 'text-slate-600 dark:text-slate-400' : 'text-slate-900 dark:text-white font-medium'}`}>
                           {n.message}
                         </p>
-                        <p className="text-[10px] text-slate-500 mt-1 font-mono">
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
                           {new Date(n.createdAt).toLocaleString()}
                         </p>
                       </div>
@@ -117,6 +119,8 @@ const boardOptions = [
   { to: '/admin/orders', icon: <ShoppingCart className="w-5 h-5 flex-shrink-0" />, label: 'Orders' },
   { to: '/admin/coupons', icon: <Ticket className="w-5 h-5 flex-shrink-0" />, label: 'Coupons' },
   { to: '/admin/offers', icon: <Zap className="w-5 h-5 flex-shrink-0" />, label: 'Offers' },
+  { to: '/admin/banners', icon: <ImageIcon className="w-5 h-5 flex-shrink-0" />, label: 'Banners' },
+  { to: '/admin/faqs', icon: <HelpCircle className="w-5 h-5 flex-shrink-0" />, label: 'FAQs' },
   { to: '/admin/support', icon: <HelpCircle className="w-5 h-5 flex-shrink-0" />, label: 'Support' },
   { to: '/admin/restock', icon: <RefreshCw className="w-5 h-5 flex-shrink-0" />, label: 'Restock' },
   { to: '/admin/social-links', icon: <LinkIcon className="w-5 h-5 flex-shrink-0" />, label: 'Social Links' },
@@ -150,7 +154,7 @@ export default function AdminDashboard() {
         <Link to="/" className="flex items-center text-indigo-600">
            <img src="/logo-primary.svg" alt="QuantumRig" className="h-8 sm:h-10 w-auto" />
         </Link>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-3">Admin Panel</p>
+        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-3">Admin Panel</p>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-1">
@@ -164,7 +168,7 @@ export default function AdminDashboard() {
                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
                  isActive 
                   ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-900 dark:text-white'
                }`}
              >
                {React.cloneElement(opt.icon as React.ReactElement, { className: `w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-slate-400'}` })}
@@ -187,15 +191,15 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="bg-slate-50 min-h-[calc(100vh-4rem)] flex flex-col md:flex-row max-w-[1600px] mx-auto">
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-[calc(100vh-4rem)] flex flex-col md:flex-row max-w-[1600px] mx-auto">
       {/* Mobile Top Bar */}
-      <div className="md:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20">
+      <div className="md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20">
          <div className="flex items-center">
-            <h2 className="text-lg font-bold text-slate-900">Admin Panel</h2>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admin Panel</h2>
          </div>
          <button 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+            className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 rounded-lg"
          >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
          </button>
@@ -208,23 +212,23 @@ export default function AdminDashboard() {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-20 w-64 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:h-auto
+        fixed inset-y-0 left-0 z-20 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:h-auto
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <SidebarContent />
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 w-full bg-slate-50 p-4 md:p-8 min-w-0">
+      <main className="flex-1 w-full bg-slate-50 dark:bg-slate-950 p-4 md:p-8 min-w-0">
          
          <div className="flex justify-between items-center mb-6">
-           <h1 className="text-2xl font-bold text-slate-800 tracking-tight hidden md:block">Admin Workspace</h1>
+           <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200 tracking-tight hidden md:block">Admin Workspace</h1>
            <div className="flex items-center gap-4 ml-auto">
              <AdminNotificationsDropdown />
            </div>
          </div>
 
-         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[600px]">
+         <div className="bg-[#f9fbfd] rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[600px] hover:border-slate-300 transition-colors">
            <Routes>
              <Route path="/" element={<Navigate to="analytics" replace />} />
              <Route path="analytics" element={<AnalyticsTab />} />
@@ -235,6 +239,8 @@ export default function AdminDashboard() {
              <Route path="orders" element={<OrdersTab />} />
              <Route path="coupons" element={<CouponsTab />} />
              <Route path="offers" element={<OffersTab />} />
+             <Route path="banners" element={<BannersTab />} />
+             <Route path="faqs" element={<FAQsTab />} />
              <Route path="support" element={<SupportTab />} />
              <Route path="restock" element={<RestockRequestsTab />} />
              <Route path="users" element={<UsersTab />} />

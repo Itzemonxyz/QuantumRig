@@ -79,3 +79,59 @@ export const api = {
     }
   }
 };
+
+/**
+ * Compresses an image file or base64 string to be suitable for database storage.
+ */
+export function compressImage(fileOrBase64: File | string, maxWidth: number = 1000, quality: number = 0.7): Promise<string> {
+  return new Promise((resolve) => {
+    const processImage = (src: string) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(src); // fallback
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Export to highly compressed JPEG
+        const compressedBase = canvas.toDataURL("image/jpeg", quality);
+        resolve(compressedBase);
+      };
+      img.onerror = () => {
+        resolve(src); // fallback
+      };
+      img.src = src;
+    };
+
+    if (fileOrBase64 instanceof File) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          processImage(e.target.result as string);
+        } else {
+          resolve(""); // fallback
+        }
+      };
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(fileOrBase64);
+    } else {
+      processImage(fileOrBase64);
+    }
+  });
+}
+

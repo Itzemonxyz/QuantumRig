@@ -1,12 +1,16 @@
 import { create } from 'zustand';
-import { User, Category, Brand, Product, Order, Settings, Offer, Analytics, UserNotification, SocialLink, ToastMessage } from './types';
+import { User, Category, Brand, Product, Order, Settings, Offer, Banner, Analytics, UserNotification, SocialLink, ToastMessage, FAQItem } from './types';
 import { api } from './lib/api';
 
-const syncCartToServer = async (cart: { product: Product; quantity: number }[], token: string | null) => {
+const syncCartToServer = async (cart: { product: Product; quantity: number; selectedOptions?: Record<string, string> }[], token: string | null) => {
   if (!token) return;
   try {
     await api.post('/users/me/cart', {
-      cart: cart.map(item => ({ productId: item.product.id, quantity: item.quantity }))
+      cart: cart.map(item => ({ 
+        productId: item.product.id, 
+        quantity: item.quantity,
+        selectedOptions: item.selectedOptions
+      }))
     }, token);
   } catch (error) {
     console.warn("Cart synchronization failed:", error);
@@ -20,17 +24,21 @@ interface StoreState {
   brands: Brand[];
   products: Product[];
   offers: Offer[];
+  banners: Banner[];
+  faqs: FAQItem[];
   settings: Settings | null;
   socialLinks: SocialLink[];
   analytics: Analytics | null;
   notifications: UserNotification[];
-  cart: { product: Product; quantity: number }[];
+  cart: { product: Product; quantity: number; selectedOptions?: Record<string, string> }[];
   builderCart: { [categoryId: string]: Product };
   isLoading: boolean;
   toasts: ToastMessage[];
+  theme: 'light' | 'dark';
 
   // Actions
   setIsLoading: (loading: boolean) => void;
+  setTheme: (theme: 'light' | 'dark') => void;
   login: (user: User, token: string) => void;
   logout: () => void;
   updateUser: (user: User) => void;
@@ -38,6 +46,8 @@ interface StoreState {
   setBrands: (brands: Brand[]) => void;
   setProducts: (products: Product[]) => void;
   setOffers: (offers: Offer[]) => void;
+  setBanners: (banners: Banner[]) => void;
+  setFaqs: (faqs: FAQItem[]) => void;
   setSettings: (settings: Settings) => void;
   setSocialLinks: (socialLinks: SocialLink[]) => void;
   setAnalytics: (analytics: Analytics) => void;
@@ -49,9 +59,9 @@ interface StoreState {
   removeToast: (id: string) => void;
 
   // Cart
-  addToCart: (product: Product, quantity?: number, silent?: boolean) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addToCart: (product: Product, quantity?: number, silent?: boolean, selectedOptions?: Record<string, string>) => void;
+  removeFromCart: (productId: string, selectedOptions?: Record<string, string>) => void;
+  updateQuantity: (productId: string, quantity: number, selectedOptions?: Record<string, string>) => void;
   clearCart: () => void;
 
   // Builder
@@ -74,6 +84,8 @@ export const useStore = create<StoreState>((set) => ({
   brands: [],
   products: [],
   offers: [],
+  banners: [],
+  faqs: [],
   settings: null,
   socialLinks: [],
   analytics: null,
@@ -84,8 +96,13 @@ export const useStore = create<StoreState>((set) => ({
   showCompareModal: false,
   toasts: [],
   isLoading: true,
+  theme: (localStorage.getItem('theme') as 'light' | 'dark') || 'light',
 
   setIsLoading: (loading) => set({ isLoading: loading }),
+  setTheme: (theme) => {
+    localStorage.setItem('theme', theme);
+    set({ theme });
+  },
   setShowCompareModal: (show: boolean) => set({ showCompareModal: show }),
   login: (user, token) => {
     localStorage.setItem('token', token);
@@ -95,11 +112,18 @@ export const useStore = create<StoreState>((set) => ({
         user.cart.forEach((dbItem: any) => {
           const product = state.products.find(p => p.id === dbItem.productId);
           if (product) {
-            const existing = mergedCart.find(item => item.product.id === product.id);
+            const existing = mergedCart.find(item => 
+              item.product.id === product.id && 
+              JSON.stringify(item.selectedOptions || {}) === JSON.stringify(dbItem.selectedOptions || {})
+            );
             if (existing) {
               existing.quantity = Math.max(existing.quantity, dbItem.quantity);
             } else {
-              mergedCart.push({ product, quantity: dbItem.quantity });
+              mergedCart.push({ 
+                product, 
+                quantity: dbItem.quantity,
+                selectedOptions: dbItem.selectedOptions 
+              });
             }
           }
         });
@@ -119,6 +143,8 @@ export const useStore = create<StoreState>((set) => ({
   setBrands: (brands) => set({ brands }),
   setProducts: (products) => set({ products }),
   setOffers: (offers) => set({ offers }),
+  setBanners: (banners) => set({ banners }),
+  setFaqs: (faqs) => set({ faqs }),
   setSettings: (settings) => set({ settings }),
   setSocialLinks: (socialLinks) => set({ socialLinks }),
   setAnalytics: (analytics) => set({ analytics }),
@@ -138,13 +164,20 @@ export const useStore = create<StoreState>((set) => ({
     toasts: state.toasts.filter((t) => t.id !== id)
   })),
 
-  addToCart: (product, quantity = 1, silent = false) => set((state) => {
-    const existing = state.cart.find((item) => item.product.id === product.id);
+  addToCart: (product, quantity = 1, silent = false, selectedOptions = undefined) => set((state) => {
+    const existing = state.cart.find((item) => 
+      item.product.id === product.id && 
+      JSON.stringify(item.selectedOptions || {}) === JSON.stringify(selectedOptions || {})
+    );
     let newCart;
     if (existing) {
-      newCart = state.cart.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item);
+      newCart = state.cart.map((item) => 
+        (item.product.id === product.id && JSON.stringify(item.selectedOptions || {}) === JSON.stringify(selectedOptions || {}))
+          ? { ...item, quantity: item.quantity + quantity } 
+          : item
+      );
     } else {
-      newCart = [...state.cart, { product, quantity }];
+      newCart = [...state.cart, { product, quantity, selectedOptions }];
     }
     syncCartToServer(newCart, state.token);
 
@@ -162,8 +195,10 @@ export const useStore = create<StoreState>((set) => ({
       toasts: [...state.toasts, { id: toastId, message: `Added "${product.title}" to cart!`, type: 'success' }]
     };
   }),
-  removeFromCart: (productId) => set((state) => {
-    const newCart = state.cart.filter((item) => item.product.id !== productId);
+  removeFromCart: (productId, selectedOptions = undefined) => set((state) => {
+    const newCart = state.cart.filter((item) => 
+      !(item.product.id === productId && JSON.stringify(item.selectedOptions || {}) === JSON.stringify(selectedOptions || {}))
+    );
     syncCartToServer(newCart, state.token);
     
     const prod = state.cart.find(item => item.product.id === productId)?.product;
@@ -178,8 +213,12 @@ export const useStore = create<StoreState>((set) => ({
       toasts: [...state.toasts, { id: toastId, message: `Removed "${title}" from cart.`, type: 'info' }]
     };
   }),
-  updateQuantity: (productId, quantity) => set((state) => {
-    const newCart = state.cart.map((item) => item.product.id === productId ? { ...item, quantity } : item);
+  updateQuantity: (productId, quantity, selectedOptions = undefined) => set((state) => {
+    const newCart = state.cart.map((item) => 
+      (item.product.id === productId && JSON.stringify(item.selectedOptions || {}) === JSON.stringify(selectedOptions || {})) 
+        ? { ...item, quantity } 
+        : item
+    );
     syncCartToServer(newCart, state.token);
     return { cart: newCart };
   }),
