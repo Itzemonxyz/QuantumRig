@@ -45,7 +45,7 @@ export default function Products() {
       try {
         const stored = localStorage.getItem('recentSearches');
         let list: string[] = stored ? JSON.parse(stored) : [];
-        list = [q, ...list.filter(item => item.toLowerCase() !== q.toLowerCase())].slice(0, 10);
+        list = [q, ...list.filter(item => item && typeof item === 'string' && item.toLowerCase() !== q.toLowerCase())].slice(0, 10);
         localStorage.setItem('recentSearches', JSON.stringify(list));
         window.dispatchEvent(new Event('recentlyViewedUpdated'));
       } catch (e) {
@@ -196,7 +196,7 @@ export default function Products() {
         </ul>
       </div>
 
-      <div className="border-t border-slate-200 pt-6">
+      <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
         <h3 className="font-bold text-sm mb-3 text-slate-900 dark:text-white uppercase tracking-wider">Price Range</h3>
         <div className="flex items-center gap-2 mb-4">
           <input 
@@ -238,7 +238,7 @@ export default function Products() {
           />
         </div>
         
-        <div className="flex flex-col gap-1 bg-slate-50 dark:bg-slate-950 border border-slate-100 p-4 rounded-xl shadow-sm">
+        <div className="flex flex-col gap-1 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800/60 p-4 rounded-xl shadow-sm">
            <style>{`
              .dual-range-inputs {
                position: absolute;
@@ -372,7 +372,7 @@ export default function Products() {
       </div>
 
       {allBrands.length > 0 && (
-        <div className="border-t border-slate-200 pt-6">
+        <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
           <h3 className="font-bold text-sm mb-3 text-slate-900 dark:text-white uppercase tracking-wider">Brands</h3>
           <ul className="space-y-2 text-sm max-h-48 overflow-y-auto pr-2">
             {allBrands.map(brand => (
@@ -399,7 +399,7 @@ export default function Products() {
       )}
 
       {(stockFilter !== 'all' || priceRange.min || priceRange.max || selectedBrands.length > 0 || searchQuery) && (
-        <div className="border-t border-slate-200 pt-4">
+        <div className="border-t border-slate-200 dark:border-slate-800 pt-4">
           <button 
             onClick={clearFilters}
             className="w-full py-2 text-sm text-slate-600 dark:text-slate-400 font-medium bg-slate-100 dark:bg-slate-800 rounded md:hover:bg-slate-200 dark:bg-slate-700 transition-colors"
@@ -425,7 +425,7 @@ export default function Products() {
          <div className="flex items-center gap-4">
            <button 
              onClick={() => setShowMobileFilters(true)}
-             className="md:hidden flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 px-4 py-2 rounded-lg text-sm font-medium focus:ring-indigo-500"
+             className="md:hidden flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-lg text-sm font-medium focus:ring-indigo-500"
            >
              <Filter className="w-4 h-4" /> Filters
            </button>
@@ -434,7 +434,7 @@ export default function Products() {
                 id="sort"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-white dark:bg-slate-900 border border-slate-200 text-slate-900 dark:text-white text-sm font-medium rounded-lg focus:ring-2 focus:ring-indigo-500 block p-2 w-full md:w-auto outline-none cursor-pointer"
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-sm font-medium rounded-lg focus:ring-2 focus:ring-indigo-500 block p-2 w-full md:w-auto outline-none cursor-pointer"
              >
                 {sortOptions.map(opt => (
                    <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -446,7 +446,7 @@ export default function Products() {
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Desktop Sidebar */}
-        <div className="hidden md:block col-span-1 border border-slate-200 bg-white dark:bg-slate-900 p-5 rounded-xl h-fit sticky top-24 shadow-sm">
+        <div className="hidden md:block col-span-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 rounded-xl h-fit sticky top-24 shadow-sm">
           {filterSidebarContent}
         </div>
         
@@ -466,7 +466,7 @@ export default function Products() {
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
                 className="w-full bg-white dark:bg-slate-900 h-[85vh] max-h-[85vh] rounded-t-3xl shadow-2xl flex flex-col overflow-hidden"
               >
-                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-white dark:bg-slate-900 sticky top-0 z-10 shrink-0">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800/60 flex justify-between items-center bg-white dark:bg-slate-900 sticky top-0 z-10 shrink-0">
                   <h2 className="font-bold text-lg text-slate-900 dark:text-white">Filters</h2>
                   <div className="flex items-center space-x-4">
                     <button 
@@ -492,7 +492,7 @@ export default function Products() {
                 <div className="p-5 overflow-y-auto flex-1 bg-slate-50/50">
                   {filterSidebarContent}
                 </div>
-                <div className="p-4 border-t border-slate-200 bg-white dark:bg-slate-900 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                   <div className="flex items-center justify-between mb-3 text-sm font-bold">
                     <span className="text-slate-500 dark:text-slate-400">Products found:</span>
                     <span className="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">{sortedProducts.length}</span>
@@ -515,7 +515,7 @@ export default function Products() {
               ))}
             </div>
           ) : sortedProducts.length === 0 ? (
-            <div className="text-center py-16 px-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
+            <div className="text-center py-16 px-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center">
               <Search className="w-12 h-12 text-slate-300 mb-4" />
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No products found</h3>
               <p className="text-slate-500 dark:text-slate-400 mb-4">Try adjusting your filters or search criteria.</p>

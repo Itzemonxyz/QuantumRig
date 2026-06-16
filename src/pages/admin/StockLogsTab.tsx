@@ -33,9 +33,9 @@ export default function StockLogsTab() {
   const filteredLogs = logs.filter(log => {
     const query = searchQuery.toLowerCase();
     const matchesSearch = 
-      log.productTitle.toLowerCase().includes(query) ||
-      log.userEmail.toLowerCase().includes(query) ||
-      log.userName.toLowerCase().includes(query);
+      (log.productTitle || '').toLowerCase().includes(query) ||
+      (log.userEmail || '').toLowerCase().includes(query) ||
+      (log.userName || '').toLowerCase().includes(query);
 
     if (typeFilter === 'all') return matchesSearch;
     if (typeFilter === 'add') return matchesSearch && log.amountChanged > 0;

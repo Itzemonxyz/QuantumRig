@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useStore } from '../../store';
 import { useNavigate, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { Package, FolderTree, ShoppingCart, Settings as SettingsIcon, Ticket, Zap, LogOut, AreaChart, HelpCircle, RefreshCw, Link as LinkIcon, Menu, X, Box, Bell, ClipboardList, Image as ImageIcon } from 'lucide-react';
+import { Package, FolderTree, ShoppingCart, Settings as SettingsIcon, Ticket, Zap, LogOut, AreaChart, HelpCircle, RefreshCw, Link as LinkIcon, Menu, X, Box, Bell, ClipboardList, Image as ImageIcon, Sun, Moon } from 'lucide-react';
 import { api } from '../../lib/api';
 import AnalyticsTab from './AnalyticsTab';
 import ProductsTab from './ProductsTab';
@@ -128,7 +128,7 @@ const boardOptions = [
 ];
 
 export default function AdminDashboard() {
-  const { user, token, logout } = useStore();
+  const { user, token, logout, theme, setTheme } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -197,12 +197,21 @@ export default function AdminDashboard() {
          <div className="flex items-center">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admin Panel</h2>
          </div>
-         <button 
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 rounded-lg"
-         >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-         </button>
+         <div className="flex items-center gap-2">
+           <button 
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 rounded-lg transition-colors"
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+           </button>
+           <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 rounded-lg"
+           >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+           </button>
+         </div>
       </div>
 
       {/* Mobile Menu Overlay */}
@@ -224,6 +233,13 @@ export default function AdminDashboard() {
          <div className="flex justify-between items-center mb-6">
            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200 tracking-tight hidden md:block">Admin Workspace</h1>
            <div className="flex items-center gap-4 ml-auto">
+             <button 
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                className="relative p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 rounded-full transition-colors"
+                title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              >
+                {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+              </button>
              <AdminNotificationsDropdown />
            </div>
          </div>

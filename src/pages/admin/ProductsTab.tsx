@@ -609,7 +609,7 @@ export default function ProductsTab() {
                     value={form.title || ''}
                     required
                     onChange={(val) => {
-                      setForm({...form, title: val, slug: val.toLowerCase().replace(/[^a-z0-9]+/g, '-')});
+                      setForm({...form, title: val, slug: (val || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')});
                     }}
                     suggestions={products.map(p => ({
                       id: p.id,
@@ -625,7 +625,7 @@ export default function ProductsTab() {
                           setForm({
                             ...form,
                             title: p.title,
-                            slug: p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                            slug: (p.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
                             brand: p.brand || '',
                             categoryId: p.categoryId,
                             price: p.price,
@@ -640,7 +640,7 @@ export default function ProductsTab() {
                           setImageList([p.imageUrl, ...(p.additionalImages || [])].filter(Boolean));
                           addToast("Quick boilerplate template imported!", "success");
                         } else {
-                          setForm({...form, title: p.title, slug: p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')});
+                          setForm({...form, title: p.title, slug: (p.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')});
                         }
                       }
                     }}
@@ -675,7 +675,7 @@ export default function ProductsTab() {
                     value={categories.find(c => c.id === form.categoryId)?.name || ''}
                     required
                     onChange={(val) => {
-                      const matched = categories.find(c => c.name.toLowerCase() === val.toLowerCase());
+                      const matched = categories.find(c => (c.name || '').toLowerCase() === val.toLowerCase());
                       if (matched) {
                         setForm({...form, categoryId: matched.id});
                       } else {

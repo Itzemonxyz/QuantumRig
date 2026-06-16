@@ -160,7 +160,7 @@ function SupportTicketsView({ user, addToast, products, token }: any) {
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Describe your issue or question..."
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-lg p-3 text-sm h-28 resize-none focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-sm h-28 resize-none focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-white placeholder:text-slate-400"
             />
           </div>
           <button

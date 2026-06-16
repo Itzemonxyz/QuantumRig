@@ -106,7 +106,7 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
     <motion.div 
       whileHover={{ y: -4 }}
       onClick={() => navigate(`/products/${product.id}`)}
-      className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 overflow-hidden flex flex-col group cursor-pointer relative transition-all md:hover:border-indigo-500/50 md:hover:shadow-md"
+      className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col group cursor-pointer relative transition-all md:hover:border-indigo-500/50 md:hover:shadow-md"
     >
       {saveAmount > 0 && (
          <div className="absolute top-0 left-0 bg-rose-600 text-white text-[11px] sm:text-xs px-3 py-1 rounded-br-2xl font-medium z-10">
@@ -129,14 +129,14 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
         <button 
           onClick={handleCompareClick}
           title={isComparing ? "Remove from Compare" : "Add to Compare"}
-          className={`p-1.5 sm:p-2 rounded-full transition-all shadow-sm hover:scale-105 ${isComparing ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 hover:bg-slate-50 dark:bg-slate-950 opacity-100 md:opacity-0 md:group-hover:opacity-100'}`}
+          className={`p-1.5 sm:p-2 rounded-full transition-all shadow-sm hover:scale-105 ${isComparing ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:bg-slate-950 opacity-100 md:opacity-0 md:group-hover:opacity-100'}`}
         >
           {isComparing ? <Check className="w-4 h-4" /> : <ArrowLeftRight className="w-4 h-4" />}
         </button>
         <button 
           onClick={handleShareClick}
           title="Share Product"
-          className="p-1.5 sm:p-2 rounded-full transition-all shadow-sm hover:scale-105 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 hover:bg-slate-50 dark:bg-slate-950 opacity-100 md:opacity-0 md:group-hover:opacity-100"
+          className="p-1.5 sm:p-2 rounded-full transition-all shadow-sm hover:scale-105 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-700 opacity-100 md:opacity-0 md:group-hover:opacity-100"
         >
           <Share2 className="w-4 h-4" />
         </button>
@@ -144,7 +144,7 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
           whileTap={{ scale: 0.9 }}
           onClick={handleToggleSave}
           title={isSaved ? "Remove from Saved" : "Save Product"}
-          className={`p-1.5 sm:p-2 rounded-full transition-all shadow-sm ${isSaved ? 'bg-rose-50 text-rose-500 border-rose-200' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 hover:bg-slate-50 dark:bg-slate-950'} opacity-100 md:opacity-0 md:group-hover:opacity-100 flex items-center justify-center`}
+          className={`p-1.5 sm:p-2 rounded-full transition-all shadow-sm ${isSaved ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-500 border-rose-200 dark:border-rose-500/30' : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-700'} opacity-100 md:opacity-0 md:group-hover:opacity-100 flex items-center justify-center`}
         >
           <motion.div
             animate={isSaved ? { scale: [1, 1.4, 0.9, 1.1, 1] } : { scale: 1 }}
@@ -160,7 +160,7 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
               onRemove();
             }}
             title="Remove from Saved"
-            className="p-1.5 sm:p-2 rounded-full transition-all shadow-sm hover:scale-105 bg-white dark:bg-slate-900 text-rose-500 border border-slate-200 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 opacity-100 md:opacity-0 md:group-hover:opacity-100"
+            className="p-1.5 sm:p-2 rounded-full transition-all shadow-sm hover:scale-105 bg-white dark:bg-slate-900 text-rose-500 border border-slate-200 dark:border-slate-800 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 opacity-100 md:opacity-0 md:group-hover:opacity-100"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -173,10 +173,10 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
         </div>
       )}
 
-      <div className="aspect-square relative overflow-hidden bg-white dark:bg-slate-900 p-4 sm:p-6 flex items-center justify-center border-b border-slate-100 group-hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-          <img loading="lazy" src={product.imageUrl} alt={product.title} className="w-full h-full object-contain md:group-hover:scale-110 transition-transform duration-700 ease-out mix-blend-multiply" />
+      <div className="aspect-square relative flex-shrink-0 bg-white dark:bg-slate-800 p-4 sm:p-6 flex items-center justify-center border-b border-slate-100 dark:border-slate-700 group-hover:bg-slate-50 dark:bg-slate-900/50 dark:group-hover:bg-slate-700/50 transition-colors">
+          <img loading="lazy" src={product.imageUrl} alt={product.title} className="w-full h-full object-contain md:group-hover:scale-110 transition-transform duration-700 ease-out dark:mix-blend-normal mix-blend-multiply" />
           
-          <div className="absolute inset-0 bg-white dark:bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          <div className="absolute inset-0 bg-white/40 dark:bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
             <button 
               onClick={(e) => { e.stopPropagation(); setShowQuickView(true); }}
               className="bg-slate-900 text-white px-4 py-2 rounded-xl font-bold flex items-center shadow-lg hover:bg-indigo-600 transition-all hover:scale-105 active:scale-95 text-sm"
@@ -186,7 +186,7 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
             </button>
           </div>
       </div>
-      <div className="p-3 sm:p-4 flex-1 flex flex-col bg-slate-50/50 relative overflow-hidden">
+      <div className="p-3 sm:p-4 flex-1 flex flex-col bg-slate-50/50 dark:bg-slate-800/50 relative overflow-hidden text-left">
         <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-2 line-clamp-2 md:hover:text-indigo-600 transition-all duration-300" title={product.title}>{product.title}</h3>
         
         {product.code && (
@@ -204,7 +204,7 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
            </ul>
         )}
         
-        <div className="mt-auto pt-3 border-t border-slate-200 flex flex-col gap-3 grow-0 shrink-0">
+        <div className="mt-auto pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-3 grow-0 shrink-0">
           {/* Price with Label Row */}
           <div className="flex items-center justify-between w-full">
              <span className="text-[10px] font-extrabold text-slate-400 tracking-wider uppercase select-none">PRICE</span>
@@ -324,9 +324,9 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
                 <X className="w-5 h-5" />
               </button>
               
-              <div className="w-full md:w-1/2 bg-slate-50 dark:bg-slate-950 relative flex flex-col border-b md:border-b-0 md:border-r border-slate-200 min-h-[300px] md:min-h-[500px]">
-                <div className="absolute inset-0 p-8 flex items-center justify-center">
-                  <img src={allImages[activeImageIndex]} alt={product.title} className="w-full h-full object-contain mix-blend-multiply" />
+              <div className="w-full md:w-1/2 bg-slate-50 dark:bg-slate-900 relative flex flex-col border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 min-h-[300px] md:min-h-[500px]">
+                <div className="absolute inset-0 p-8 flex items-center justify-center bg-white dark:bg-slate-800">
+                  <img src={allImages[activeImageIndex]} alt={product.title} className="w-full h-full object-contain dark:mix-blend-normal mix-blend-multiply" />
                 </div>
                 
                 {allImages.length > 1 && (
@@ -336,7 +336,7 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
                         e.stopPropagation();
                         setActiveImageIndex(prev => (prev === 0 ? allImages.length - 1 : prev - 1));
                       }}
-                      className="absolute left-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-white dark:bg-slate-900 border border-slate-200 text-slate-800 dark:text-slate-200 rounded-full flex items-center justify-center shadow-lg hover:bg-slate-50 dark:bg-slate-950 transition-colors z-10"
+                      className="absolute left-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 rounded-full flex items-center justify-center shadow-lg hover:bg-slate-50 dark:bg-slate-950 transition-colors z-10"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
@@ -345,7 +345,7 @@ export default function ProductCard({ product, onRemove }: ProductCardProps) {
                         e.stopPropagation();
                         setActiveImageIndex(prev => (prev === allImages.length - 1 ? 0 : prev + 1));
                       }}
-                      className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-white dark:bg-slate-900 border border-slate-200 text-slate-800 dark:text-slate-200 rounded-full flex items-center justify-center shadow-lg hover:bg-slate-50 dark:bg-slate-950 transition-colors z-10"
+                      className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 rounded-full flex items-center justify-center shadow-lg hover:bg-slate-50 dark:bg-slate-950 transition-colors z-10"
                     >
                       <ChevronRight className="w-5 h-5" />
                     </button>

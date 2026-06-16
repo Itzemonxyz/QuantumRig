@@ -223,7 +223,7 @@ export default function Home() {
         accentColor: "#4f46e5",
         glowColor: "rgba(79, 70, 229, 0.15)",
         countDescription: "High-Performance Cores",
-        iconClass: "text-indigo-600"
+        iconClass: "text-indigo-600 dark:text-indigo-400"
       };
     }
     if (slug.includes('motherboard') || id === 'c2' || name.includes('motherboard')) {
@@ -235,7 +235,7 @@ export default function Home() {
         accentColor: "#8b5cf6",
         glowColor: "rgba(139, 92, 246, 0.15)",
         countDescription: "Stable System Architecture",
-        iconClass: "text-violet-600"
+        iconClass: "text-violet-600 dark:text-violet-400"
       };
     }
     if (slug.includes('ram') || id === 'c3' || name.includes('ram') || name.includes('memory')) {
@@ -247,7 +247,7 @@ export default function Home() {
         accentColor: "#14b8a6",
         glowColor: "rgba(20, 184, 166, 0.15)",
         countDescription: "High MHz DDR5 Modules",
-        iconClass: "text-teal-600"
+        iconClass: "text-teal-600 dark:text-teal-400"
       };
     }
     if (slug.includes('storage') || id === 'c4' || name.includes('storage') || name.includes('ssd') || name.includes('hdd')) {
@@ -259,7 +259,7 @@ export default function Home() {
         accentColor: "#10b981",
         glowColor: "rgba(16, 185, 129, 0.15)",
         countDescription: "Extreme Read/Write Speeds",
-        iconClass: "text-emerald-600"
+        iconClass: "text-emerald-600 dark:text-emerald-400"
       };
     }
     if (slug.includes('graphic') || slug.includes('gpu') || id === 'c5' || name.includes('gpu') || name.includes('graphic')) {
@@ -271,7 +271,7 @@ export default function Home() {
         accentColor: "#f43f5e",
         glowColor: "rgba(244, 63, 94, 0.15)",
         countDescription: "Unmatched FPS & Rendering",
-        iconClass: "text-rose-600"
+        iconClass: "text-rose-600 dark:text-rose-400"
       };
     }
     if (slug.includes('power') || slug.includes('psu') || id === 'c6' || name.includes('power') || name.includes('psu')) {
@@ -283,7 +283,7 @@ export default function Home() {
         accentColor: "#f59e0b",
         glowColor: "rgba(245, 158, 11, 0.15)",
         countDescription: "Stable Energy Delivery",
-        iconClass: "text-amber-600"
+        iconClass: "text-amber-600 dark:text-amber-400"
       };
     }
     if (slug.includes('case') || slug.includes('casing') || id === 'c7' || name.includes('case') || name.includes('chassis')) {
@@ -295,7 +295,7 @@ export default function Home() {
         accentColor: "#3b82f6",
         glowColor: "rgba(59, 130, 246, 0.15)",
         countDescription: "Optimal Structural Layout",
-        iconClass: "text-blue-600"
+        iconClass: "text-blue-600 dark:text-blue-400"
       };
     }
     if (slug.includes('cooler') || id === 'c8' || name.includes('cooler')) {
@@ -307,7 +307,7 @@ export default function Home() {
         accentColor: "#06b6d4",
         glowColor: "rgba(6, 182, 212, 0.15)",
         countDescription: "Low Decibel Fluid Fans",
-        iconClass: "text-cyan-600"
+        iconClass: "text-cyan-600 dark:text-cyan-400"
       };
     }
     if (slug.includes('monitor') || id === 'c9' || name.includes('monitor') || name.includes('display')) {
@@ -319,7 +319,7 @@ export default function Home() {
         accentColor: "#a855f7",
         glowColor: "rgba(168, 85, 247, 0.15)",
         countDescription: "Vibrant Gaming Panels",
-        iconClass: "text-purple-600"
+        iconClass: "text-purple-600 dark:text-purple-400"
       };
     }
     if (slug.includes('laptop') || id === 'c11' || name.includes('laptop')) {
@@ -331,7 +331,7 @@ export default function Home() {
         accentColor: "#d946ef",
         glowColor: "rgba(217, 70, 239, 0.15)",
         countDescription: "All-In-One Specifications",
-        iconClass: "text-fuchsia-600"
+        iconClass: "text-fuchsia-600 dark:text-fuchsia-400"
       };
     }
     if (slug.includes('accessor') || id === 'c10' || name.includes('accessor') || name.includes('mouse') || name.includes('keyboard')) {
@@ -343,7 +343,7 @@ export default function Home() {
         accentColor: "#f97316",
         glowColor: "rgba(249, 115, 22, 0.15)",
         countDescription: "Premium Gaming Gear",
-        iconClass: "text-orange-600"
+        iconClass: "text-orange-600 dark:text-orange-400"
       };
     }
 
@@ -355,7 +355,7 @@ export default function Home() {
       accentColor: "#4f46e5",
       glowColor: "rgba(79, 70, 229, 0.15)",
       countDescription: "Vetted Sourced Hardware",
-      iconClass: "text-indigo-600"
+      iconClass: "text-indigo-600 dark:text-indigo-400"
     };
   };
 
@@ -373,10 +373,10 @@ export default function Home() {
       {/* Mobile-Only Blocks */}
       <div className="md:hidden flex flex-col w-full">
         {/* Quick Access Categories separate box container for mobile */}
-        <div className="bg-white dark:bg-slate-900 py-5 px-4 border-b border-slate-200 relative z-10 mb-2 select-none" id="mobile-categories-separate-box">
+        <div className="bg-white dark:bg-slate-900 py-5 px-4 border-b border-slate-200 dark:border-slate-800 relative z-10 mb-2 select-none" id="mobile-categories-separate-box">
           <div className="mb-4">
             <span className="text-[9px] font-extrabold uppercase tracking-widest text-indigo-600 block mb-0.5">HARDWARE SECTIONS</span>
-            <h3 className="text-lg font-bold text-[#111827]">Categories</h3>
+            <h3 className="text-lg font-bold text-[#111827] dark:text-white">Categories</h3>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {(categories || []).slice(0, showMoreMobileCats ? (categories || []).length : 4).map((c) => {
@@ -385,21 +385,21 @@ export default function Home() {
               return (
                 <div 
                   key={c.id || 'fallback'} 
-                  className="p-3 bg-slate-50/50 border border-slate-200/85 rounded-xl flex items-center gap-3 cursor-pointer select-none transform hover:scale-[1.01] hover:shadow-md transition-all duration-300 active:scale-95 active:bg-indigo-50/20 active:border-indigo-200" 
+                  className="p-3 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200/85 dark:border-slate-700 rounded-xl flex items-center gap-3 cursor-pointer select-none transform hover:scale-[1.01] hover:shadow-md transition-all duration-300 active:scale-95 active:bg-indigo-50/20 active:border-indigo-200 dark:active:border-indigo-500/50" 
                   onClick={() => c.id && navigate(`/products?category=${c.id}`)}
                 >
                   <div 
-                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border"
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border ${meta.iconClass}`}
                     style={{ 
                       backgroundColor: meta.bgColor,
                       borderColor: meta.accentColor + "15",
-                      color: meta.textColor 
+                      /* color: meta.textColor */ 
                     }}
                   >
                     {meta.icon}
                   </div>
                   <div className="overflow-hidden">
-                    <h4 className="text-xs font-bold text-[#111827] truncate leading-tight">{c.name || 'Category'}</h4>
+                    <h4 className="text-xs font-bold text-[#111827] dark:text-white truncate leading-tight">{c.name || 'Category'}</h4>
                     <span className="text-[10px] font-semibold text-slate-400 block uppercase tracking-wider">{meta.tagline.split(' ')[0]}</span>
                   </div>
                 </div>
@@ -409,7 +409,7 @@ export default function Home() {
           {(categories || []).length > 4 && (
             <button 
               onClick={() => setShowMoreMobileCats(p => !p)} 
-              className="w-full mt-4 py-2 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800/80 text-xs font-bold text-indigo-600 flex items-center justify-center rounded-lg transition-colors border border-slate-200"
+              className="w-full mt-4 py-2 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800/80 text-xs font-bold text-indigo-600 flex items-center justify-center rounded-lg transition-colors border border-slate-200 dark:border-slate-800"
             >
               {showMoreMobileCats ? 'Show Less' : 'Show All Categories'}
             </button>
@@ -427,7 +427,7 @@ export default function Home() {
             <img 
               src={displayedBanners[campaignIndex]?.imageUrl} 
               alt={displayedBanners[campaignIndex]?.title} 
-              className="max-w-full max-h-full w-auto h-auto object-contain block select-none pointer-events-none rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-transform hover:scale-[1.01] hover:shadow-md"
+              className="max-w-full max-h-full w-auto h-auto object-contain block select-none pointer-events-none rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-800/50 bg-slate-50 dark:bg-slate-950 transition-transform hover:scale-[1.01] hover:shadow-md"
               referrerPolicy="no-referrer"
             />
             
@@ -447,7 +447,7 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-3 px-4 mt-3">
           <div 
             onClick={() => navigate(fixed1Banner.linkUrl || '/builder')}
-            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden cursor-pointer shadow-sm active:scale-95 transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md flex items-center justify-center"
+            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden cursor-pointer shadow-sm active:scale-95 transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md flex items-center justify-center"
           >
             <img 
               src={fixed1Banner.imageUrl} 
@@ -458,7 +458,7 @@ export default function Home() {
           </div>
           <div 
             onClick={() => navigate(fixed2Banner.linkUrl || '/builder')}
-            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden cursor-pointer shadow-sm active:scale-95 transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md flex items-center justify-center"
+            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden cursor-pointer shadow-sm active:scale-95 transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md flex items-center justify-center"
           >
             <img 
               src={fixed2Banner.imageUrl} 
@@ -475,7 +475,7 @@ export default function Home() {
         </div>
 
         {/* Primary Action Buttons */}
-        <div className="flex gap-3 px-4 py-4 mb-2 bg-white dark:bg-slate-900 border-b border-slate-200 shadow-sm mt-3">
+        <div className="flex gap-3 px-4 py-4 mb-2 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm mt-3">
           <button onClick={() => navigate('/builder')} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 px-2 flex flex-col items-center justify-center shadow-lg shadow-indigo-600/10 transition-transform active:scale-95 border border-transparent">
             <CircuitBoard className="w-6 h-6 mb-1 text-white" />
             <span className="font-bold text-xs">PC Builder</span>
@@ -501,7 +501,7 @@ export default function Home() {
               <img 
                 src={displayedBanners[campaignIndex]?.imageUrl} 
                 alt={displayedBanners[campaignIndex]?.title} 
-                className="max-w-full max-h-full w-auto h-auto object-contain block select-none pointer-events-none rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-transform hover:scale-[1.01] hover:shadow-lg"
+                className="max-w-full max-h-full w-auto h-auto object-contain block select-none pointer-events-none rounded-2xl shadow-md border border-slate-200/50 dark:border-slate-800/50 bg-slate-50 dark:bg-slate-950 transition-transform hover:scale-[1.01] hover:shadow-lg"
                 referrerPolicy="no-referrer"
               />
 
@@ -510,13 +510,13 @@ export default function Home() {
                 <>
                   <button 
                     onClick={(e) => { e.stopPropagation(); prevSlide(e); }}
-                    className="absolute left-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white dark:bg-slate-900 hover:bg-indigo-600 hover:text-white text-slate-800 dark:text-slate-200 border border-slate-200 flex items-center justify-center transition-all opacity-0 group-hover/slider:opacity-100 shadow-lg cursor-pointer transform hover:scale-105"
+                    className="absolute left-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white dark:bg-slate-900 hover:bg-indigo-600 hover:text-white text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 flex items-center justify-center transition-all opacity-0 group-hover/slider:opacity-100 shadow-lg cursor-pointer transform hover:scale-105"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   <button 
                     onClick={(e) => { e.stopPropagation(); nextSlide(e); }}
-                    className="absolute right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white dark:bg-slate-900 hover:bg-indigo-600 hover:text-white text-slate-800 dark:text-slate-200 border border-slate-200 flex items-center justify-center transition-all opacity-0 group-hover/slider:opacity-100 shadow-lg cursor-pointer transform hover:scale-105"
+                    className="absolute right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white dark:bg-slate-900 hover:bg-indigo-600 hover:text-white text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 flex items-center justify-center transition-all opacity-0 group-hover/slider:opacity-100 shadow-lg cursor-pointer transform hover:scale-105"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
@@ -529,7 +529,7 @@ export default function Home() {
                   <button 
                     key={i} 
                     onClick={(e) => { e.stopPropagation(); setCampaignIndex(i); }}
-                    className={`h-2 rounded-full transition-all duration-300 ${i === campaignIndex ? 'w-6 bg-[#ff5e14]' : 'w-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300'}`} 
+                    className={`h-2 rounded-full transition-all duration-300 ${i === campaignIndex ? 'w-6 bg-indigo-600' : 'w-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300'}`} 
                   />
                 ))}
               </div>
@@ -541,7 +541,7 @@ export default function Home() {
             {/* Top Fixed Promo Banner */}
             <div 
               onClick={() => navigate(fixed1Banner.linkUrl || '/builder')}
-              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden cursor-pointer shadow-md transition-all duration-305 transform hover:scale-[1.01] hover:shadow-md flex items-center justify-center active:scale-[0.99]"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden cursor-pointer shadow-md transition-all duration-305 transform hover:scale-[1.01] hover:shadow-md flex items-center justify-center active:scale-[0.99]"
             >
               <img 
                 src={fixed1Banner.imageUrl} 
@@ -554,7 +554,7 @@ export default function Home() {
             {/* Bottom Fixed Promo Banner */}
             <div 
               onClick={() => navigate(fixed2Banner.linkUrl || '/builder')}
-              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden cursor-pointer shadow-md transition-all duration-305 transform hover:scale-[1.01] hover:shadow-md flex items-center justify-center active:scale-[0.99]"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden cursor-pointer shadow-md transition-all duration-305 transform hover:scale-[1.01] hover:shadow-md flex items-center justify-center active:scale-[0.99]"
             >
               <img 
                 src={fixed2Banner.imageUrl} 
@@ -574,7 +574,7 @@ export default function Home() {
 
       {/* Dynamic Intro Block - Immersive Custom PC Builder Banner Box in soft deep charcoal with indigo border */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 pt-8 pb-6 select-none">
-        <div id="builder-hero-banner-container" className="relative w-full rounded-3xl bg-[#12131e] border border-indigo-900/50 overflow-hidden shadow-2xl p-8 md:p-14 text-center flex flex-col items-center justify-center min-h-[320px]">
+        <div id="builder-hero-banner-container" className="relative w-full rounded-3xl bg-slate-900 dark:bg-slate-950/80 border border-indigo-900/50 overflow-hidden shadow-2xl p-8 md:p-14 text-center flex flex-col items-center justify-center min-h-[320px]">
           {/* Subtle background glow accents (CSS-only with no gradients in text) */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(79,70,229,0.18),transparent_60%)] pointer-events-none" />
           <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-600/8 rounded-full blur-3xl pointer-events-none" />
@@ -618,18 +618,18 @@ export default function Home() {
           <Link 
             to="/builder" 
             id="portal-pc-builder"
-            className="group relative overflow-hidden flex flex-col justify-between bg-white dark:bg-slate-900 hover:bg-indigo-50/50 border border-slate-200 hover:border-indigo-300 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300 min-h-[180px]"
+            className="group relative overflow-hidden flex flex-col justify-between bg-white dark:bg-slate-900 hover:bg-indigo-50/50 dark:hover:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500/50 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300 min-h-[180px]"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-100/50 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-100/50 dark:from-indigo-900/20 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
             
             <div className="flex flex-col gap-4 z-10">
-              <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-950 shadow-sm border border-slate-100 group-hover:bg-indigo-100 group-hover:border-indigo-200 flex items-center justify-center text-indigo-600 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-950 shadow-sm border border-slate-100 dark:border-slate-800 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 group-hover:border-indigo-200 dark:group-hover:border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <CircuitBoard className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-indigo-700 transition-colors">PC Builder</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">PC Builder</h3>
             </div>
             
-            <div className="mt-6 text-xs font-bold text-indigo-600 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 z-10 opacity-70 group-hover:opacity-100">
+            <div className="mt-6 text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 z-10 opacity-70 group-hover:opacity-100">
               Start Assembling <ArrowRight className="w-4 h-4" />
             </div>
           </Link>
@@ -638,18 +638,18 @@ export default function Home() {
           <Link 
             to="/laptop-finder" 
             id="portal-laptop-finder"
-            className="group relative overflow-hidden flex flex-col justify-between bg-white dark:bg-slate-900 hover:bg-blue-50/50 border border-slate-200 hover:border-blue-300 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300 min-h-[180px]"
+            className="group relative overflow-hidden flex flex-col justify-between bg-white dark:bg-slate-900 hover:bg-blue-50/50 dark:hover:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-500/50 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300 min-h-[180px]"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-100/50 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-100/50 dark:from-blue-900/20 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
             
             <div className="flex flex-col gap-4 z-10">
-              <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-950 shadow-sm border border-slate-100 group-hover:bg-blue-100 group-hover:border-blue-200 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-950 shadow-sm border border-slate-100 dark:border-slate-800 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 group-hover:border-blue-200 dark:group-hover:border-blue-500/30 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <Laptop className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-700 transition-colors">Laptop Finder</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">Laptop Finder</h3>
             </div>
             
-            <div className="mt-6 text-xs font-bold text-blue-600 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 z-10 opacity-70 group-hover:opacity-100">
+            <div className="mt-6 text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 z-10 opacity-70 group-hover:opacity-100">
               Find Laptop <ArrowRight className="w-4 h-4" />
             </div>
           </Link>
@@ -658,18 +658,18 @@ export default function Home() {
           <Link 
             to="/track-order" 
             id="portal-track-order"
-            className="group relative overflow-hidden flex flex-col justify-between bg-white dark:bg-slate-900 hover:bg-emerald-50/50 border border-slate-200 hover:border-emerald-300 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1 transition-all duration-300 min-h-[180px]"
+            className="group relative overflow-hidden flex flex-col justify-between bg-white dark:bg-slate-900 hover:bg-emerald-50/50 dark:hover:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-500/50 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1 transition-all duration-300 min-h-[180px]"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-100/50 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-100/50 dark:from-emerald-900/20 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
             
             <div className="flex flex-col gap-4 z-10">
-              <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-950 shadow-sm border border-slate-100 group-hover:bg-emerald-100 group-hover:border-emerald-200 flex items-center justify-center text-emerald-600 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-950 shadow-sm border border-slate-100 dark:border-slate-800 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30 group-hover:border-emerald-200 dark:group-hover:border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <Box className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-emerald-700 transition-colors">Track Order</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">Track Order</h3>
             </div>
             
-            <div className="mt-6 text-xs font-bold text-emerald-600 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 z-10 opacity-70 group-hover:opacity-100">
+            <div className="mt-6 text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 z-10 opacity-70 group-hover:opacity-100">
               Track Progress <ArrowRight className="w-4 h-4" />
             </div>
           </Link>
@@ -679,18 +679,18 @@ export default function Home() {
             type="button"
             onClick={() => setIsComplaintOpen(true)}
             id="portal-raise-complaint"
-            className="group relative overflow-hidden flex flex-col justify-between bg-white dark:bg-slate-900 hover:bg-rose-50/50 border border-slate-200 hover:border-rose-300 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-rose-500/10 hover:-translate-y-1 transition-all duration-300 text-left min-h-[180px]"
+            className="group relative overflow-hidden flex flex-col justify-between bg-white dark:bg-slate-900 hover:bg-rose-50/50 dark:hover:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-500/50 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-rose-500/10 hover:-translate-y-1 transition-all duration-300 text-left min-h-[180px]"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-rose-100/50 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-rose-100/50 dark:from-rose-900/20 to-transparent rounded-bl-[100px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
             
             <div className="flex flex-col gap-4 z-10">
-              <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-950 shadow-sm border border-slate-100 group-hover:bg-rose-100 group-hover:border-rose-200 flex items-center justify-center text-rose-600 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-950 shadow-sm border border-slate-100 dark:border-slate-800 group-hover:bg-rose-100 dark:group-hover:bg-rose-900/30 group-hover:border-rose-200 dark:group-hover:border-rose-500/30 flex items-center justify-center text-rose-600 dark:text-rose-400 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <LifeBuoy className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-rose-700 transition-colors">Raise a Complaint</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-rose-700 dark:group-hover:text-rose-400 transition-colors">Raise a Complaint</h3>
             </div>
             
-            <div className="mt-6 text-xs font-bold text-rose-600 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 z-10 opacity-70 group-hover:opacity-100">
+            <div className="mt-6 text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2 group-hover:gap-3 transition-all duration-300 z-10 opacity-70 group-hover:opacity-100">
               File Complaint <ArrowRight className="w-4 h-4" />
             </div>
           </button>
@@ -717,7 +717,7 @@ export default function Home() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.18 }}
-              className="relative w-full max-w-xl bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border border-slate-200 pointer-events-auto overflow-hidden text-left z-10 flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-xl bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border border-slate-200 dark:border-slate-800 pointer-events-auto overflow-hidden text-left z-10 flex flex-col max-h-[90vh]"
             >
               <div className="bg-slate-900 px-6 py-6 text-white relative shrink-0">
                 <h3 className="text-xl font-extrabold tracking-tight flex items-center gap-2">
@@ -743,7 +743,7 @@ export default function Home() {
                     value={complaintName}
                     onChange={(e) => setComplaintName(e.target.value)}
                     placeholder="e.g. John Doe"
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-xl focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none"
                   />
                 </div>
 
@@ -755,7 +755,7 @@ export default function Home() {
                     value={complaintEmail}
                     onChange={(e) => setComplaintEmail(e.target.value)}
                     placeholder="e.g. user@example.com"
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-xl focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-800 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none text-slate-900 dark:text-white"
                   />
                 </div>
 
@@ -767,7 +767,7 @@ export default function Home() {
                       value={complaintOrderId}
                       onChange={(e) => setComplaintOrderId(e.target.value)}
                       placeholder="e.g. QRG-123456"
-                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-xl focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-800 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none text-slate-900 dark:text-white"
                     />
                   </div>
                   <div>
@@ -775,7 +775,7 @@ export default function Home() {
                     <select 
                       value={complaintCategory}
                       onChange={(e) => setComplaintCategory(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-xl focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none font-medium text-slate-800 dark:text-slate-200"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-800 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none font-medium text-slate-900 dark:text-white"
                     >
                       <option value="Delivery Issue">Delivery Issue</option>
                       <option value="Replacement / Return">Replacement / Return</option>
@@ -795,11 +795,11 @@ export default function Home() {
                     value={complaintDescription}
                     onChange={(e) => setComplaintDescription(e.target.value)}
                     placeholder="Detail what occurred. We will inspect the logged data and reply in 24 hours..."
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-xl focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none resize-none h-28 text-slate-800 dark:text-slate-200"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-800 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none resize-none h-28 text-slate-900 dark:text-white"
                   ></textarea>
                 </div>
 
-                <div className="pt-2 flex justify-end gap-3 border-t border-slate-100">
+                <div className="pt-2 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800/60">
                   <button 
                     type="button"
                     onClick={() => setIsComplaintOpen(false)}
@@ -831,7 +831,7 @@ export default function Home() {
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-50/50 border border-indigo-100 text-indigo-700 text-[10px] font-bold tracking-wider uppercase mb-2">
                 <LayoutGrid className="w-3.5 h-3.5 text-indigo-600" /> VETTED HARDWARE CLASSIFICATION
               </div>
-              <h2 className="text-2xl font-extrabold text-[#111827] tracking-tight">
+              <h2 className="text-2xl font-extrabold text-[#111827] dark:text-white tracking-tight">
                 Explore Components By Category
               </h2>
               <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
@@ -848,15 +848,15 @@ export default function Home() {
                 <button 
                    key={c.id || 'fallback-desktop'}
                    onClick={() => c.id && navigate(`/products?category=${c.id}`)}
-                   className="group p-5 rounded-2xl border border-slate-200/80 bg-slate-50/30 hover:bg-white dark:bg-slate-900 text-left transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md flex flex-col items-start gap-5 cursor-pointer hover:border-indigo-500/80 active:scale-95"
+                   className="group p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-900/50 hover:bg-white dark:bg-slate-900 dark:hover:bg-slate-800 text-left transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md flex flex-col items-start gap-5 cursor-pointer hover:border-indigo-500/80 dark:hover:border-indigo-400/50 active:scale-95"
                 >
                    {/* Icon element in highlighted colored circle badge */}
                    <div 
-                     className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-inner border"
+                     className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-inner border ${meta.iconClass}`}
                      style={{ 
                        backgroundColor: meta.bgColor,
                        borderColor: meta.accentColor + "20",
-                       color: meta.textColor 
+                       /* color: meta.textColor */ 
                      }}
                    >
                      {meta.icon}
@@ -865,7 +865,7 @@ export default function Home() {
                    {/* Informative description block */}
                    <div>
                      <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">{meta.tagline}</span>
-                     <h3 className="text-sm font-bold text-[#111827] group-hover:text-indigo-600 transition-colors leading-tight">
+                     <h3 className="text-sm font-bold text-[#111827] dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">
                        {c.name || 'Category'}
                      </h3>
                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1 font-medium select-none">
@@ -879,14 +879,14 @@ export default function Home() {
             {/* All Products Action Card */}
             <button 
                onClick={() => navigate('/products')}
-               className="group p-5 rounded-2xl border border-slate-200 bg-slate-50/30 hover:bg-white dark:bg-slate-900 text-left transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md flex flex-col items-start gap-5 cursor-pointer hover:border-indigo-500/80 active:scale-95"
+               className="group p-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-900/50 hover:bg-white dark:bg-slate-900 dark:hover:bg-slate-800 text-left transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md flex flex-col items-start gap-5 cursor-pointer hover:border-indigo-500/80 dark:hover:border-indigo-400/50 active:scale-95"
             >
-               <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-inner border border-indigo-100">
+               <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-inner border border-indigo-100 dark:border-indigo-500/30">
                   <LayoutGrid className="w-5 h-5" strokeWidth={1.5} />
                </div>
                <div>
-                 <span className="text-[9px] font-extrabold uppercase tracking-widest text-[#ff5e14] block mb-1">FULL SELECTION</span>
-                 <h3 className="text-sm font-bold text-[#111827] group-hover:text-indigo-600 transition-colors leading-tight">
+                 <span className="text-[9px] font-extrabold uppercase tracking-widest text-indigo-600 block mb-1">FULL SELECTION</span>
+                 <h3 className="text-sm font-bold text-[#111827] dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">
                     All Products
                  </h3>
                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1 font-medium select-none">
@@ -925,7 +925,7 @@ export default function Home() {
 
       {/* Curated Preset Blueprints Section */}
       <div className="px-4 md:px-8 mb-16 md:mb-24">
-        <div className="bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 p-8 md:p-14 relative overflow-hidden shadow-sm transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md">
+        <div className="bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 md:p-14 relative overflow-hidden shadow-sm transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md">
           <div className="relative z-10 flex flex-col lg:flex-row gap-10 items-stretch font-sans">
             
             {/* Left Console Column: Selector & Details */}
@@ -957,11 +957,11 @@ export default function Home() {
                       className={`w-full text-left p-4 rounded-xl border transition-all duration-300 flex items-center justify-between font-sans ${
                         isSelected 
                           ? 'bg-white dark:bg-slate-900 border-indigo-500 text-slate-900 dark:text-white shadow-md' 
-                          : 'bg-transparent border-slate-200 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-white dark:bg-slate-900/50'
+                          : 'bg-transparent border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-white dark:bg-slate-900/50'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${isSelected ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 text-slate-505 text-slate-500 dark:text-slate-400'}`}>
+                        <div className={`p-2 rounded-lg ${isSelected ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-505 text-slate-500 dark:text-slate-400'}`}>
                           {tab.id === 0 && <Cpu className="w-4 h-4" />}
                           {tab.id === 1 && <TrendingUp className="w-4 h-4" />}
                           {tab.id === 2 && <Award className="w-4 h-4" />}
@@ -978,7 +978,7 @@ export default function Home() {
               </div>
 
               {/* Estimated Pricing Benchmarks */}
-              <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 flex justify-between items-center text-sm font-sans">
+              <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex justify-between items-center text-sm font-sans">
                 <div>
                   <span className="text-xs text-slate-505 text-slate-500 dark:text-slate-400 tracking-wider block font-bold">PREPARATION CLASS</span>
                   <strong className="text-slate-800 dark:text-slate-200 text-xs uppercase block mt-0.5">
@@ -997,10 +997,10 @@ export default function Home() {
             </div>
 
             {/* Right Interactive Telemetry Layout Card */}
-            <div className="lg:w-7/12 bg-white dark:bg-slate-900 border border-slate-200 rounded-2xl p-6 flex flex-col justify-between relative shadow-sm font-sans">
+            <div className="lg:w-7/12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col justify-between relative shadow-sm font-sans">
               
               <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100 dark:border-slate-800/60">
                   <div>
                     <h3 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight uppercase">
                       {selectedBlueprint === 0 && "The Ray-Tracing Sentinel"}
@@ -1068,14 +1068,14 @@ export default function Home() {
                       selectedBlueprint === 2 && { label: "RAW FRAME-TIME RATIO", val: "85%", desc: "Cuda Suite" },
                       selectedBlueprint === 2 && { label: "AIRFLOW & COOLING STAGE", val: "96%", desc: "360mm Liquid" }
                     ].filter(Boolean).map((metric: any, mIdx) => (
-                      <div key={mIdx} className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200">
+                      <div key={mIdx} className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
                         <span className="text-xs text-slate-500 dark:text-slate-400 block leading-tight tracking-wider uppercase h-6 line-clamp-2">{metric.label}</span>
                         <div className="flex items-baseline gap-1.5 mt-1">
                           <span className="text-base font-bold text-slate-900 dark:text-white">{metric.val}</span>
                           <span className="text-xs text-indigo-600 uppercase font-bold">{metric.desc}</span>
                         </div>
                         {/* Solid progress line - NO star icons! */}
-                        <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden border border-slate-100">
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden border border-slate-100 dark:border-slate-800/60">
                           <div className="bg-indigo-600 h-full rounded-full" style={{ width: metric.val }} />
                         </div>
                       </div>
@@ -1084,7 +1084,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="pt-6 mt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-4 justify-between">
+              <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row items-center gap-4 justify-between">
                 <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm leading-relaxed">
                   {selectedBlueprint === 0 && "Curated to operate zero bottleneck on absolute ultra graphic settings at Native 4K UHD resolutions."}
                   {selectedBlueprint === 1 && "Engineered with ultimate frame buffer hardware to max competitive responsiveness for 240Hz/360Hz displays."}
@@ -1106,7 +1106,7 @@ export default function Home() {
 
       {/* Trust & Testimonial Badges Section */}
       <div className="px-4 md:px-8 mb-16 md:mb-24">
-        <div className="bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 p-8 md:p-14 relative overflow-hidden shadow-sm transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md">
+        <div className="bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 md:p-14 relative overflow-hidden shadow-sm transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md">
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center font-sans">
             
             <div className="lg:col-span-4 space-y-4 font-sans">
@@ -1128,10 +1128,10 @@ export default function Home() {
             <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6 font-sans">
               
               {/* Testimonial card 1 */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 p-6 rounded-2xl space-y-4 shadow-sm hover:shadow-md transition-all duration-300">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-6 rounded-2xl space-y-4 shadow-sm hover:shadow-md transition-all duration-300">
                 <div className="flex justify-between items-start">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-bold uppercase tracking-wider">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" /> VERIFIED VETTED OWNER
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> VERIFIED VETTED OWNER
                   </div>
                   <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold">RATING: 10 / 10</span>
                 </div>
@@ -1139,7 +1139,7 @@ export default function Home() {
                   "I configured my whole PC on the PC builder tool. The compatibility checker saved me from choosing a cooler too big for my casing! Shipping took 1 day, pristine packaging. Exceptional service."
                 </p>
                 <div className="flex items-center gap-3 pt-1">
-                  <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 font-bold text-indigo-600 flex items-center justify-center text-sm select-none">
+                  <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-500/30 font-bold text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm select-none">
                     MK
                   </div>
                   <div>
@@ -1150,10 +1150,10 @@ export default function Home() {
               </div>
 
               {/* Testimonial card 2 */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 p-6 rounded-2xl space-y-4 shadow-sm hover:shadow-md transition-all duration-300">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-6 rounded-2xl space-y-4 shadow-sm hover:shadow-md transition-all duration-300">
                 <div className="flex justify-between items-start">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-bold uppercase tracking-wider">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" /> VERIFIED VETTED OWNER
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> VERIFIED VETTED OWNER
                   </div>
                   <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold">RATING: 10 / 10</span>
                 </div>
@@ -1161,7 +1161,7 @@ export default function Home() {
                   "QuantumRig is by far the most polished PC building destination. Best prices, zero-fuss checkout, and an incredible user workflow. Highly recommend their custom builder tool!"
                 </p>
                 <div className="flex items-center gap-3 pt-1">
-                  <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 font-bold text-indigo-600 flex items-center justify-center text-sm select-none">
+                  <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-500/30 font-bold text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm select-none">
                     AN
                   </div>
                   <div>
@@ -1184,7 +1184,7 @@ export default function Home() {
 
       {/* Dynamic dynamic FAQ Section with Soft Deep Charcoal Palette */}
       <div className="px-4 md:px-8 mb-16 md:mb-24" id="homepage-faq-section">
-        <div className="bg-[#111827] text-slate-100 rounded-3xl border border-slate-800/80 p-8 md:p-14 relative overflow-hidden shadow-xl">
+        <div className="bg-slate-900 text-slate-100 rounded-3xl border border-slate-800/80 p-8 md:p-14 relative overflow-hidden shadow-xl">
           <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:24px_24px] opacity-15" />
           
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-start font-sans">
@@ -1279,7 +1279,7 @@ export default function Home() {
 
       {/* Enhancements / Features Section */}
       <div className="px-8 mb-20">
-        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-3xl p-8 md:p-16 text-center relative overflow-hidden">
+        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 md:p-16 text-center relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-50"></div>
           <div className="relative z-10 max-w-3xl mx-auto">
             <h2 className="text-3xl md:text-5xl font-extrabold mb-6 tracking-tight text-slate-900 dark:text-white uppercase">The PC Builder's Choice</h2>
@@ -1287,17 +1287,17 @@ export default function Home() {
               We don't just sell parts. We provide an intuitive interactive builder ensuring all your components are 100% compatible. Expertly curate your next battlestation with zero guesswork.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-               <div className="bg-white dark:bg-slate-900 border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
                  <Zap className="w-8 h-8 text-amber-500 mb-4" />
                  <h3 className="font-extrabold text-slate-800 dark:text-slate-200 mb-2 uppercase text-sm tracking-wide">Fast Delivery</h3>
                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Express nationwide shipping on all custom orders and packages.</p>
                </div>
-               <div className="bg-white dark:bg-slate-900 border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
                  <Box className="w-8 h-8 text-emerald-500 mb-4" />
                  <h3 className="font-extrabold text-slate-800 dark:text-slate-200 mb-2 uppercase text-sm tracking-wide">Secure Packaging</h3>
                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Your precious components are boxed with absolute extreme care and security.</p>
                </div>
-               <div className="bg-white dark:bg-slate-900 border border-slate-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
                  <Headphones className="w-8 h-8 text-indigo-500 mb-4" />
                  <h3 className="font-extrabold text-slate-800 dark:text-slate-200 mb-2 uppercase text-sm tracking-wide">Expert Support</h3>
                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Got a question during building? Our expert team is available 24/7 online.</p>

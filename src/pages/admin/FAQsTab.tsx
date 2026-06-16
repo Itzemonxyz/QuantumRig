@@ -83,8 +83,8 @@ export default function FAQsTab() {
   };
 
   const filteredFaqs = localFaqs.filter(faq => 
-    faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
+    (faq.question || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (faq.answer || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (isEditing) {

@@ -140,7 +140,7 @@ export default function Checkout() {
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">Order Placed Successfully!</h1>
         <p className="text-slate-600 dark:text-slate-400 mb-2">Your order has been received and is being processed.</p>
         {successOrderId && (
-          <p className="text-sm font-mono text-slate-500 dark:text-slate-400 mb-8 bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-lg px-4 py-2 inline-block">
+          <p className="text-sm font-mono text-slate-500 dark:text-slate-400 mb-8 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2 inline-block">
             Order Reference: #{successOrderId}
           </p>
         )}
@@ -148,7 +148,7 @@ export default function Checkout() {
           <Link to="/profile" className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md shadow-indigo-600/20 text-sm">
             Track Order Status
           </Link>
-          <Link to="/" className="bg-white dark:bg-slate-900 border border-slate-200 hover:bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 px-6 py-3 rounded-xl font-bold transition-all text-sm">
+          <Link to="/" className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 px-6 py-3 rounded-xl font-bold transition-all text-sm">
             Back to Home
           </Link>
         </div>
@@ -181,7 +181,7 @@ export default function Checkout() {
       </div>
 
       {!token ? (
-        <div className="max-w-lg mx-auto text-center py-12 px-6 bg-white dark:bg-slate-900 border border-slate-200 rounded-2xl shadow-xl">
+        <div className="max-w-lg mx-auto text-center py-12 px-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl">
           <div className="w-16 h-16 bg-indigo-50 border border-indigo-100/50 rounded-full flex items-center justify-center mx-auto text-indigo-600 mb-6">
             <ShieldAlert className="w-8 h-8" />
           </div>
@@ -201,7 +201,7 @@ export default function Checkout() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Checkout Form */}
           <div className="lg:col-span-2">
-            <form onSubmit={handleCheckout} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm space-y-6">
+            <form onSubmit={handleCheckout} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white uppercase tracking-tight mb-1">Shipping & Delivery Details</h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Your order will be packaged securely and shipped to the address provided below.</p>
@@ -215,7 +215,7 @@ export default function Checkout() {
                     type="text" 
                     value={form.fullName} 
                     onChange={e => setForm({...form, fullName: e.target.value})} 
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50 transition-all font-medium" 
+                    className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white transition-all font-medium" 
                   />
                 </div>
                 <div>
@@ -225,7 +225,7 @@ export default function Checkout() {
                     type="text" 
                     value={form.phone} 
                     onChange={e => setForm({...form, phone: e.target.value})} 
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50 transition-all font-medium" 
+                    className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white transition-all font-medium" 
                   />
                 </div>
               </div>
@@ -238,7 +238,7 @@ export default function Checkout() {
                   placeholder="Street address, apartment, city, state, postal code"
                   value={form.address} 
                   onChange={e => setForm({...form, address: e.target.value})} 
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50 transition-all resize-none font-medium text-slate-800 dark:text-slate-200" 
+                  className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50 dark:bg-slate-900 placeholder:text-slate-400 transition-all resize-none font-medium text-slate-900 dark:text-white" 
                 />
               </div>
 
@@ -249,17 +249,17 @@ export default function Checkout() {
                   value={form.instructions} 
                   onChange={e => setForm({...form, instructions: e.target.value})} 
                   placeholder="e.g. Leave with security, call when outside, or preferred delivery timing" 
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50 transition-all resize-none font-medium" 
+                  className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50 dark:bg-slate-900 placeholder:text-slate-400 transition-all resize-none font-medium text-slate-900 dark:text-white" 
                 />
               </div>
 
 
 
               {/* Payment Section */}
-              <div className="border-t border-slate-100 pt-6 space-y-4">
+              <div className="border-t border-slate-100 dark:border-slate-800/60 pt-6 space-y-4">
                 <h3 className="font-bold text-sm text-slate-900 dark:text-white uppercase tracking-wider">Select Payment Method</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label className={`block p-4 border rounded-xl cursor-pointer transition-all duration-200 ${paymentMethod === 'Cash on Delivery' ? 'border-indigo-600 bg-indigo-50/40 shadow-sm' : 'border-slate-200 hover:border-indigo-200 bg-white dark:bg-slate-900'}`}>
+                  <label className={`block p-4 border rounded-xl cursor-pointer transition-all duration-200 ${paymentMethod === 'Cash on Delivery' ? 'border-indigo-600 bg-indigo-50/40 shadow-sm' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-200 bg-white dark:bg-slate-900'}`}>
                     <div className="flex items-center space-x-3">
                       <input 
                         type="radio" 
@@ -276,7 +276,7 @@ export default function Checkout() {
                     </div>
                   </label>
                   
-                  <label className={`block p-4 border rounded-xl cursor-pointer transition-all duration-200 ${paymentMethod === 'Manual Payment' ? 'border-indigo-600 bg-indigo-50/40 shadow-sm' : 'border-slate-200 hover:border-indigo-200 bg-white dark:bg-slate-900'}`}>
+                  <label className={`block p-4 border rounded-xl cursor-pointer transition-all duration-200 ${paymentMethod === 'Manual Payment' ? 'border-indigo-600 bg-indigo-50/40 shadow-sm' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-200 bg-white dark:bg-slate-900'}`}>
                     <div className="flex items-center space-x-3">
                       <input 
                         type="radio" 
@@ -337,16 +337,16 @@ export default function Checkout() {
 
           {/* Sidebar Summary & Promo coupons */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 p-6 shadow-sm sticky top-24 space-y-6">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-100 pb-3">Checkout Invoice</h2>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm sticky top-24 space-y-6">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800/60 pb-3">Checkout Invoice</h2>
               
               {/* Small cart items summary list */}
-              <div className="space-y-3 border-t border-slate-100 pt-4">
+              <div className="space-y-3 border-t border-slate-100 dark:border-slate-800/60 pt-4">
                 <h3 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Order Summary</h3>
                 <div className="max-h-52 overflow-y-auto space-y-3 pr-1">
                   {cart.map((item) => (
                     <div key={item.product.id} className="flex gap-3 text-sm items-center">
-                      <div className="w-10 h-10 rounded border border-slate-100 shrink-0 p-1 flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+                      <div className="w-10 h-10 rounded border border-slate-100 dark:border-slate-800/60 shrink-0 p-1 flex items-center justify-center bg-slate-50 dark:bg-slate-950">
                         <img src={item.product.imageUrl} alt={item.product.title} className="max-h-full max-w-full object-contain" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -360,7 +360,7 @@ export default function Checkout() {
               </div>
 
               {/* Receipts pricing summary metrics */}
-              <div className="space-y-3 border-t border-slate-100 pt-4 text-sm font-medium">
+              <div className="space-y-3 border-t border-slate-100 dark:border-slate-800/60 pt-4 text-sm font-medium">
                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
                   <span>Items subtotal</span>
                   <span className="flex items-center"><TakaIcon className="w-3.5 h-3.5 mr-[1px]"/> {Number(subtotal || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
@@ -378,7 +378,7 @@ export default function Checkout() {
                     <span className="flex items-center">-<TakaIcon className="w-3.5 h-3.5 mr-[1px]"/> {Number(discountAmount || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-slate-600 dark:text-slate-400 border-b border-slate-100 pb-3">
+                <div className="flex justify-between text-slate-600 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800/60 pb-3">
                   <span>Shipping delivery</span>
                   <span className="flex items-center">{shipping === 0 ? <span className="text-emerald-650 font-bold">FREE</span> : <><TakaIcon className="w-3.5 h-3.5 mr-[1px]"/>{Number(shipping || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</>}</span>
                 </div>

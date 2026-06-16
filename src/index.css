@@ -20,6 +20,27 @@
     --chart-text: var(--color-slate-400);
     --chart-tooltip-bg: var(--color-slate-900);
     --chart-tooltip-border: var(--color-slate-700);
+
+    /* Softer Dark Mode Palette to reduce eye strain */
+    --color-slate-950: #0d1117; /* Deep, cool foundation (GitHub style) */
+    --color-slate-900: #161b22; /* Elevated card surface */
+    --color-slate-800: #21262d; /* Distinct borders and hovers */
+    --color-slate-700: #30363d; /* Stronger borders/inputs */
+    --color-slate-600: #484f58; /* Muted distinct */
+    --color-slate-500: #8b949e; /* Tertiary text */
+    --color-slate-400: #8b949e; /* Muted secondary text */
+    --color-slate-300: #c9d1d9; /* Secondary text */
+    --color-slate-200: #e6edf3; /* Primary text soft */
+    --color-slate-100: #f0f6fc; /* Bright highlight */
+    --color-slate-50:  #f0f6fc;
+    
+    /* Eliminate extremely stark whites in dark mode */
+    --color-white: #e6edf3; 
+    
+    /* Slightly temper indigo in dark mode to avoid glare */
+    --color-indigo-400: #818cf8;
+    --color-indigo-500: #6366f1;
+    --color-indigo-600: #4f46e5;
   }
 }
 
@@ -37,6 +58,21 @@ select,
 textarea,
 button {
   font-family: "Outfit", ui-sans-serif, system-ui, sans-serif !important;
+}
+
+@layer base {
+  .dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  .dark textarea,
+  .dark select {
+    background-color: var(--color-slate-900);
+    border-color: var(--color-slate-700);
+    color: var(--color-white);
+  }
+  .dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+  .dark textarea:focus,
+  .dark select:focus {
+    border-color: var(--color-indigo-500);
+  }
 }
 
 .mono-spec-text {

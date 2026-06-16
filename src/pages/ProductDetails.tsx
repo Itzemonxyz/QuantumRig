@@ -6,7 +6,7 @@ import { ShoppingCart, ArrowLeft, Check, AlertTriangle, Heart, Share2, CheckCirc
 import Breadcrumbs from '../components/Breadcrumbs';
 import ScrollToTopButton from '../components/ScrollToTopButton';
 import { useScrollLock } from '../hooks/useScrollLock';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'motion/react';
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -85,6 +85,25 @@ function ProductDetailsInner({ product }: { product: any }) {
 
   const [zoomStyle, setZoomStyle] = useState({});
   const imageContainerRef = useRef<HTMLDivElement>(null);
+  
+  const specsRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: specsScrollProgress } = useScroll({
+    target: specsRef,
+    offset: ["start end", "end start"]
+  });
+  
+  const specsScaleX = useSpring(specsScrollProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
+
+  const specsOpacity = useTransform(
+    specsScrollProgress,
+    [0, 0.05, 0.95, 1],
+    [0, 1, 1, 0]
+  );
+
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!imageContainerRef.current) return;
@@ -275,7 +294,12 @@ function ProductDetailsInner({ product }: { product: any }) {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-slate-900 dark:text-white">
+    <>
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-1.5 bg-indigo-500 z-[100] origin-left shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+        style={{ scaleX: specsScaleX, opacity: specsOpacity }}
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-slate-900 dark:text-white">
       <Breadcrumbs items={breadcrumbItems} />
       <button 
         onClick={() => navigate(-1)} 
@@ -649,7 +673,7 @@ function ProductDetailsInner({ product }: { product: any }) {
           </div>
 
           {/* Technical Specs */}
-          <div className="mt-12 bg-slate-50 dark:bg-slate-950 rounded-xl p-6 border border-slate-200">
+          <div ref={specsRef} className="mt-12 bg-slate-50 dark:bg-slate-950 rounded-xl p-6 border border-slate-200">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-200 pb-4 mb-4">
               Technical Specifications
             </h3>
@@ -796,7 +820,7 @@ function ProductDetailsInner({ product }: { product: any }) {
                     <select 
                       value={reviewRating} 
                       onChange={e => setReviewRating(Number(e.target.value))}
-                      className="w-full border border-slate-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full border border-slate-300 dark:border-slate-700 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                     >
                       <option value="5">5 - Excellent</option>
                       <option value="4">4 - Good</option>
@@ -812,7 +836,7 @@ function ProductDetailsInner({ product }: { product: any }) {
                       rows={4}
                       value={reviewComment}
                       onChange={e => setReviewComment(e.target.value)}
-                      className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                      className="w-full border border-slate-300 dark:border-slate-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400"
                       placeholder="What did you think about this product?"
                     ></textarea>
                   </div>
@@ -986,7 +1010,7 @@ function ProductDetailsInner({ product }: { product: any }) {
                       setSupportEmail(e.target.value);
                       if (supportErrors.email) setSupportErrors({ ...supportErrors, email: '' });
                     }}
-                    className={`w-full border ${supportErrors.email ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 focus:ring-indigo-500'} rounded-lg p-3 text-sm focus:ring-2 focus:outline-none`}
+                    className={`w-full border ${supportErrors.email ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-slate-700 focus:ring-indigo-500'} rounded-lg p-3 text-sm focus:ring-2 focus:outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400`}
                   />
                   {supportErrors.email && <p className="text-rose-500 text-xs mt-1">{supportErrors.email}</p>}
                 </div>
@@ -999,7 +1023,7 @@ function ProductDetailsInner({ product }: { product: any }) {
                       setSupportQuestion(e.target.value);
                       if (supportErrors.question) setSupportErrors({ ...supportErrors, question: '' });
                     }}
-                    className={`w-full border ${supportErrors.question ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 focus:ring-indigo-500'} rounded-lg p-3 text-sm focus:ring-2 focus:outline-none`}
+                    className={`w-full border ${supportErrors.question ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-slate-700 focus:ring-indigo-500'} rounded-lg p-3 text-sm focus:ring-2 focus:outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400`}
                   ></textarea>
                   {supportErrors.question && <p className="text-rose-500 text-xs mt-1">{supportErrors.question}</p>}
                 </div>
@@ -1086,5 +1110,6 @@ function ProductDetailsInner({ product }: { product: any }) {
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 }
