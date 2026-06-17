@@ -964,7 +964,7 @@ export default function Profile() {
          </div>
          <button 
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 rounded-lg"
+            className="p-2 text-indigo-600 hover:bg-slate-100 dark:bg-slate-800 rounded-lg transition-colors"
          >
             {showMobileMenu ? <X className="w-6 h-6" /> : <Settings className="w-6 h-6" />}
          </button>
@@ -1029,7 +1029,7 @@ export default function Profile() {
              }`}
           >
              <Package className={`w-5 h-5 ${activeTab === 'orders' ? 'text-indigo-600' : 'text-slate-400'}`} />
-             <span>My Orders</span>
+             <span>Order History</span>
           </button>
           
           <button 

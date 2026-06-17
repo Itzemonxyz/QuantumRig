@@ -173,7 +173,49 @@ export default function Products() {
 
   const filterSidebarContent = (
     <div className="space-y-6">
-      <div>
+      {categories && categories.length > 0 && (
+        <div>
+          <h3 className="font-bold text-sm mb-3 text-slate-900 dark:text-white uppercase tracking-wider">Categories</h3>
+          <ul className="space-y-2 text-sm max-h-48 overflow-y-auto pr-2">
+            <li>
+               <label className="flex items-center space-x-3 cursor-pointer py-1.5">
+                 <input 
+                   type="radio" 
+                   name="category"
+                   checked={!activeCategory}
+                   onChange={() => {
+                     const params = new URLSearchParams(searchParams);
+                     params.delete('category');
+                     setSearchParams(params);
+                   }}
+                   className="w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-slate-300"
+                 />
+                 <span className={`${!activeCategory ? 'font-bold text-indigo-600' : 'text-slate-700 dark:text-slate-300 font-medium'}`}>All Categories</span>
+               </label>
+            </li>
+            {categories.map(category => (
+              <li key={category.id}>
+                 <label className="flex items-center space-x-3 cursor-pointer py-1.5">
+                   <input 
+                     type="radio" 
+                     name="category"
+                     checked={activeCategory === category.id}
+                     onChange={() => {
+                       const params = new URLSearchParams(searchParams);
+                       params.set('category', category.id);
+                       setSearchParams(params);
+                     }}
+                     className="w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-slate-300"
+                   />
+                   <span className={`${activeCategory === category.id ? 'font-bold text-indigo-600' : 'text-slate-700 dark:text-slate-300 font-medium'}`}>{category.name}</span>
+                 </label>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className={`${categories && categories.length > 0 ? "border-t border-slate-200 dark:border-slate-800 pt-6" : ""}`}>
         <h3 className="font-bold text-sm mb-3 text-slate-900 dark:text-white uppercase tracking-wider">Availability</h3>
         <ul className="space-y-2 text-sm">
           {['all', 'in-stock', 'out-of-stock'].map(status => (
