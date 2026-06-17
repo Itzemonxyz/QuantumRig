@@ -27,6 +27,8 @@ import Profile from './pages/Profile';
 import AdminDashboard from './pages/admin/Dashboard';
 import TrackOrder from './pages/TrackOrder';
 import Offers from './pages/Offers';
+import SharedBuildView from './pages/SharedBuildView';
+import Support from './pages/Support';
 import ErrorBoundary from './components/ErrorBoundary';
 import SupportChat from './components/SupportChat';
 
@@ -152,6 +154,7 @@ export default function App() {
               <Builder />
             </ErrorBoundary>
           } />
+          <Route path="build/:id" element={<SharedBuildView />} />
           <Route path="laptop-finder" element={<LaptopFinder />} />
           <Route path="cart" element={<Cart />} />
           <Route path="checkout" element={<Checkout />} />
@@ -161,6 +164,7 @@ export default function App() {
           <Route path="track-order" element={<TrackOrder />} />
           <Route path="track-order/:id" element={<TrackOrder />} />
           <Route path="offers" element={<Offers />} />
+          <Route path="support" element={<Support />} />
           <Route path="admin/*" element={<AdminDashboard />} />
         </Route>
       </Routes>

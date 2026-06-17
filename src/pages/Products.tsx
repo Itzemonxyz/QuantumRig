@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useStore } from '../store';
-import { Scale, X, Filter, Search } from 'lucide-react';
+import { Scale, X, Filter, Search, Loader2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import ProductSkeleton from '../components/ProductSkeleton';
@@ -9,35 +9,101 @@ import RecentlyViewed from '../components/RecentlyViewed';
 import ScrollToTopButton from '../components/ScrollToTopButton';
 import { Product } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useScrollLock } from '../hooks/useScrollLock';
+import { api } from '../lib/api';
 
 export default function Products() {
-  const { products, categories, isLoading, compareIds, toggleCompare, clearCompare } = useStore();
+  const { categories, isLoading: storeIsLoading, builderCart } = useStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCategory = searchParams.get('category');
   const searchQuery = searchParams.get('search');
   const isBuilderMode = searchParams.get('builder') === 'true';
 
   const [sortBy, setSortBy] = useState('newest');
-  
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  
   useScrollLock(showMobileFilters);
 
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-
-  // New filter states
-  const [stockFilter, setStockFilter] = useState('all'); // all, in-stock, out-of-stock
+  const [stockFilter, setStockFilter] = useState('all');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [localPriceRange, setLocalPriceRange] = useState({ min: '', max: '' });
-  const [isFiltering, setIsFiltering] = useState(false);
+  
+  const [paginatedProducts, setPaginatedProducts] = useState<Product[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(true);
+  const [totalProducts, setTotalProducts] = useState(0);
+  
+  const [allBrands, setAllBrands] = useState<string[]>([]);
+  const [minPriceLimit, setMinPriceLimit] = useState(0);
+  const [maxPriceLimit, setMaxPriceLimit] = useState(100000);
 
-  React.useEffect(() => {
-    setIsFiltering(true);
-    const timer = setTimeout(() => setIsFiltering(false), 300);
-    return () => clearTimeout(timer);
+  const observer = useRef<IntersectionObserver>();
+  const lastProductElementRef = useCallback((node: HTMLDivElement) => {
+    if (isLoadingMore || isFiltering) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [isLoadingMore, isFiltering, hasMore]);
+
+  // Reset page entirely when filters change
+  useEffect(() => {
+    setPage(1);
+    setPaginatedProducts([]);
   }, [activeCategory, searchQuery, sortBy, selectedBrands, stockFilter, priceRange]);
+
+  // Fetch logic
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const isInitial = page === 1;
+      if (isInitial) {
+        setIsFiltering(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+      
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: '12',
+        ...(activeCategory && { category: activeCategory }),
+        ...(searchQuery && { search: searchQuery }),
+        ...(sortBy && { sortBy }),
+        ...(stockFilter !== 'all' && { stockFilter }),
+        ...(priceRange.min && { minPrice: priceRange.min }),
+        ...(priceRange.max && { maxPrice: priceRange.max }),
+        ...(selectedBrands.length > 0 && { brands: selectedBrands.join(',') }),
+        ...(isBuilderMode && builderCart?.['c1'] && { builderCpuId: builderCart['c1'].id }),
+        ...(isBuilderMode && builderCart?.['c2'] && { builderMotherboardId: builderCart['c2'].id }),
+        ...(isBuilderMode && builderCart?.['c3'] && { builderRamId: builderCart['c3'].id })
+      });
+
+      try {
+        const res = await api.get(`/products/paginated?${queryParams.toString()}`);
+        if (isInitial) {
+          setPaginatedProducts(res.data);
+          setAllBrands(res.allBrands || []);
+          setMinPriceLimit(res.minPriceLimit || 0);
+          setMaxPriceLimit(res.maxPriceLimit || 100000);
+        } else {
+          setPaginatedProducts(prev => [...prev, ...res.data]);
+        }
+        setTotalProducts(res.total || 0);
+        setHasMore(page < res.totalPages);
+      } catch (error) {
+        console.error("Failed to fetch paginated products:", error);
+      } finally {
+        if (isInitial) setIsFiltering(false);
+        setIsLoadingMore(false);
+      }
+    };
+
+    fetchProducts();
+  }, [page, activeCategory, searchQuery, sortBy, selectedBrands, stockFilter, priceRange, isBuilderMode, builderCart]);
 
   React.useEffect(() => {
     if (searchQuery && searchQuery.trim()) {
@@ -58,46 +124,6 @@ export default function Products() {
     setLocalPriceRange(priceRange);
   }, [priceRange]);
 
-  let baseFilteredProducts = products;
-  
-  if (activeCategory) {
-    baseFilteredProducts = baseFilteredProducts.filter(p => p.categoryId === activeCategory);
-  }
-  
-  if (searchQuery) {
-    const q = searchQuery.toLowerCase();
-    baseFilteredProducts = baseFilteredProducts.filter(p => 
-      (p.title || '').toLowerCase().includes(q) || 
-      (p.description || '').toLowerCase().includes(q) || 
-      (p.brand || '').toLowerCase().includes(q) ||
-      (p.code || '').toLowerCase().includes(q)
-    );
-  }
-
-  const allBrands = useMemo(() => {
-    const availableProducts = baseFilteredProducts.filter(p => p.stockStatus !== 'Out of Stock' && p.inventoryCount !== 0);
-    return Array.from(new Set(availableProducts.map(p => p.brand).filter(Boolean) as string[])).sort();
-  }, [baseFilteredProducts]);
-  
-  let filteredProducts = baseFilteredProducts;
-
-  if (stockFilter === 'in-stock') {
-    filteredProducts = filteredProducts.filter(p => p.stockStatus === 'In Stock');
-  } else if (stockFilter === 'out-of-stock') {
-    filteredProducts = filteredProducts.filter(p => p.stockStatus === 'Out of Stock');
-  }
-
-  if (priceRange.min !== '') {
-    filteredProducts = filteredProducts.filter(p => p.price >= Number(priceRange.min));
-  }
-  if (priceRange.max !== '') {
-    filteredProducts = filteredProducts.filter(p => p.price <= Number(priceRange.max));
-  }
-  
-  if (selectedBrands.length > 0) {
-    filteredProducts = filteredProducts.filter(p => p.brand && selectedBrands.includes(p.brand));
-  }
-  
   const sortOptions = useMemo(() => {
     const options = [
       { value: 'newest', label: 'Newest Arrivals' },
@@ -107,62 +133,13 @@ export default function Products() {
       { value: 'name-asc', label: 'Name: A to Z' },
       { value: 'name-desc', label: 'Name: Z to A' },
     ];
-    
-    if (activeCategory && filteredProducts.length > 0) {
-       const specKeys = new Set<string>();
-       products.filter(p => p.categoryId === activeCategory).forEach(p => {
-           Object.keys(p.specs || {}).forEach(k => specKeys.add(k));
-       });
-       
-       const formatKey = (key: string) => key.replace(/([A-Z])/g, ' $1').trim();
-       
-       Array.from(specKeys).forEach(key => {
-           options.push({ value: `spec-${key}-asc`, label: `${formatKey(key)}: Low to High`});
-           options.push({ value: `spec-${key}-desc`, label: `${formatKey(key)}: High to Low`});
-       });
-    }
     return options;
-  }, [activeCategory, products, filteredProducts.length]);
-
-  const sortedProducts = useMemo(() => {
-    let sorted = [...filteredProducts];
-    if (sortBy === 'newest') {
-       sorted.sort((a, b) => b.id.localeCompare(a.id));
-    } else if (sortBy === 'price-asc') {
-       sorted.sort((a, b) => a.price - b.price);
-    } else if (sortBy === 'price-desc') {
-       sorted.sort((a, b) => b.price - a.price);
-    } else if (sortBy === 'name-asc') {
-       sorted.sort((a, b) => a.title.localeCompare(b.title));
-    } else if (sortBy === 'name-desc') {
-       sorted.sort((a, b) => b.title.localeCompare(a.title));
-    } else if (sortBy !== 'default') {
-       const isDesc = sortBy.endsWith('-desc');
-       const specKey = sortBy.replace('spec-', '').replace('-asc', '').replace('-desc', '');
-       
-       sorted.sort((a, b) => {
-           const valA = a.specs?.[specKey] || "";
-           const valB = b.specs?.[specKey] || "";
-           const numA = parseFloat(valA.toString().replace(/[^0-9.-]+/g,""));
-           const numB = parseFloat(valB.toString().replace(/[^0-9.-]+/g,""));
-           
-           if (!isNaN(numA) && !isNaN(numB)) {
-               return isDesc ? numB - numA : numA - numB;
-           }
-           return isDesc ? String(valB).localeCompare(String(valA)) : String(valA).localeCompare(String(valB));
-       });
-    }
-    return sorted;
-  }, [filteredProducts, sortBy]);
+  }, []);
 
   const breadcrumbItems = [
     { label: 'Products', path: '/products' },
     ...(activeCategory ? [{ label: categories.find(c => c.id === activeCategory)?.name || 'Category' }] : [])
   ];
-
-  const productPrices = products.map(p => Number(p.price)).filter(p => !isNaN(p));
-  const minPriceLimit = productPrices.length > 0 ? Math.floor(Math.min(...productPrices)) : 0;
-  const maxPriceLimit = productPrices.length > 0 ? Math.ceil(Math.max(...productPrices)) : 100000;
 
   const clearFilters = () => {
     setSearchParams({});
@@ -461,7 +438,13 @@ export default function Products() {
            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-2">
              {searchQuery ? `Search Results for "${searchQuery}"` : activeCategory ? categories.find(c => c.id === activeCategory)?.name || 'Products' : 'All Products'}
            </h1>
-           <p className="text-sm text-slate-500 dark:text-slate-400">Showing {sortedProducts.length} results</p>
+           <p className="text-sm text-slate-500 dark:text-slate-400">Showing {paginatedProducts.length} of {totalProducts} results</p>
+           {isBuilderMode && (
+             <div className="mt-3 flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 text-xs font-bold px-3 py-1.5 rounded-full w-fit border border-indigo-100 dark:border-indigo-800/50">
+               <Scale className="w-4 h-4" />
+               <span>Strict Compatibility Engine Active</span>
+             </div>
+           )}
          </div>
          
          <div className="flex items-center gap-4">
@@ -537,10 +520,10 @@ export default function Products() {
                 <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                   <div className="flex items-center justify-between mb-3 text-sm font-bold">
                     <span className="text-slate-500 dark:text-slate-400">Products found:</span>
-                    <span className="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">{sortedProducts.length}</span>
+                    <span className="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">{totalProducts}</span>
                   </div>
                   <button onClick={() => setShowMobileFilters(false)} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-transform active:scale-95">
-                    Show {sortedProducts.length} Results
+                    Show {totalProducts} Results
                   </button>
                 </div>
               </motion.div>
@@ -550,13 +533,17 @@ export default function Products() {
 
         {/* Products Grid */}
         <div className="col-span-1 md:col-span-3 pb-24">
-          {isLoading || isFiltering ? (
+          <div className="md:hidden flex items-center justify-between mb-4">
+             <span className="text-sm font-bold text-slate-500 dark:text-slate-400">{totalProducts} Products</span>
+          </div>
+
+          {storeIsLoading || isFiltering ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {Array.from({ length: 8 }).map((_, index) => (
                 <ProductSkeleton key={`skeleton-${index}`} />
               ))}
             </div>
-          ) : sortedProducts.length === 0 ? (
+          ) : paginatedProducts.length === 0 ? (
             <div className="text-center py-16 px-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center">
               <Search className="w-12 h-12 text-slate-300 mb-4" />
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No products found</h3>
@@ -565,17 +552,27 @@ export default function Products() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {sortedProducts.map((p, index) => (
-                <motion.div 
-                  key={p.id || `product-${index}`}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className="h-full"
-                >
-                  <ProductCard product={p} />
-                </motion.div>
-              ))}
+              {paginatedProducts.map((p, index) => {
+                const isLast = index === paginatedProducts.length - 1;
+                return (
+                  <motion.div 
+                    key={p.id || `product-${index}`}
+                    ref={isLast ? lastProductElementRef : null}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="h-full"
+                  >
+                    <ProductCard product={p} />
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+
+          {isLoadingMore && (
+            <div className="mt-8 flex justify-center items-center py-4">
+               <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
             </div>
           )}
         </div>

@@ -230,6 +230,38 @@ export default function TrackOrder() {
                   </div>
                 </div>
               )}
+              
+              {(orderData.courierName || orderData.trackingNumber) && (orderData.status === 'Shipped' || orderData.status === 'Delivered') && (
+                <div className="mt-8 pt-6 border-t border-slate-200/60 pl-2">
+                   <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-wider flex items-center">
+                     <Package className="w-3.5 h-3.5 mr-1.5" /> Shipping Details
+                   </h4>
+                   <div className="flex flex-col sm:flex-row sm:items-center gap-6 bg-white dark:bg-slate-900 border border-slate-100 p-4 w-full rounded-xl shadow-sm">
+                     {orderData.courierName && (
+                       <div>
+                         <span className="block text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Courier Service</span>
+                         <span className="font-bold text-slate-900 dark:text-white flex items-center">
+                           {orderData.courierName}
+                         </span>
+                       </div>
+                     )}
+                     {orderData.trackingNumber && (
+                       <div>
+                         <span className="block text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Tracking Number</span>
+                         {orderData.trackingNumber.startsWith('http') ? (
+                           <a href={orderData.trackingNumber} target="_blank" rel="noopener noreferrer" className="font-mono text-indigo-600 font-bold hover:underline">
+                              {orderData.trackingNumber.substring(0, 30)}...
+                           </a>
+                         ) : (
+                           <span className="font-mono text-slate-900 dark:text-white font-bold bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded tracking-wider">
+                             {orderData.trackingNumber}
+                           </span>
+                         )}
+                       </div>
+                     )}
+                   </div>
+                </div>
+              )}
             </div>
 
             <div className="mb-10 bg-white dark:bg-slate-900 border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">

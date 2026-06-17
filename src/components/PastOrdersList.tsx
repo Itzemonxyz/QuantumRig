@@ -11,30 +11,37 @@ interface PastOrdersListProps {
 
 export default function PastOrdersList({ token, initialOrders }: PastOrdersListProps) {
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<Order[]>(initialOrders || []);
-  const [loading, setLoading] = useState(!initialOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalOrders, setTotalOrders] = useState(0);
 
   useEffect(() => {
-    if (initialOrders) {
-      setOrders(initialOrders);
-      setLoading(false);
-      return;
-    }
-
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    if (!token) return;
 
     const fetchOrders = async () => {
       try {
         setLoading(true);
-        const data = await api.get('/orders/user', token);
-        setOrders(data || []);
+        const data = await api.get(`/orders/user?page=${page}&limit=5`, token);
+        if (data && data.data) {
+           if (page === 1) {
+             setOrders(data.data);
+           } else {
+             setOrders(prev => [...prev, ...data.data]);
+           }
+           setTotalOrders(data.total);
+           setHasMore(page < data.totalPages);
+        } else {
+           // fallback if server hasn't restarted yet
+           setOrders(data || []);
+           setHasMore(false);
+        }
       } catch (err: any) {
-        console.error('Failed to fetch orders in past orders list:', err);
+        console.error('Failed to fetch orders:', err);
         setError('Failed to fetch your order history.');
       } finally {
         setLoading(false);
@@ -42,7 +49,7 @@ export default function PastOrdersList({ token, initialOrders }: PastOrdersListP
     };
 
     fetchOrders();
-  }, [token, initialOrders]);
+  }, [token, page]);
 
   const handlePrint = (order: Order) => {
     const printWindow = window.open('', '_blank');
@@ -325,6 +332,18 @@ export default function PastOrdersList({ token, initialOrders }: PastOrdersListP
               </div>
             );
           })}
+          
+          {hasMore && (
+            <div className="flex justify-center mt-6">
+              <button 
+                onClick={() => setPage(p => p + 1)} 
+                disabled={loading}
+                className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Loading...' : 'Load More'}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1,11 +1,11 @@
 import "dotenv/config";
 import express from "express";
 import path from "path";
+import Stripe from "stripe";
 import cors from "cors";
 import { createServer as createViteServer } from "vite";
 import fs from "fs";
-import { User, Category, Brand, Product, Order, Settings, Coupon, Offer, Banner, RestockRequest, UserNotification, SocialLink, StockAdjustmentLog, FAQItem } from "./src/types";
-
+import { User, Category, Brand, Product, Order, Settings, Coupon, Offer, Banner, RestockRequest, UserNotification, SocialLink, StockAdjustmentLog, FAQItem, SharedBuild, Role } from "./src/types";
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -33,19 +33,22 @@ app.use((req, res, next) => {
 
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 
 // Initialize the Admin SDK
 let db: Firestore;
 const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+const bucketName = process.env.VITE_FIREBASE_STORAGE_BUCKET || "emonxyz-48285.appspot.com";
 
 if (serviceAccountJson) {
   try {
     const serviceAccount = JSON.parse(serviceAccountJson);
     initializeApp({
-      credential: cert(serviceAccount)
+      credential: cert(serviceAccount),
+      storageBucket: bucketName
     });
     db = getFirestore();
-    console.log("🔥 Connected to Firebase Admin (bypasses security rules)");
+    console.log("🔥 Connected to Firebase Admin (bypasses security rules) with Storage bucket:", bucketName);
   } catch (error) {
     console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT environment variable:", error);
   }
@@ -61,6 +64,7 @@ let complaints: { id: string; name: string; email: string; orderId?: string; cat
 let analyticsEvents: { id: string; event: string; productId: string; timestamp: string }[] = [];
 let restockRequests: RestockRequest[] = [];
 let adminNotifications: { id: string; message: string; type: string; read: boolean; createdAt: string }[] = [];
+let roles: Role[] = [];
 let users: User[] = [
   { id: "admin_1", name: "Administrator", email: "admin@quantumrig.tech", password: "admin", role: "admin", savedProductIds: [], createdAt: new Date(Date.now() - 86400000 * 30).toISOString(), lastVisited: new Date().toISOString() },
   { id: "admin_2", name: "Administrator", email: "admin@quantumrig.tech", password: "admin6207", role: "admin", savedProductIds: [], createdAt: new Date(Date.now() - 86400000 * 15).toISOString(), lastVisited: new Date().toISOString() }
@@ -142,24 +146,28 @@ let faqs: FAQItem[] = [
     id: "faq_1",
     question: "How long does it take to assemble and ship a custom PC?",
     answer: "Custom PCs are specifically built, meticulously stress-tested, and performance-optimized within 2 to 3 business days. Shipping usually takes an additional 1 to 2 days inside Dhaka, and 3 to 4 days for deliveries outside. Rest assured, we pride ourselves on speed without sacrificing build safety.",
+    category: "Shipping",
     order: 1
   },
   {
     id: "faq_2",
     question: "Are all components brand new and covered by official warranties?",
     answer: "Absolutely! At QuantumRig, we only use 100% genuine, factory-sealed components sourced directly from official authorized brand distributors. Every component maintains its full original manufacturer's warranty, which spans anywhere from 1 up to 10 years depending on the specific model and manufacturer.",
+    category: "Products",
     order: 2
   },
   {
     id: "faq_3",
     question: "Do you perform stress testing and temperature optimization before shipping?",
     answer: "Yes, standard for every single machine. Each custom build undergoes a rigorous 24-hour diagnostic phase including dedicated processor and GPU stress tests. We tune custom fan speed profiles to sustain low noise levels and cool temperatures inside our deep, sleek enclosures for high-load gaming or production.",
+    category: "Services",
     order: 3
   },
   {
     id: "faq_4",
     question: "What shipping protocols do you follow, and is my shipment protected?",
     answer: "We use premium domestic couriers and enforce safe, thick internal expand-wrap foam packaging to securely brace heavy graphic cards and massive air-cooler heatsinks during transit. Every dynamic shipment is fully insured by us, ensuring a seamless replacement policy in the unlikely event of arrival damage.",
+    category: "Shipping",
     order: 4
   }
 ];
@@ -171,6 +179,7 @@ let socialLinks: SocialLink[] = [
 ];
 
 let orders: Order[] = [];
+let sharedBuilds: SharedBuild[] = [];
 
 let settings: Settings = {
   announcementText: "Free shipping on all PC Builds over ৳2000! Use code QUANTUM24",
@@ -373,6 +382,17 @@ async function syncDatabase() {
       }
     }
 
+    // 15. Sync Shared Builds
+    const sbSnap = await db.collection("shared_builds").get();
+    if (!sbSnap.empty) {
+      sharedBuilds = sbSnap.docs.map((d: any) => d.data() as SharedBuild);
+    }
+    
+    // 16. Sync Roles
+    const rolesSnap = await db.collection("roles").get();
+    if (!rolesSnap.empty) {
+      roles = rolesSnap.docs.map((d: any) => d.data() as Role);
+    }
   } catch (error: any) {
     if (error && error.message && error.message.includes('PERMISSION_DENIED')) return;
     console.warn("Firestore Sync Error (rules may not open yet):", error);
@@ -388,6 +408,58 @@ app.use(async (req, res, next) => {
     await initialSyncPromise;
   }
   next();
+});
+
+// Stripe Payment
+let stripeClient: Stripe | null = null;
+function getStripe(): Stripe {
+  if (!stripeClient) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+      throw new Error('STRIPE_SECRET_KEY environment variable is missing');
+    }
+    stripeClient = new Stripe(key);
+  }
+  return stripeClient;
+}
+
+app.post("/api/create-payment-intent", async (req, res) => {
+  try {
+    const stripe = getStripe();
+    const { amount } = req.body;
+    
+    // Create a PaymentIntent with the order amount and currency
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100), // Stripe expects cents, or paisa equivalent
+      currency: "usd",
+      automatic_payment_methods: {
+        enabled: true,
+      },
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+    });
+  } catch (error: any) {
+    console.error("Stripe Error:", error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Update Order Payment Status
+app.put("/api/orders/:id/pay", async (req, res) => {
+  const { id } = req.params;
+  const { paymentIntentId } = req.body;
+  const orderIdx = orders.findIndex((o) => o.id === id);
+  if (orderIdx !== -1) {
+    orders[orderIdx].status = 'Accepted';
+    orders[orderIdx].paymentMethod = 'Credit Card (Stripe)';
+    orders[orderIdx].transactionId = paymentIntentId;
+    if (db) await db.collection("orders").doc(id).set(JSON.parse(JSON.stringify(orders[orderIdx]))).catch(console.error);
+    res.json(orders[orderIdx]);
+  } else {
+    res.status(404).json({ error: "Order not found" });
+  }
 });
 
 // Users & Auth
@@ -519,6 +591,55 @@ app.put("/api/users/me", (req, res) => {
     res.json(userWithoutPassword);
   } else {
     res.status(401).json({ error: "Unauthorized" });
+  }
+});
+
+// Roles
+app.get("/api/roles", (req, res) => res.json(roles));
+app.post("/api/roles", async (req, res) => {
+  const role: Role = { id: `role_${Date.now()}`, ...req.body, createdAt: new Date().toISOString() };
+  if (db) await db.collection("roles").doc(role.id).set(JSON.parse(JSON.stringify(role))).catch(console.error);
+  roles.push(role);
+  res.json(role);
+});
+app.put("/api/roles/:id", async (req, res) => {
+  const idx = roles.findIndex(r => r.id === req.params.id);
+  if (idx > -1) {
+    roles[idx] = { ...roles[idx], ...req.body };
+    if (db) await db.collection("roles").doc(roles[idx].id).set(JSON.parse(JSON.stringify(roles[idx]))).catch(console.error);
+    res.json(roles[idx]);
+  } else res.status(404).json({ error: "Not found" });
+});
+app.delete("/api/roles/:id", async (req, res) => {
+  roles = roles.filter(r => r.id !== req.params.id);
+  if (db) await db.collection("roles").doc(req.params.id).delete().catch(console.error);
+  // Optional: Also find users with this role and remove or set role='user'
+  res.sendStatus(204);
+});
+
+// Admin Users Route
+app.get("/api/admin/users", (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+  const admin = users.find(u => u.id === token && (u.role === 'admin' || u.role === 'staff'));
+  if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+  const sanitizedUsers = users.map(u => {
+    const { password, ...uSafe } = u;
+    return uSafe;
+  });
+  res.json(sanitizedUsers);
+});
+app.put("/api/admin/users/:id", async (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+  const admin = users.find(u => u.id === token && (u.role === 'admin' || u.role === 'staff'));
+  if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+
+  const idx = users.findIndex(u => u.id === req.params.id);
+  if (idx > -1) {
+    users[idx] = { ...users[idx], ...req.body };
+    if (db) await db.collection("users").doc(users[idx].id).set(JSON.parse(JSON.stringify(users[idx]))).catch(console.error);
+    res.json(users[idx]);
+  } else {
+    res.status(404).json({ error: "Not found" });
   }
 });
 
@@ -684,7 +805,7 @@ app.post("/api/users/me/request-deletion", async (req, res) => {
 
 app.post("/api/admin/users/:id/approve-deletion", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
-  const admin = users.find((u) => u.id === token && u.role === 'admin');
+  const admin = users.find((u) => u.id === token && (u.role === 'admin' || u.role === 'staff'));
   if (!admin) return res.status(401).json({ error: 'Unauthorized' });
   
   const userId = req.params.id;
@@ -697,7 +818,7 @@ app.post("/api/admin/users/:id/approve-deletion", async (req, res) => {
 
 app.post("/api/admin/users/:id/deny-deletion", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
-  const admin = users.find((u) => u.id === token && u.role === 'admin');
+  const admin = users.find((u) => u.id === token && (u.role === 'admin' || u.role === 'staff'));
   if (!admin) return res.status(401).json({ error: 'Unauthorized' });
   
   const userId = req.params.id;
@@ -871,6 +992,63 @@ app.delete("/api/internal/clear-all", async (req, res) => {
   }
 });
 
+// Image Upload
+app.post("/api/upload", async (req, res) => {
+  try {
+    const { image } = req.body;
+    if (!image) {
+      return res.status(400).json({ error: "No image provided" });
+    }
+    
+    // Process base64
+    const matches = image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      // It might already be a URL if it was uploaded before
+      if (image.startsWith('http')) {
+        return res.json({ url: image });
+      }
+      return res.status(400).json({ error: "Invalid base64 string" });
+    }
+    
+    if (!db) {
+       // If no Firebase admin initialized (local fallback), just return the base64 or a dummy
+       return res.json({ url: image }); 
+    }
+    
+    const mimeType = matches[1];
+    const base64Data = matches[2];
+    const buffer = Buffer.from(base64Data, 'base64');
+    
+    const extMatch = mimeType.split('/')[1];
+    const ext = extMatch ? extMatch.replace('jpeg', 'jpg') : 'jpg';
+    const fileName = `uploads/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`;
+    
+    let downloadUrl = image;
+    try {
+      const bucket = getStorage().bucket(process.env.VITE_FIREBASE_STORAGE_BUCKET || "emonxyz-48285.appspot.com");
+      const file = bucket.file(fileName);
+      
+      await file.save(buffer, {
+        metadata: { contentType: mimeType },
+      });
+
+      try {
+        await file.makePublic();
+      } catch(e) {
+        // Ignored
+      }
+      downloadUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+    } catch (uploadObjError: any) {
+      console.warn("Firebase storage failed, falling back to base64 string.", uploadObjError.message);
+    }
+
+    res.json({ url: downloadUrl });
+  } catch (error: any) {
+    console.error("Upload error:", error);
+    res.status(500).json({ error: error.message || "Failed to upload image" });
+  }
+});
+
 // Products
 app.get("/api/admin/products/search", (req, res) => {
   const q = (req.query.q as string || "").toLowerCase();
@@ -884,7 +1062,154 @@ app.get("/api/admin/products/search", (req, res) => {
   res.json(results);
 });
 
-app.get("/api/products", (req, res) => res.json(products));
+app.get("/api/products/paginated", (req, res) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 12;
+  
+  const category = req.query.category as string;
+  const search = (req.query.search as string || "").toLowerCase();
+  const brands = req.query.brands as string;
+  const stockFilter = req.query.stockFilter as string;
+  const minPrice = req.query.minPrice ? Number(req.query.minPrice) : null;
+  const maxPrice = req.query.maxPrice ? Number(req.query.maxPrice) : null;
+  const sortBy = req.query.sortBy as string;
+  const builderCpuId = req.query.builderCpuId as string;
+  const builderMotherboardId = req.query.builderMotherboardId as string;
+  const builderRamId = req.query.builderRamId as string;
+
+  let filtered = [...products];
+
+  if (category) {
+    filtered = filtered.filter(p => p.categoryId === category);
+  }
+
+  // Builder Compatibility Engine
+  if (category && (builderCpuId || builderMotherboardId || builderRamId)) {
+    let requiredSocket: string | undefined;
+    let requiredRam: string | undefined;
+
+    const builderCpu = products.find(p => p.id === builderCpuId);
+    const builderMob = products.find(p => p.id === builderMotherboardId);
+    const builderRam = products.find(p => p.id === builderRamId);
+
+    if (builderCpu) {
+      requiredSocket = builderCpu.socket || builderCpu.specs?.["Socket"];
+    }
+    if (builderMob) {
+      if (!requiredSocket) requiredSocket = builderMob.socket || builderMob.specs?.["Socket"];
+      
+      const mobRamRaw = builderMob.specs?.["Memory Type"] || builderMob.specs?.["RAM Type"] || builderMob.specs?.["Supported Memory"] || "";
+      if (mobRamRaw.toUpperCase().includes("DDR5")) requiredRam = "DDR5";
+      else if (mobRamRaw.toUpperCase().includes("DDR4")) requiredRam = "DDR4";
+    }
+    if (!requiredRam && builderRam) {
+      const ramTypeRaw = builderRam.specs?.["Type"] || builderRam.specs?.["Memory Type"] || builderRam.title || "";
+      if (ramTypeRaw.toUpperCase().includes("DDR5")) requiredRam = "DDR5";
+      else if (ramTypeRaw.toUpperCase().includes("DDR4")) requiredRam = "DDR4";
+    }
+
+    if (requiredSocket && (category === "c1" || category === "c2")) {
+      const cleanSocket = requiredSocket.toLowerCase().replace(/[^a-z0-9]/g, '');
+      filtered = filtered.filter(p => {
+        const pSocket = p.socket || p.specs?.["Socket"] || "";
+        if (!pSocket) return false;
+        const cleanPSocket = pSocket.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return cleanPSocket.includes(cleanSocket) || cleanSocket.includes(cleanPSocket);
+      });
+    }
+
+    if (requiredRam && (category === "c2" || category === "c3")) {
+      filtered = filtered.filter(p => {
+        let pRam = "";
+        if (category === "c2") pRam = p.specs?.["Memory Type"] || p.specs?.["RAM Type"] || p.specs?.["Supported Memory"] || "";
+        if (category === "c3") pRam = p.specs?.["Type"] || p.specs?.["Memory Type"] || p.title || "";
+        return pRam.toUpperCase().includes(requiredRam!);
+      });
+    }
+  }
+
+  if (search) {
+    filtered = filtered.filter(p => 
+      (p.title || '').toLowerCase().includes(search) || 
+      (p.description || '').toLowerCase().includes(search) || 
+      (p.brand || '').toLowerCase().includes(search) ||
+      (p.code || '').toLowerCase().includes(search)
+    );
+  }
+
+  // Calculate available brands before applying stock and explicit brand filters
+  const allBrands = Array.from(new Set(
+    filtered.filter(p => p.stockStatus !== 'Out of Stock' && p.inventoryCount !== 0).map(p => p.brand).filter(Boolean) as string[]
+  )).sort();
+
+  if (stockFilter === 'in-stock') {
+    filtered = filtered.filter(p => p.stockStatus === 'In Stock');
+  } else if (stockFilter === 'out-of-stock') {
+    filtered = filtered.filter(p => p.stockStatus === 'Out of Stock');
+  }
+
+  // Calculate min and max price limits before applying price filtering
+  const prices = filtered.map(p => p.price).filter(p => !isNaN(p));
+  const minPriceLimit = prices.length > 0 ? Math.floor(Math.min(...prices)) : 0;
+  const maxPriceLimit = prices.length > 0 ? Math.ceil(Math.max(...prices)) : 100000;
+
+  if (minPrice !== null && !isNaN(minPrice)) {
+    filtered = filtered.filter(p => p.price >= minPrice);
+  }
+  if (maxPrice !== null && !isNaN(maxPrice)) {
+    filtered = filtered.filter(p => p.price <= maxPrice);
+  }
+
+  if (brands) {
+    const brandList = brands.split(',');
+    filtered = filtered.filter(p => p.brand && brandList.includes(p.brand));
+  }
+
+  if (sortBy === 'price-asc') {
+    filtered.sort((a, b) => a.price - b.price);
+  } else if (sortBy === 'price-desc') {
+    filtered.sort((a, b) => b.price - a.price);
+  } else if (sortBy === 'name-asc') {
+    filtered.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+  } else if (sortBy === 'name-desc') {
+    filtered.sort((a, b) => (b.title || "").localeCompare(a.title || ""));
+  } else if (sortBy === 'newest') {
+    filtered.reverse(); // Simple reverse to simulate newest since we don't have insertion timestamps
+  }
+
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+
+  res.json({
+    data: filtered.slice(startIndex, endIndex),
+    total: filtered.length,
+    page,
+    limit,
+    totalPages: Math.ceil(filtered.length / limit),
+    allBrands,
+    minPriceLimit,
+    maxPriceLimit
+  });
+});
+
+app.get("/api/products", (req, res) => {
+  const page = parseInt(req.query.page as string);
+  const limit = parseInt(req.query.limit as string);
+
+  if (page && limit) {
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    res.json({
+      data: products.slice(startIndex, endIndex),
+      total: products.length,
+      page,
+      limit,
+      totalPages: Math.ceil(products.length / limit)
+    });
+  } else {
+    res.json(products);
+  }
+});
 
 app.post("/api/products/reorder", async (req, res) => {
   const { reorderedProducts } = req.body;
@@ -901,6 +1226,49 @@ app.post("/api/products/reorder", async (req, res) => {
   } else {
     res.status(400).json({ error: "Invalid data" });
   }
+});
+
+app.post("/api/products/bulk", async (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+  const admin = users.find(u => u.id === token && (u.role === 'admin' || u.role === 'staff'));
+  if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+
+  const { products: bulkProducts } = req.body;
+  if (!Array.isArray(bulkProducts)) return res.status(400).json({ error: "Invalid data format" });
+
+  const updatedProducts = [];
+  
+  for (const item of bulkProducts) {
+    if (item.id && products.some(p => p.id === item.id)) {
+       // Update existing
+       const idx = products.findIndex(p => p.id === item.id);
+       products[idx] = { ...products[idx], ...item };
+       const safeP = JSON.parse(JSON.stringify(products[idx]));
+       if (db) await db.collection("products").doc(products[idx].id).set(safeP).catch(console.error);
+       updatedProducts.push(products[idx]);
+    } else {
+       // Create new
+       let code = item.code || item.id;
+       if (!code) {
+         let attempts = 0;
+         while (attempts < 100) {
+           const randId = Math.floor(10000 + Math.random() * 90000).toString();
+           if (!products.some(p => p.code === randId || p.id === randId)) {
+             code = randId;
+             break;
+           }
+           attempts++;
+         }
+       }
+       const p: Product = { ...item, id: code, code, order: item.order !== undefined ? item.order : products.length };
+       const safeP = JSON.parse(JSON.stringify(p));
+       if (db) await db.collection("products").doc(p.id).set(safeP).catch(console.error);
+       products.push(p);
+       updatedProducts.push(p);
+    }
+  }
+
+  res.json({ message: "Bulk operation successful", successCount: updatedProducts.length });
 });
 
 app.post("/api/products", async (req, res) => {
@@ -1166,7 +1534,22 @@ app.get("/api/coupons/validate/:code", (req, res) => {
 
 // Orders
 app.get("/api/orders", (req, res) => {
-  res.json(orders);
+  const page = parseInt(req.query.page as string);
+  const limit = parseInt(req.query.limit as string);
+
+  if (page && limit) {
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    res.json({
+      data: orders.slice(startIndex, endIndex),
+      total: orders.length,
+      page,
+      limit,
+      totalPages: Math.ceil(orders.length / limit)
+    });
+  } else {
+    res.json(orders);
+  }
 });
 
 app.delete("/api/orders/:id", async (req, res) => {
@@ -1178,7 +1561,23 @@ app.delete("/api/orders/:id", async (req, res) => {
 app.get("/api/orders/user", (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "") || "guest";
   const userOrders = orders.filter(o => o.userId === token);
-  res.json(userOrders);
+  
+  const page = parseInt(req.query.page as string);
+  const limit = parseInt(req.query.limit as string);
+
+  if (page && limit) {
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    res.json({
+      data: userOrders.slice(startIndex, endIndex),
+      total: userOrders.length,
+      page,
+      limit,
+      totalPages: Math.ceil(userOrders.length / limit)
+    });
+  } else {
+    res.json(userOrders);
+  }
 });
 app.post("/api/orders", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
@@ -1241,11 +1640,13 @@ app.put("/api/orders/:id/status", async (req, res) => {
   const idx = orders.findIndex(o => o.id === req.params.id);
   if (idx > -1) {
     orders[idx].status = req.body.status;
+    if (req.body.courierName) orders[idx].courierName = req.body.courierName;
+    if (req.body.trackingNumber) orders[idx].trackingNumber = req.body.trackingNumber;
     
     // Append to tracking history
     const descriptions: Record<string, string> = {
       "Accepted": "Order has been accepted and is being processed.",
-      "Shipped": "Order has been dispatched and is on its way.",
+      "Shipped": req.body.trackingNumber ? `Order has been dispatched via ${req.body.courierName || 'Courier'}. Tracking: ${req.body.trackingNumber}` : "Order has been dispatched and is on its way.",
       "Delivered": "Order has been delivered successfully.",
       "Cancelled": "Order has been cancelled."
     };
@@ -1257,7 +1658,14 @@ app.put("/api/orders/:id/status", async (req, res) => {
       description: descriptions[req.body.status] || "Order status updated."
     });
 
-    if (db) await db.collection("orders").doc(req.params.id).update({ status: req.body.status, trackingHistory: orders[idx].trackingHistory }).catch(console.error);
+    const updateData: any = { 
+       status: req.body.status, 
+       trackingHistory: orders[idx].trackingHistory 
+    };
+    if (req.body.courierName) updateData.courierName = req.body.courierName;
+    if (req.body.trackingNumber) updateData.trackingNumber = req.body.trackingNumber;
+
+    if (db) await db.collection("orders").doc(req.params.id).update(updateData).catch(console.error);
     res.json(orders[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
@@ -1293,7 +1701,7 @@ app.get("/api/public/orders/:id", (req, res) => {
 // Analytics
 app.get("/api/admin/stock-logs", (req, res) => {
   const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
-  const admin = users.find((u) => u.id === token && u.role === 'admin');
+  const admin = users.find((u) => u.id === token && (u.role === 'admin' || u.role === 'staff'));
   if (!admin) return res.status(401).json({ error: "Unauthorized" });
   res.json(stockLogs);
 });
@@ -1404,6 +1812,37 @@ app.get("/api/admin/analytics", (req, res) => {
     topProducts,
     salesData
   });
+});
+
+// Shared Builds
+app.post("/api/shared-builds", async (req, res) => {
+  const { items, totalPrice, totalWattage } = req.body;
+  if (!items) {
+    return res.status(400).json({ error: "Build items missing" });
+  }
+
+  const id = Math.floor(10000 + Math.random() * 90000).toString();
+  const build: SharedBuild = {
+    id,
+    items,
+    totalPrice: totalPrice || 0,
+    totalWattage: totalWattage || 0,
+    createdAt: new Date().toISOString()
+  };
+
+  sharedBuilds.push(build);
+  if (db) await db.collection("shared_builds").doc(id).set(JSON.parse(JSON.stringify(build))).catch(console.error);
+  
+  res.json(build);
+});
+
+app.get("/api/shared-builds/:id", (req, res) => {
+  const build = sharedBuilds.find(b => b.id === req.params.id);
+  if (build) {
+    res.json(build);
+  } else {
+    res.status(404).json({ error: "Shared build not found" });
+  }
 });
 
 // Vite & Static file serving

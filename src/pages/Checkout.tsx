@@ -7,6 +7,7 @@ import { Coupon } from '../types';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
 import TakaIcon from '../components/TakaIcon';
+import StripeCheckout from '../components/StripeCheckout';
 
 export default function Checkout() {
   const { cart, removeFromCart, clearCart, token, user, addToast } = useStore();
@@ -39,7 +40,8 @@ export default function Checkout() {
   }, [user]);
 
   // Billing states
-  const [paymentMethod, setPaymentMethod] = useState<'Cash on Delivery' | 'Manual Payment'>('Cash on Delivery');
+  const [paymentMethod, setPaymentMethod] = useState<'Cash on Delivery' | 'Manual Payment' | 'Credit Card'>('Cash on Delivery');
+  const [showStripeForm, setShowStripeForm] = useState(false);
   const [transactionId, setTransactionId] = useState('');
   const [copiedPhone, setCopiedPhone] = useState(false);
 
@@ -73,17 +75,7 @@ export default function Checkout() {
 
 
 
-  const handleCheckout = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (cart.length === 0) {
-      addToast('Your cart is empty.', 'error');
-      return;
-    }
-    if (!form.fullName.trim() || !form.phone.trim() || !form.address.trim()) {
-      addToast('Please fill in all required delivery fields.', 'error');
-      return;
-    }
-
+  const submitOrder = async (stripeTxId?: string) => {
     setLoading(true);
     try {
       // Build order payload
@@ -107,11 +99,16 @@ export default function Checkout() {
           instructions: form.instructions,
           email: user?.email || '' // Automatically match the user's logged-in email
         },
-        paymentMethod,
-        transactionId: paymentMethod === 'Manual Payment' ? transactionId : undefined
+        paymentMethod: stripeTxId ? 'Credit Card (Stripe)' : paymentMethod,
+        transactionId: stripeTxId || (paymentMethod === 'Manual Payment' ? transactionId : undefined)
       };
 
       const res = await api.post('/orders', orderPayload, token);
+      
+      if (stripeTxId && res.id && !res.id.startsWith("mock_")) {
+        await api.put(`/orders/${res.id}/pay`, { paymentIntentId: stripeTxId }, token);
+      }
+
       const generatedOrderId = res.id || Math.floor(100000 + Math.random() * 900000).toString();
       setSuccessOrderId(generatedOrderId);
 
@@ -131,6 +128,25 @@ export default function Checkout() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCheckout = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (cart.length === 0) {
+      addToast('Your cart is empty.', 'error');
+      return;
+    }
+    if (!form.fullName.trim() || !form.phone.trim() || !form.address.trim()) {
+      addToast('Please fill in all required delivery fields.', 'error');
+      return;
+    }
+
+    if (paymentMethod === 'Credit Card') {
+      setShowStripeForm(true);
+      return;
+    }
+
+    await submitOrder();
   };
 
   if (success) {
@@ -201,7 +217,7 @@ export default function Checkout() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Checkout Form */}
           <div className="lg:col-span-2">
-            <form onSubmit={handleCheckout} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm space-y-6">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white uppercase tracking-tight mb-1">Shipping & Delivery Details</h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Your order will be packaged securely and shipped to the address provided below.</p>
@@ -292,6 +308,25 @@ export default function Checkout() {
                       </div>
                     </div>
                   </label>
+                  <label className={`block p-4 border rounded-xl cursor-pointer transition-all duration-200 ${paymentMethod === 'Credit Card' ? 'border-indigo-600 bg-indigo-50/40 shadow-sm' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-200 bg-white dark:bg-slate-900'}`}>
+                    <div className="flex items-center space-x-3">
+                      <input 
+                        type="radio" 
+                        className="accent-indigo-600 w-4 h-4 flex-shrink-0" 
+                        name="paymentType" 
+                        value="Credit Card" 
+                        checked={paymentMethod === 'Credit Card'} 
+                        onChange={() => {
+                           setPaymentMethod('Credit Card');
+                           setShowStripeForm(false);
+                        }} 
+                      />
+                      <div>
+                        <span className="font-bold text-sm text-slate-900 dark:text-white leading-tight">Credit/Debit Card</span>
+                        <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">Secure payment via Stripe</span>
+                      </div>
+                    </div>
+                  </label>
                 </div>
               </div>
 
@@ -299,13 +334,13 @@ export default function Checkout() {
                 <div className="bg-amber-50 border border-amber-200/80 p-5 rounded-2xl space-y-4 animate-in fade-in duration-200">
                   <div className="text-sm text-amber-900">
                     <div className="font-bold mb-3 flex flex-wrap items-center gap-2">
-                      Please send total amount to our bKash/Nagad Personal Number: 
-                      <div className="inline-flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-amber-200 shadow-sm align-middle">
-                        <strong className="text-indigo-600 tracking-wider font-mono text-sm">01759231313</strong>
-                        <button type="button" onClick={handleCopyPhone} className="text-slate-400 hover:text-indigo-600 transition-colors focus:outline-none" title="Copy Phone Number">
-                          {copiedPhone ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                        </button>
-                      </div>
+                       Please send total amount to our bKash/Nagad Personal Number: 
+                       <div className="inline-flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-amber-200 shadow-sm align-middle">
+                         <strong className="text-indigo-600 tracking-wider font-mono text-sm">01759231313</strong>
+                         <button type="button" onClick={handleCopyPhone} className="text-slate-400 hover:text-indigo-600 transition-colors focus:outline-none" title="Copy Phone Number">
+                           {copiedPhone ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                         </button>
+                       </div>
                     </div>
                     <p className="text-xs text-amber-800 leading-relaxed">
                       Enter your Transaction ID below to verify your payment. Your credentials will be processed & confirmed within 12 hours.
@@ -325,14 +360,24 @@ export default function Checkout() {
                 </div>
               )}
 
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-bold text-sm tracking-wide transition-all disabled:opacity-75 shadow-md shadow-indigo-600/20 cursor-pointer"
-              >
-                {loading ? 'Processing Order Placements...' : `Complete Order & Place Receipt (৳${Number(total || 0).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})})`}
-              </button>
-            </form>
+              {showStripeForm ? (
+                <StripeCheckout 
+                  total={total} 
+                  token={token}
+                  onSuccess={(paymentIntentId: string) => submitOrder(paymentIntentId)}
+                  onCancel={() => setShowStripeForm(false)}
+                />
+              ) : (
+                <button 
+                  type="button" 
+                  onClick={handleCheckout}
+                  disabled={loading}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-bold text-sm tracking-wide transition-all disabled:opacity-75 shadow-md shadow-indigo-600/20 cursor-pointer"
+                >
+                  {loading ? 'Processing Order Placements...' : (paymentMethod === 'Credit Card' ? 'Proceed to Payment securely' : `Complete Order & Place Receipt (৳${Number(total || 0).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})})`)}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Sidebar Summary & Promo coupons */}

@@ -567,8 +567,8 @@ export default function Layout() {
               
               {user ? (
                 <div className="flex items-center space-x-4">
-                  {user.role === 'admin' && (
-                    <Link to="/admin" className="relative p-2 flex items-center justify-center text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors" title="Admin Workspace">
+                  {(user.role === 'admin' || user.role === 'staff') && (
+                    <Link to="/admin" className="relative p-2 flex items-center justify-center text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors" title="Workspace">
                       <Shield className="w-5 h-5" />
                     </Link>
                   )}
@@ -747,6 +747,14 @@ export default function Layout() {
                     <Monitor className="w-5 h-5 mr-3 text-slate-400" />
                     PC Builder Tool
                   </Link>
+                  <Link
+                    to="/support"
+                    onClick={() => setShowMobileMenu(false)}
+                    className="flex items-center px-4 py-3 text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600 rounded-xl transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                    Support & FAQs
+                  </Link>
                 </nav>
 
                 <div className="mt-8 px-8">
@@ -836,6 +844,7 @@ export default function Layout() {
               <li><Link to="/products" className="hover:text-white transition-colors">All Products</Link></li>
               <li><Link to="/builder" className="hover:text-white transition-colors">PC Builder Tool</Link></li>
               <li><Link to="/cart" className="hover:text-white transition-colors">Cart</Link></li>
+              <li><Link to="/support" className="hover:text-white transition-colors">Support & FAQs</Link></li>
             </ul>
           </div>
           <div className="col-span-12 md:col-span-2">

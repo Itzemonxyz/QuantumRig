@@ -69,9 +69,35 @@ export default function OrdersTab() {
   });
   const sortedOrders = getSortedOrders(filteredOrders, sortOption);
 
+  const [trackingInputs, setTrackingInputs] = useState<Record<string, {courierName: string, trackingNumber: string}>>({});
+
+  useEffect(() => {
+    // Sync current tracking info into state when orders load
+    const newTrackingInputs: Record<string, {courierName: string, trackingNumber: string}> = {};
+    orders.forEach(o => {
+      newTrackingInputs[o.id] = { courierName: o.courierName || '', trackingNumber: o.trackingNumber || '' };
+    });
+    setTrackingInputs(newTrackingInputs);
+  }, [orders]);
+
+  const handleTrackingChange = (orderId: string, field: 'courierName' | 'trackingNumber', value: string) => {
+    setTrackingInputs(prev => ({
+      ...prev,
+      [orderId]: {
+         ...(prev[orderId] || { courierName: '', trackingNumber: '' }),
+         [field]: value
+      }
+    }));
+  };
+
   const updateStatus = async (id: string, status: string) => {
     try {
-      await api.put(`/orders/${id}/status`, { status }, token);
+      const payload: any = { status };
+      const t = trackingInputs[id];
+      if (t?.courierName) payload.courierName = t.courierName;
+      if (t?.trackingNumber) payload.trackingNumber = t.trackingNumber;
+
+      await api.put(`/orders/${id}/status`, payload, token);
       fetchOrders();
     } catch (e) {
       alert("Failed to update status");
@@ -499,6 +525,41 @@ export default function OrdersTab() {
                       )}
                     </div>
                   </div>
+                  
+                  {order.status !== 'Pending' && order.status !== 'Cancelled' && (
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider flex items-center gap-1.5 hover:text-indigo-600 transition-colors cursor-pointer group" title="Update before changing status to Shipped">
+                         Shipping & Tracking <Package className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+                      </h4>
+                      <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-lg border border-slate-100 text-sm space-y-3">
+                         <div>
+                            <label className="block text-xs font-bold mb-1 ml-1 text-slate-600">Courier Name</label>
+                            <input 
+                              type="text" 
+                              value={trackingInputs[order.id]?.courierName || ''}
+                              onChange={(e) => handleTrackingChange(order.id, 'courierName', e.target.value)}
+                              placeholder="e.g. RedX, Pathao, Steadfast"
+                              className="w-full text-sm py-1.5 px-3 border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none"
+                            />
+                         </div>
+                         <div>
+                            <label className="block text-xs font-bold mb-1 ml-1 text-slate-600">Tracking Number / Route URL</label>
+                            <input 
+                              type="text" 
+                              value={trackingInputs[order.id]?.trackingNumber || ''}
+                              onChange={(e) => handleTrackingChange(order.id, 'trackingNumber', e.target.value)}
+                              placeholder="e.g. 1A2B3CXYZ or URL"
+                              className="w-full text-sm py-1.5 px-3 border border-slate-200 rounded-lg font-mono placeholder:font-sans focus:ring-1 focus:ring-indigo-500 outline-none"
+                            />
+                         </div>
+                         {(trackingInputs[order.id]?.courierName !== order.courierName || trackingInputs[order.id]?.trackingNumber !== order.trackingNumber) && (
+                           <button onClick={() => updateStatus(order.id, order.status)} className="w-full py-1.5 text-xs font-bold bg-indigo-600 text-white rounded-md hover:bg-indigo-700 shadow-sm transition-colors">
+                             Save Tracking Details
+                           </button>
+                         )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>

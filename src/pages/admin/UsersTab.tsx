@@ -43,9 +43,25 @@ export default function UsersTab() {
   
   useScrollLock(!!viewingUserId);
 
+  const [roles, setRoles] = useState<any[]>([]);
+  
   useEffect(() => {
     fetchUsers();
+    api.get('/roles').then(data => setRoles(data || [])).catch(() => {});
   }, [token]);
+
+  const handleUpdateRole = async (userId: string, targetRole: string, roleId?: string) => {
+    try {
+      await api.put(`/admin/users/${userId}`, { role: targetRole, roleId: roleId || null }, token);
+      addToast('User role updated successfully', 'success');
+      fetchUsers();
+      if (userDetails && userDetails.id === userId) {
+        setUserDetails({ ...userDetails, role: targetRole, roleId: roleId || null });
+      }
+    } catch (err) {
+      addToast('Failed to update user role', 'error');
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -298,6 +314,10 @@ export default function UsersTab() {
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
                             <Shield className="w-3 h-3 mr-1" /> Admin
                           </span>
+                        ) : user.role === 'staff' ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            <Shield className="w-3 h-3 mr-1" /> Staff / Manager
+                          </span>
                         ) : (
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200">
                             <User className="w-3 h-3 mr-1" /> User
@@ -390,15 +410,45 @@ export default function UsersTab() {
                       <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 flex flex-col justify-center space-y-3">
                          <div>
                            <div className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">Current Role</div>
-                           {userDetails.role === 'admin' ? (
-                               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-indigo-100 text-indigo-700">
-                               <Shield className="w-4 h-4 mr-1.5" /> Admin
-                               </span>
-                           ) : (
-                               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200">
-                               <User className="w-4 h-4 mr-1.5" /> User
-                               </span>
-                           )}
+                           <div className="flex items-center gap-2">
+                             {userDetails.role === 'admin' ? (
+                                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-indigo-100 text-indigo-700">
+                                 <Shield className="w-4 h-4 mr-1.5" /> Admin
+                                 </span>
+                             ) : userDetails.role === 'staff' ? (
+                                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-emerald-100 text-emerald-800">
+                                 <Shield className="w-4 h-4 mr-1.5" /> Staff
+                                 </span>
+                             ) : (
+                                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200">
+                                 <User className="w-4 h-4 mr-1.5" /> User
+                                 </span>
+                             )}
+                           </div>
+                           
+                           <div className="mt-4 pt-3 border-t border-slate-200">
+                              <p className="text-xs font-bold text-slate-500 mb-2">Assign New Role:</p>
+                              <select 
+                                className="w-full text-sm p-2 border border-slate-300 rounded mb-2 bg-white"
+                                value={userDetails.role === 'staff' ? (userDetails.roleId || 'staff') : userDetails.role}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val === 'admin' || val === 'user') {
+                                    handleUpdateRole(userDetails.id, val);
+                                  } else {
+                                    handleUpdateRole(userDetails.id, 'staff', val);
+                                  }
+                                }}
+                              >
+                                <option value="user">User (Standard)</option>
+                                <option value="admin">Administrator (Full Access)</option>
+                                <optgroup label="Custom Roles">
+                                  {roles.map(r => (
+                                    <option key={r.id} value={r.id}>Staff - {r.name}</option>
+                                  ))}
+                                </optgroup>
+                              </select>
+                           </div>
                          </div>
                          <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 shadow-sm text-sm">
                            <span className="text-slate-500 dark:text-slate-400 font-medium">Joined:</span>

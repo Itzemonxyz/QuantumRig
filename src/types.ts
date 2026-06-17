@@ -19,7 +19,8 @@ export interface User {
   phone?: string;
   avatar?: string;
   password?: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'staff';
+  roleId?: string;
   savedProductIds?: string[];
   loyaltyPoints?: number;
   notifications?: UserNotification[];
@@ -27,6 +28,23 @@ export interface User {
   deletionRequested?: boolean;
   createdAt?: string;
   lastVisited?: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  permissions: {
+    dashboard: boolean;
+    orders: boolean;
+    products: boolean;
+    inventory: boolean;
+    customers: boolean;
+    settings: boolean;
+    promotions: boolean;
+    support: boolean;
+    roles: boolean;
+  };
+  createdAt: string;
 }
 
 export interface RestockRequest {
@@ -37,6 +55,14 @@ export interface RestockRequest {
   productId: string;
   productTitle: string;
   status: 'pending' | 'accepted' | 'fulfilled';
+  createdAt: string;
+}
+
+export interface SharedBuild {
+  id: string;
+  items: Record<string, string>; // categoryId -> productId
+  totalPrice: number;
+  totalWattage: number;
   createdAt: string;
 }
 
@@ -129,6 +155,8 @@ export interface Order {
     instructions?: string;
   };
   trackingHistory?: TrackingStep[];
+  courierName?: string;
+  trackingNumber?: string;
   couponCode?: string;
   discountAmount?: number;
   paymentMethod?: string;
@@ -212,6 +240,7 @@ export interface StockAdjustmentLog {
 
 export interface FAQItem {
   id: string;
+  category?: string;
   question: string;
   answer: string;
   order: number;

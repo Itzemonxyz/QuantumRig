@@ -6,7 +6,7 @@ const firebaseConfig = {
   apiKey: process.env.VITE_FIREBASE_API_KEY,
   authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "emonxyz-48285.firebaseapp.com",
   projectId: process.env.VITE_FIREBASE_PROJECT_ID || "emonxyz-48285",
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "emonxyz-48285.firebasestorage.app",
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "emonxyz-48285.appspot.com",
   messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.VITE_FIREBASE_APP_ID
 };

@@ -6,10 +6,11 @@ import { Product } from '../../types';
 import { 
   ArrowUpDown, Plus, Minus, Trash2, X, PackagePlus, Copy, AlertCircle, GripVertical, 
   UploadCloud, Image as ImageIcon, FileImage, Check, Sparkles, Coins, Eye, Tag, Folder, 
-  PlusCircle, CheckCircle2, ChevronRight, Sliders, Shield, RefreshCw, Layers, ArrowLeft, Cpu
+  PlusCircle, CheckCircle2, ChevronRight, Sliders, Shield, RefreshCw, Layers, ArrowLeft, Cpu, Upload
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import TakaIcon from '../../components/TakaIcon';
+import Papa from 'papaparse';
 
 interface SuggestionItem {
   id: string;
@@ -515,22 +516,30 @@ export default function ProductsTab() {
       ? Math.round(activeCategoryProducts.reduce((sum, p) => sum + (p.price || 0), 0) / activeCategoryProducts.length) 
       : 0;
 
-    const handleFilesUpload = (files: FileList) => {
+    const handleFilesUpload = async (files: FileList) => {
       const imagesToLoad = Array.from(files).slice(0, 5); // accept up to 5 images at once
-      imagesToLoad.forEach(file => {
+      addToast(`Uploading ${imagesToLoad.length} asset(s) to cloud storage...`, "info");
+      
+      for (const file of imagesToLoad) {
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
           const resultObj = e.target?.result;
           if (typeof resultObj === 'string') {
-            setImageList(prev => {
-              if (prev.includes(resultObj)) return prev;
-              return [...prev, resultObj];
-            });
+             try {
+                const res = await api.post('/upload', { image: resultObj }, token);
+                const finalUrl = res?.url || resultObj;
+                setImageList(prev => {
+                  if (prev.includes(finalUrl)) return prev;
+                  return [...prev, finalUrl];
+                });
+             } catch (err) {
+                console.error("Image upload failed", err);
+                setImageList(prev => [...prev, resultObj]);
+             }
           }
         };
         reader.readAsDataURL(file);
-      });
-      addToast(`Processing ${imagesToLoad.length} asset(s) with live base64 encoder...`, "success");
+      }
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1329,11 +1338,28 @@ export default function ProductsTab() {
     );
   }
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const handleDownloadCSV = () => {
-    const headers = ['Title', 'Price', 'Stock Count'];
+    const headers = ['code', 'title', 'brand', 'categoryId', 'price', 'discountPrice', 'inventoryCount', 'stockStatus', 'imageUrl', 'description', 'socket', 'wattage'];
     const csvContent = [
       headers.join(','),
-      ...products.map(p => `"${p.title.replace(/"/g, '""')}",${Number(p.price || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})},${p.inventoryCount || 0}`)
+      ...products.map(p => 
+        [
+          p.code || p.id,
+          `"${(p.title || '').replace(/"/g, '""')}"`,
+          `"${p.brand || ''}"`,
+          p.categoryId,
+          p.price || 0,
+          p.discountPrice || '',
+          p.inventoryCount || 0,
+          p.stockStatus || 'In Stock',
+          `"${(p.imageUrl || '').replace(/"/g, '""')}"`,
+          `"${(p.description || '').replace(/"/g, '""')}"`,
+          `"${p.socket || ''}"`,
+          p.wattage || 0
+        ].join(',')
+      )
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1344,6 +1370,53 @@ export default function ProductsTab() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleUploadCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        try {
+          const parsedProducts = results.data.map((row: any) => ({
+             code: row.code || undefined,
+             title: row.title || 'Untitled',
+             brand: row.brand || '',
+             categoryId: row.categoryId || categories[0]?.id || '',
+             price: parseFloat(row.price) || 0,
+             discountPrice: row.discountPrice ? parseFloat(row.discountPrice) : undefined,
+             inventoryCount: parseInt(row.inventoryCount) || 0,
+             stockStatus: row.stockStatus || 'In Stock',
+             imageUrl: row.imageUrl || '',
+             description: row.description || '',
+             socket: row.socket || '',
+             wattage: parseInt(row.wattage) || 0,
+          }));
+
+          const res = await api.post('/products/bulk', { products: parsedProducts }, token);
+          addToast(`Bulk importing processing... ${res.successCount} items synced.`, 'success');
+          
+          const updated = await api.get('/products');
+          setProducts(updated);
+        } catch (err) {
+          console.error(err);
+          addToast('Failed to import CSV.', 'error');
+        } finally {
+          setLoading(false);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+      },
+      error: (err) => {
+        console.error(err);
+        addToast('Error reading CSV file', 'error');
+        setLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    });
   };
 
   return (
@@ -1362,10 +1435,20 @@ export default function ProductsTab() {
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2 w-full md:w-auto">
-          <button onClick={handleDownloadCSV} className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center shadow hover:bg-emerald-500 transition-colors whitespace-nowrap flex-1 sm:flex-none">
+          <input 
+            type="file" 
+            accept=".csv" 
+            className="hidden" 
+            ref={fileInputRef} 
+            onChange={handleUploadCSV} 
+          />
+          <button onClick={() => fileInputRef.current?.click()} disabled={loading} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center shadow hover:bg-slate-700 transition-colors whitespace-nowrap flex-1 sm:flex-none">
+            <Upload className="w-4 h-4 mr-1 shrink-0"/> Import
+          </button>
+          <button onClick={handleDownloadCSV} disabled={loading} className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center shadow hover:bg-emerald-500 transition-colors whitespace-nowrap flex-1 sm:flex-none">
             Download CSV
           </button>
-          <button onClick={handleNew} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center shadow hover:bg-indigo-500 transition-colors whitespace-nowrap flex-1 sm:flex-none">
+          <button onClick={handleNew} disabled={loading} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center shadow hover:bg-indigo-500 transition-colors whitespace-nowrap flex-1 sm:flex-none">
             <Plus className="w-4 h-4 mr-1 shrink-0"/> Add Product
           </button>
         </div>

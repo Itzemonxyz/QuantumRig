@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useStore } from '../../store';
 import { useNavigate, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { Package, FolderTree, ShoppingCart, Settings as SettingsIcon, Ticket, Zap, LogOut, AreaChart, HelpCircle, RefreshCw, Link as LinkIcon, Menu, X, Box, Bell, ClipboardList, Image as ImageIcon, Sun, Moon } from 'lucide-react';
+import { Package, FolderTree, ShoppingCart, Settings as SettingsIcon, Ticket, Zap, LogOut, AreaChart, HelpCircle, RefreshCw, Link as LinkIcon, Menu, X, Box, Bell, ClipboardList, Image as ImageIcon, Sun, Moon, Shield, Users } from 'lucide-react';
 import { api } from '../../lib/api';
+import { Role } from '../../types';
 import AnalyticsTab from './AnalyticsTab';
 import ProductsTab from './ProductsTab';
 import CategoriesTab from './CategoriesTab';
@@ -18,6 +19,7 @@ import RestockRequestsTab from './RestockRequestsTab';
 import UsersTab from './UsersTab';
 import StockLogsTab from './StockLogsTab';
 import FAQsTab from './FAQsTab';
+import RolesTab from './RolesTab';
 import { useScrollLock } from '../../hooks/useScrollLock';
 
 function AdminNotificationsDropdown() {
@@ -110,21 +112,23 @@ function AdminNotificationsDropdown() {
   );
 }
 
-const boardOptions = [
-  { to: '/admin/analytics', icon: <AreaChart className="w-5 h-5 flex-shrink-0" />, label: 'Analytics' },
-  { to: '/admin/products', icon: <Package className="w-5 h-5 flex-shrink-0" />, label: 'Products' },
-  { to: '/admin/stock-logs', icon: <ClipboardList className="w-5 h-5 flex-shrink-0" />, label: 'Stock Logs' },
-  { to: '/admin/categories', icon: <FolderTree className="w-5 h-5 flex-shrink-0" />, label: 'Categories' },
-  { to: '/admin/brands', icon: <Box className="w-5 h-5 flex-shrink-0" />, label: 'Brands' },
-  { to: '/admin/orders', icon: <ShoppingCart className="w-5 h-5 flex-shrink-0" />, label: 'Orders' },
-  { to: '/admin/coupons', icon: <Ticket className="w-5 h-5 flex-shrink-0" />, label: 'Coupons' },
-  { to: '/admin/offers', icon: <Zap className="w-5 h-5 flex-shrink-0" />, label: 'Offers' },
-  { to: '/admin/banners', icon: <ImageIcon className="w-5 h-5 flex-shrink-0" />, label: 'Banners' },
-  { to: '/admin/faqs', icon: <HelpCircle className="w-5 h-5 flex-shrink-0" />, label: 'FAQs' },
-  { to: '/admin/support', icon: <HelpCircle className="w-5 h-5 flex-shrink-0" />, label: 'Support' },
-  { to: '/admin/restock', icon: <RefreshCw className="w-5 h-5 flex-shrink-0" />, label: 'Restock' },
-  { to: '/admin/social-links', icon: <LinkIcon className="w-5 h-5 flex-shrink-0" />, label: 'Social Links' },
-  { to: '/admin/settings', icon: <SettingsIcon className="w-5 h-5 flex-shrink-0" />, label: 'Settings' },
+const allBoardOptions = [
+  { to: '/admin/analytics', icon: <AreaChart className="w-5 h-5 flex-shrink-0" />, label: 'Analytics', perm: 'dashboard' },
+  { to: '/admin/roles', icon: <Shield className="w-5 h-5 flex-shrink-0" />, label: 'Roles & Access', perm: 'roles' },
+  { to: '/admin/users', icon: <Users className="w-5 h-5 flex-shrink-0" />, label: 'Users', perm: 'customers' },
+  { to: '/admin/products', icon: <Package className="w-5 h-5 flex-shrink-0" />, label: 'Products', perm: 'products' },
+  { to: '/admin/stock-logs', icon: <ClipboardList className="w-5 h-5 flex-shrink-0" />, label: 'Stock Logs', perm: 'inventory' },
+  { to: '/admin/categories', icon: <FolderTree className="w-5 h-5 flex-shrink-0" />, label: 'Categories', perm: 'products' },
+  { to: '/admin/brands', icon: <Box className="w-5 h-5 flex-shrink-0" />, label: 'Brands', perm: 'products' },
+  { to: '/admin/orders', icon: <ShoppingCart className="w-5 h-5 flex-shrink-0" />, label: 'Orders', perm: 'orders' },
+  { to: '/admin/coupons', icon: <Ticket className="w-5 h-5 flex-shrink-0" />, label: 'Coupons', perm: 'promotions' },
+  { to: '/admin/offers', icon: <Zap className="w-5 h-5 flex-shrink-0" />, label: 'Offers', perm: 'promotions' },
+  { to: '/admin/banners', icon: <ImageIcon className="w-5 h-5 flex-shrink-0" />, label: 'Banners', perm: 'promotions' },
+  { to: '/admin/faqs', icon: <HelpCircle className="w-5 h-5 flex-shrink-0" />, label: 'FAQs', perm: 'support' },
+  { to: '/admin/support', icon: <HelpCircle className="w-5 h-5 flex-shrink-0" />, label: 'Support Tickets', perm: 'support' },
+  { to: '/admin/restock', icon: <RefreshCw className="w-5 h-5 flex-shrink-0" />, label: 'Restock', perm: 'inventory' },
+  { to: '/admin/social-links', icon: <LinkIcon className="w-5 h-5 flex-shrink-0" />, label: 'Social Links', perm: 'settings' },
+  { to: '/admin/settings', icon: <SettingsIcon className="w-5 h-5 flex-shrink-0" />, label: 'Settings', perm: 'settings' },
 ];
 
 export default function AdminDashboard() {
@@ -132,16 +136,38 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userRole, setUserRole] = useState<Role | null>(null);
+  const [loadingRoles, setLoadingRoles] = useState(true);
   
   useScrollLock(mobileMenuOpen);
 
   useEffect(() => {
-    if (!user || user.role !== 'admin') {
+    if (!user || (user.role !== 'admin' && user.role !== 'staff')) {
       navigate('/admin-login');
+      return;
+    }
+    
+    if (user.role === 'staff' && user.roleId) {
+      api.get('/roles')
+        .then(roles => {
+          const matchingRole = roles.find((r: Role) => r.id === user.roleId);
+          setUserRole(matchingRole || null);
+        }).finally(() => setLoadingRoles(false));
+    } else {
+      setLoadingRoles(false);
     }
   }, [user, navigate]);
 
-  if (!user || user.role !== 'admin') return null;
+  if (!user || (user.role !== 'admin' && user.role !== 'staff')) return null;
+  if (loadingRoles) return <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950"><div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent flex rounded-full animate-spin"></div></div>;
+
+  const hasAccess = (perm: string) => {
+    if (user.role === 'admin') return true;
+    if (userRole && userRole.permissions && (userRole.permissions as any)[perm]) return true;
+    return false;
+  };
+
+  const allowedOptions = allBoardOptions.filter(opt => hasAccess(opt.perm));
 
   const handleLogout = () => {
     logout();
@@ -154,11 +180,13 @@ export default function AdminDashboard() {
         <Link to="/" className="flex items-center text-indigo-600">
            <img src="/logo-primary.svg" alt="QuantumRig" className="h-8 sm:h-10 w-auto" />
         </Link>
-        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-3">Admin Panel</p>
+        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-3">
+          {user.role === 'admin' ? 'Admin Panel' : `Staff Panel - ${userRole?.name || 'Restricted'}`}
+        </p>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-1">
-         {boardOptions.map((opt) => {
+         {allowedOptions.map((opt) => {
            const isActive = location.pathname.startsWith(opt.to);
            return (
              <Link 
@@ -247,21 +275,23 @@ export default function AdminDashboard() {
          <div className="bg-[#f9fbfd] rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[600px] hover:border-slate-300 transition-colors">
            <Routes>
              <Route path="/" element={<Navigate to="analytics" replace />} />
-             <Route path="analytics" element={<AnalyticsTab />} />
-             <Route path="products" element={<ProductsTab />} />
-             <Route path="stock-logs" element={<StockLogsTab />} />
-             <Route path="categories" element={<CategoriesTab />} />
-             <Route path="brands" element={<BrandsTab />} />
-             <Route path="orders" element={<OrdersTab />} />
-             <Route path="coupons" element={<CouponsTab />} />
-             <Route path="offers" element={<OffersTab />} />
-             <Route path="banners" element={<BannersTab />} />
-             <Route path="faqs" element={<FAQsTab />} />
-             <Route path="support" element={<SupportTab />} />
-             <Route path="restock" element={<RestockRequestsTab />} />
-             <Route path="users" element={<UsersTab />} />
-             <Route path="social-links" element={<SocialLinksTab />} />
-             <Route path="settings" element={<SettingsTab />} />
+             {hasAccess('dashboard') && <Route path="analytics" element={<AnalyticsTab />} />}
+             {hasAccess('roles') && <Route path="roles" element={<RolesTab />} />}
+             {hasAccess('products') && <Route path="products" element={<ProductsTab />} />}
+             {hasAccess('inventory') && <Route path="stock-logs" element={<StockLogsTab />} />}
+             {hasAccess('products') && <Route path="categories" element={<CategoriesTab />} />}
+             {hasAccess('products') && <Route path="brands" element={<BrandsTab />} />}
+             {hasAccess('orders') && <Route path="orders" element={<OrdersTab />} />}
+             {hasAccess('promotions') && <Route path="coupons" element={<CouponsTab />} />}
+             {hasAccess('promotions') && <Route path="offers" element={<OffersTab />} />}
+             {hasAccess('promotions') && <Route path="banners" element={<BannersTab />} />}
+             {hasAccess('support') && <Route path="faqs" element={<FAQsTab />} />}
+             {hasAccess('support') && <Route path="support" element={<SupportTab />} />}
+             {hasAccess('inventory') && <Route path="restock" element={<RestockRequestsTab />} />}
+             {hasAccess('customers') && <Route path="users" element={<UsersTab />} />}
+             {hasAccess('settings') && <Route path="social-links" element={<SocialLinksTab />} />}
+             {hasAccess('settings') && <Route path="settings" element={<SettingsTab />} />}
+             <Route path="*" element={<div className="p-12 text-center text-slate-500">Access Denied or Page Not Found</div>} />
            </Routes>
          </div>
       </main>

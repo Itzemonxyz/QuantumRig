@@ -6,6 +6,8 @@ import { Product } from '../types';
 import { Check, AlertTriangle, Plus, ShoppingBag, Copy, CheckCircle2, Cpu, CircuitBoard, MemoryStick, HardDrive, Monitor, Box, Gpu, PlugZap, PcCase, Fan, Gamepad2, Laptop } from 'lucide-react';
 import ScrollToTopButton from '../components/ScrollToTopButton';
 
+import { api } from '../lib/api';
+
 const getCategoryIcon = (category: any) => {
   const slug = (category?.slug || '').toLowerCase();
   const id = (category?.id || '').toLowerCase();
@@ -62,20 +64,6 @@ export default function Builder() {
     }
   }, []); // Only parse on mount
 
-  const handleCopyLink = () => {
-    const buildParam = Object.entries(builderCart || {})
-      .filter(([_, product]) => Boolean(product))
-      .map(([catId, product]) => `${catId}:${product?.id}`)
-      .join(',');
-    
-    const url = new URL(window.location.origin + window.location.pathname);
-    url.searchParams.set('build', buildParam);
-    
-    navigator.clipboard.writeText(url.toString());
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
-  };
-
   // Builder Logic Check
   const compatibility = useMemo(() => {
     let warnings: string[] = [];
@@ -84,7 +72,36 @@ export default function Builder() {
     const mobo = cartItems.find(p => ['c2', 'motherboards'].includes(p?.categoryId || ''));
     const psu = cartItems.find(p => ['c6', 'power-supplies'].includes(p?.categoryId || ''));
 
-    const totalWattage = cartItems.reduce((acc, p) => acc + (p?.wattage || 0), 0);
+    const totalWattage = cartItems.reduce((acc, p) => {
+       if (p?.wattage) return acc + p.wattage;
+       
+       let estimate = 0;
+       // Try to parse TDP from specs
+       const tdpString = p?.specs?.['TDP'] || p?.specs?.['Power Consumption'] || p?.specs?.['Maximum Power Draw'] || p?.specs?.['Wattage'];
+       if (tdpString) {
+           const match = String(tdpString).match(/(\d+)/);
+           if (match) estimate = parseInt(match[1]);
+       }
+
+       if (!estimate) {
+         // Default empirical estimates
+         const catList = ['c1', 'processors'].includes(p?.categoryId || '') ? 'cpu' :
+                         ['c5', 'graphics-cards'].includes(p?.categoryId || '') ? 'gpu' :
+                         ['c4', 'storage'].includes(p?.categoryId || '') ? 'storage' :
+                         ['c3', 'ram'].includes(p?.categoryId || '') ? 'ram' :
+                         ['c2', 'motherboards'].includes(p?.categoryId || '') ? 'mobo' :
+                         ['c8', 'cooler'].includes(p?.categoryId || '') ? 'cooler' :
+                         ['c7', 'case', 'casing'].includes(p?.categoryId || '') ? 'case' : '';
+         if (catList === 'cpu') estimate = 125;
+         else if (catList === 'gpu') estimate = 250;
+         else if (catList === 'storage') estimate = 15;
+         else if (catList === 'ram') estimate = 10;
+         else if (catList === 'mobo') estimate = 40;
+         else if (catList === 'cooler') estimate = 25;
+         else if (catList === 'case') estimate = 15; // Fans
+       }
+       return acc + estimate;
+    }, 0);
 
     if (cpu && mobo && cpu.socket && mobo.socket) {
       if (cpu.socket !== mobo.socket) {
@@ -92,9 +109,18 @@ export default function Builder() {
       }
     }
 
-    if (psu && psu.wattage) {
-       if (totalWattage > psu.wattage) {
-         warnings.push(`Power Warning: Selected components use ~${totalWattage}W which exceeds PSU (${psu.wattage}W)`);
+    if (psu) {
+       let parsedPsuWattage = psu.wattage || 0;
+       if (!parsedPsuWattage) {
+         const psuWattageMatch = (psu.specs?.['Wattage'] || psu.specs?.['Capacity'] || psu.title || "").match(/(\d+)(W| W)/i);
+         if (psuWattageMatch) parsedPsuWattage = parseInt(psuWattageMatch[1]);
+       }
+
+       // Add 20% safety buffer for total wattage
+       const safeWattage = Math.ceil(totalWattage * 1.2);
+
+       if (parsedPsuWattage && safeWattage > parsedPsuWattage) {
+         warnings.push(`Power Supply Warning: Your build's estimated wattage is ~${totalWattage}W. Including a 20% safety margin (${safeWattage}W), your selected ${parsedPsuWattage}W PSU may be too weak.`);
        }
     }
 
@@ -102,6 +128,30 @@ export default function Builder() {
   }, [builderCart]);
 
   const totalCost = Object.values(builderCart || {}).filter(Boolean).reduce((acc, p) => acc + ((p?.discountPrice || p?.price) || 0), 0);
+
+  const handleCopyLink = async () => {
+    try {
+      const items: Record<string, string> = {};
+      Object.entries(builderCart || {}).forEach(([catId, product]) => {
+        if (product) items[catId] = product.id;
+      });
+
+      const res = await api.post('/shared-builds', {
+        items,
+        totalPrice: totalCost,
+        totalWattage: compatibility.totalWattage
+      }, token);
+
+      const url = new URL(window.location.origin + '/build/' + res.id);
+      await navigator.clipboard.writeText(url.toString());
+      setCopiedLink(true);
+      addToast('Shareable link copied to clipboard!', 'success');
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (err) {
+      console.error(err);
+      addToast('Failed to generate sharing link.', 'error');
+    }
+  };
 
   const addAllToCart = () => {
     if (!token) {
@@ -126,7 +176,21 @@ export default function Builder() {
         <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 min-w-[250px]">
           <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">Estimated Total</div>
           <div className="text-3xl font-bold text-slate-700 dark:text-slate-300">৳{Number(totalCost || 0).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-          <div className="text-xs text-slate-400 mt-1">Est. Wattage: {compatibility.totalWattage}W</div>
+          <div className="mt-3">
+            <div className="flex justify-between items-center text-xs mb-1">
+              <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
+                <PlugZap className="w-3 h-3" /> Est. Wattage
+              </span>
+              <span className="font-bold text-slate-700 dark:text-slate-300">{compatibility.totalWattage}W</span>
+            </div>
+            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+              <motion.div 
+                className={`h-full rounded-full transition-all duration-500 ease-in-out ${compatibility.totalWattage > 800 ? 'bg-rose-500' : compatibility.totalWattage > 500 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min((compatibility.totalWattage / 1200) * 100, 100)}%` }}
+              />
+            </div>
+          </div>
           <div className="flex gap-2 mt-4 w-full">
             <motion.button 
               layout

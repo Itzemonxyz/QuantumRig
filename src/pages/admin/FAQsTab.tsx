@@ -14,6 +14,7 @@ export default function FAQsTab() {
   const [form, setForm] = useState<Partial<FAQItem>>({
     question: '',
     answer: '',
+    category: '',
     order: 1
   });
 
@@ -41,7 +42,7 @@ export default function FAQsTab() {
   const handleNew = () => {
     // Propose an order number that defaults to last_order + 1
     const nextOrder = localFaqs.length > 0 ? Math.max(...localFaqs.map(f => f.order ?? 0)) + 1 : 1;
-    setForm({ question: '', answer: '', order: nextOrder });
+    setForm({ question: '', answer: '', category: '', order: nextOrder });
     setIsEditing(true);
   };
 
@@ -108,6 +109,17 @@ export default function FAQsTab() {
                 onChange={e => setForm({...form, question: e.target.value})} 
                 className="w-full border border-slate-200 rounded-xl p-3 focus:ring-1 focus:ring-indigo-500 font-sans text-sm text-slate-800 dark:text-slate-200" 
                 placeholder="e.g. Can I upgrade GPU after purchase?" 
+              />
+            </div>
+            
+            <div>
+              <label className="block text-xs uppercase font-extrabold text-slate-500 dark:text-slate-400 tracking-wider mb-2">Category (Optional)</label>
+              <input 
+                type="text" 
+                value={form.category || ''} 
+                onChange={e => setForm({...form, category: e.target.value})} 
+                className="w-full border border-slate-200 rounded-xl p-3 focus:ring-1 focus:ring-indigo-500 font-sans text-sm text-slate-800 dark:text-slate-200" 
+                placeholder="e.g. Shipping, General, Payments" 
               />
             </div>
             

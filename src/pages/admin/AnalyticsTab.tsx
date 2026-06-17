@@ -276,6 +276,29 @@ export default function AnalyticsTab() {
     }).reverse();
   }, [orders]);
 
+  const topBrands = useMemo(() => {
+    const brandSales: Record<string, number> = {};
+    orders.forEach(order => {
+      if (order.status === 'Cancelled') return;
+      order.items.forEach(item => {
+        const prod = products.find(p => p.id === item.productId);
+        if (prod && prod.brand) {
+          brandSales[prod.brand] = (brandSales[prod.brand] || 0) + item.quantity;
+        }
+      });
+    });
+    return Object.entries(brandSales)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+  }, [orders, products]);
+
+  const conversionRate = useMemo(() => {
+    if (!analytics || !analytics.totalUsers) return 0;
+    const uniqueBuyers = new Set(orders.filter(o => o.status !== 'Cancelled').map(o => o.userId)).size;
+    return (uniqueBuyers / analytics.totalUsers) * 100;
+  }, [orders, analytics]);
+
   const customRangeData = useMemo(() => {
     if (!startDateStr || !endDateStr) return [];
     const start = new Date(startDateStr);
@@ -744,7 +767,7 @@ export default function AnalyticsTab() {
       </div>
       
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatCard 
           icon={<TakaIcon className="w-8 h-8 text-indigo-600" />} 
           title={startDateStr || endDateStr ? "Selected Period Revenue" : "Total Revenue"} 
@@ -760,6 +783,11 @@ export default function AnalyticsTab() {
           title="Total Users" 
           value={analytics.totalUsers.toLocaleString()} 
           to="/admin/users"
+        />
+        <StatCard 
+          icon={<TrendingUp className="w-8 h-8 text-indigo-600" />} 
+          title="Conversion Rate" 
+          value={`${conversionRate.toFixed(1)}%`} 
         />
         <StatCard 
           icon={<Package className="w-8 h-8 text-indigo-600" />} 
@@ -934,36 +962,75 @@ export default function AnalyticsTab() {
         </div>
       </div>
 
-      {/* Top Selling Products */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 shadow-sm">
-        <h3 className="font-bold text-slate-900 dark:text-white mb-6 tracking-tight">Top Selling Products</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-950">
-              <tr>
-                <th className="px-6 py-4 font-semibold">Rank</th>
-                <th className="px-6 py-4 font-semibold">Product Title</th>
-                <th className="px-6 py-4 font-semibold text-right">Units Sold</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {analytics.topProducts.length > 0 ? (
-                analytics.topProducts.map((p, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50 dark:bg-slate-950 transition-colors">
-                    <td className="px-6 py-4 font-bold text-slate-400">#{idx + 1}</td>
-                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{p.title}</td>
-                    <td className="px-6 py-4 font-bold text-indigo-600 text-right">{p.count}</td>
-                  </tr>
-                ))
-              ) : (
+      {/* Top Performers */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Selling Products */}
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h3 className="font-bold text-slate-900 dark:text-white mb-6 tracking-tight">Top Selling Products</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-950">
                 <tr>
-                  <td colSpan={3} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
-                    No sales data available.
-                  </td>
+                  <th className="px-6 py-4 font-semibold">Rank</th>
+                  <th className="px-6 py-4 font-semibold">Product Title</th>
+                  <th className="px-6 py-4 font-semibold text-right">Units Sold</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {analytics.topProducts.length > 0 ? (
+                  analytics.topProducts.map((p, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50 dark:bg-slate-950 transition-colors">
+                      <td className="px-6 py-4 font-bold text-slate-400">#{idx + 1}</td>
+                      <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{p.title}</td>
+                      <td className="px-6 py-4 font-bold text-indigo-600 text-right">{p.count}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
+                      No sales data available.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Top Selling Brands */}
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+          <h3 className="font-bold text-slate-900 dark:text-white mb-6 tracking-tight">Top Selling Brands</h3>
+          <div className="flex-1 min-h-[300px] w-full relative">
+            {topBrands.length > 0 ? (
+              <ResponsiveContainer width="99%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={topBrands}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                    nameKey="name"
+                  >
+                    {topBrands.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                     contentStyle={{ backgroundColor: '#111827', borderRadius: '12px', border: '1px solid #1e293b' }}
+                     itemStyle={{ color: '#f8fafc', fontSize: '12px', fontWeight: 'bold' }}
+                  />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-slate-500 dark:text-slate-400 font-medium">
+                No brand data available.
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -110,7 +110,20 @@ export function compressImage(fileOrBase64: File | string, maxWidth: number = 10
         
         // Export to highly compressed JPEG
         const compressedBase = canvas.toDataURL("image/jpeg", quality);
-        resolve(compressedBase);
+        
+        // Upload immediately to explicit endpoint to get a secure cloud URL
+        api.post('/upload', { image: compressedBase })
+          .then(res => {
+             if (res && res.url) {
+                resolve(res.url);
+             } else {
+                resolve(compressedBase);
+             }
+          })
+          .catch(err => {
+             console.error("Failed to upload compressed image", err);
+             resolve(compressedBase);
+          });
       };
       img.onerror = () => {
         resolve(src); // fallback
