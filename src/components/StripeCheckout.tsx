@@ -55,17 +55,36 @@ function PaymentForm({ onSuccess, total, onCancel }: any) {
 
 export default function StripeCheckout({ total, onSuccess, onCancel, token }: any) {
   const [clientSecret, setClientSecret] = useState('');
+  const [initError, setInitError] = useState('');
   const { addToast } = useStore();
 
   useEffect(() => {
     if (!token) return;
+    setInitError('');
     api.post('/create-payment-intent', { amount: total }, token)
        .then(res => setClientSecret(res.clientSecret))
        .catch(err => {
          console.error(err);
+         const errorMsg = err?.response?.data?.error || err.message || "Payment gateway initialization failed";
+         setInitError(errorMsg);
          addToast("Payment gateway initialization failed", 'error');
        });
   }, [total, token, addToast]);
+
+  if (initError) {
+    return (
+      <div className="p-6 text-center border border-rose-200 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-900/50 rounded-xl my-4">
+        <p className="text-sm text-rose-600 dark:text-rose-400 font-bold mb-3">Payment Gateway Error</p>
+        <div className="text-xs bg-rose-100 dark:bg-rose-900/40 px-3 py-2 rounded-lg text-rose-800 dark:text-rose-300 font-mono inline-block mb-4 text-left">
+          {initError}
+        </div>
+        <p className="text-xs text-rose-500 font-medium mb-5">Please ensure Stripe API keys (STRIPE_SECRET_KEY) are configured in your deployment environment settings.</p>
+        <button onClick={onCancel} className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-xl shadow-sm transition-colors cursor-pointer">
+          Go Back
+        </button>
+      </div>
+    );
+  }
 
   if (!clientSecret) return <div className="p-4 text-center text-sm font-bold text-slate-500 flex justify-center items-center gap-2">
     <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
