@@ -423,6 +423,12 @@ function getStripe(): Stripe {
   return stripeClient;
 }
 
+app.get("/api/stripe-config", (req, res) => {
+  res.json({ 
+    publicKey: process.env.VITE_STRIPE_PUBLIC_KEY || process.env.STRIPE_PUBLIC_KEY || 'pk_test_TYooMQauvdEDq54NiTphI7jx' 
+  });
+});
+
 app.post("/api/create-payment-intent", async (req, res) => {
   try {
     const stripe = getStripe();

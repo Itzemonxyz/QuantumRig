@@ -4,8 +4,6 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { api } from '../lib/api';
 import { useStore } from '../store';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_TYooMQauvdEDq54NiTphI7jx');
-
 function PaymentForm({ onSuccess, total, onCancel }: any) {
   const stripe = useStripe();
   const elements = useElements();
@@ -56,19 +54,27 @@ function PaymentForm({ onSuccess, total, onCancel }: any) {
 export default function StripeCheckout({ total, onSuccess, onCancel, token }: any) {
   const [clientSecret, setClientSecret] = useState('');
   const [initError, setInitError] = useState('');
+  const [stripePromise, setStripePromise] = useState<any>(null);
   const { addToast } = useStore();
 
   useEffect(() => {
     if (!token) return;
     setInitError('');
-    api.post('/create-payment-intent', { amount: total }, token)
-       .then(res => setClientSecret(res.clientSecret))
-       .catch(err => {
-         console.error(err);
-         const errorMsg = err?.response?.data?.error || err.message || "Payment gateway initialization failed";
-         setInitError(errorMsg);
-         addToast("Payment gateway initialization failed", 'error');
-       });
+    
+    Promise.all([
+      api.get('/stripe-config', token),
+      api.post('/create-payment-intent', { amount: total }, token)
+    ])
+      .then(([config, intent]) => {
+        setStripePromise(loadStripe(config.publicKey));
+        setClientSecret(intent.clientSecret);
+      })
+      .catch(err => {
+        console.error(err);
+        const errorMsg = err?.response?.data?.error || err.message || "Payment gateway initialization failed";
+        setInitError(errorMsg);
+        addToast("Payment gateway initialization failed. Check API keys.", 'error');
+      });
   }, [total, token, addToast]);
 
   if (initError) {
@@ -86,7 +92,7 @@ export default function StripeCheckout({ total, onSuccess, onCancel, token }: an
     );
   }
 
-  if (!clientSecret) return <div className="p-4 text-center text-sm font-bold text-slate-500 flex justify-center items-center gap-2">
+  if (!clientSecret || !stripePromise) return <div className="p-4 text-center text-sm font-bold text-slate-500 flex justify-center items-center gap-2">
     <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
     Loading Secure Payment Gateway...
   </div>;
