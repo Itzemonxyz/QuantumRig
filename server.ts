@@ -5,7 +5,8 @@ import Stripe from "stripe";
 import cors from "cors";
 import { createServer as createViteServer } from "vite";
 import fs from "fs";
-import { User, Category, Brand, Product, Order, Settings, Coupon, Offer, Banner, RestockRequest, UserNotification, SocialLink, StockAdjustmentLog, FAQItem, SharedBuild, Role } from "./src/types";
+import { GoogleGenAI } from "@google/genai";
+import { User, Category, Brand, Product, Order, Settings, Coupon, Offer, Banner, RestockRequest, UserNotification, SocialLink, StockAdjustmentLog, FAQItem, SharedBuild, Role, AuditLog } from "./src/types";
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -58,12 +59,32 @@ if (serviceAccountJson) {
 
 // IN-MEMORY DATABASE
 let stockLogs: StockAdjustmentLog[] = [];
+let priceAlerts: PriceAlert[] = [];
 let stockNotifications: { id: string; productId: string; email: string; createdAt: string }[] = [];
 let supportTickets: { id: string; productId: string; email: string; question: string; status: 'Open' | 'Closed'; createdAt: string }[] = [];
 let complaints: { id: string; name: string; email: string; orderId?: string; category: string; description: string; createdAt: string }[] = [];
 let analyticsEvents: { id: string; event: string; productId: string; timestamp: string }[] = [];
 let restockRequests: RestockRequest[] = [];
+let auditLogs: AuditLog[] = [];
 let adminNotifications: { id: string; message: string; type: string; read: boolean; createdAt: string }[] = [];
+
+async function recordAuditLog(adminId: string, adminName: string, action: 'CREATE' | 'UPDATE' | 'DELETE' | 'BULK_UPLOAD', entityId: string | undefined, details: string) {
+  const log: AuditLog = {
+    id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+    adminId: adminId,
+    adminName: adminName,
+    action: action,
+    entityType: 'PRODUCT',
+    entityId: entityId,
+    details: details,
+    createdAt: new Date().toISOString()
+  };
+  auditLogs.unshift(log); // Add to beginning of array
+  if (db) {
+    await db.collection("audit_logs").doc(log.id).set(JSON.parse(JSON.stringify(log))).catch(console.error);
+  }
+}
+
 let roles: Role[] = [];
 let users: User[] = [
   { id: "admin_1", name: "Administrator", email: "admin@quantumrig.tech", password: "admin", role: "admin", savedProductIds: [], createdAt: new Date(Date.now() - 86400000 * 30).toISOString(), lastVisited: new Date().toISOString() },
@@ -393,6 +414,13 @@ async function syncDatabase() {
     if (!rolesSnap.empty) {
       roles = rolesSnap.docs.map((d: any) => d.data() as Role);
     }
+    
+    // 17. Sync Audit Logs
+    const auditLogsSnap = await db.collection("audit_logs").get();
+    if (!auditLogsSnap.empty) {
+      auditLogs = auditLogsSnap.docs.map((d: any) => d.data() as AuditLog);
+      auditLogs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
   } catch (error: any) {
     if (error && error.message && error.message.includes('PERMISSION_DENIED')) return;
     console.warn("Firestore Sync Error (rules may not open yet):", error);
@@ -402,6 +430,55 @@ async function syncDatabase() {
 const initialSyncPromise = syncDatabase();
 
 // ================= API ROUTES =================
+
+let aiClient: GoogleGenAI | null = null;
+function getAI() {
+  if (!aiClient) {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) {
+      throw new Error("GEMINI_API_KEY environment variable is missing. Please add it to your secrets.");
+    }
+    aiClient = new GoogleGenAI({
+      apiKey: key,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
+  }
+  return aiClient;
+}
+
+app.post("/api/gemini/expert-tip", async (req, res) => {
+  try {
+    const { categoryId, categoryName, currentCart } = req.body;
+    
+    let cartContext = "No components selected yet.";
+    if (currentCart && Object.keys(currentCart).length > 0) {
+      const parts = Object.values(currentCart).filter(Boolean).map((p: any) => `${p.title} (${p.price} BDT)`);
+      cartContext = parts.join(", ");
+    }
+
+    const prompt = `You are a highly knowledgeable custom PC building expert. The user is currently looking at components in the category: "${categoryName}".
+    
+Current parts in their build: ${cartContext}
+
+Provide a very short, punchy, context-aware expert tip (max 2 sentences) for them while they select a "${categoryName}". 
+Focus on compatibility, value, or performance synergy based on what they already have (if any). Do not use markdown, just text.`;
+
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: prompt
+    });
+
+    res.json({ tip: response.text });
+  } catch (error: any) {
+    console.error("Gemini AI Error:", error);
+    res.status(500).json({ error: "Failed to fetch expert tip." });
+  }
+});
 
 app.use(async (req, res, next) => {
   if (initialSyncPromise) {
@@ -1217,6 +1294,14 @@ app.get("/api/products", (req, res) => {
   }
 });
 
+app.get("/api/audit-logs", (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+  const admin = users.find(u => u.id === token && (u.role === 'admin' || u.role === 'staff'));
+  if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+  
+  res.json(auditLogs);
+});
+
 app.post("/api/products/reorder", async (req, res) => {
   const { reorderedProducts } = req.body;
   if (Array.isArray(reorderedProducts)) {
@@ -1248,10 +1333,33 @@ app.post("/api/products/bulk", async (req, res) => {
     if (item.id && products.some(p => p.id === item.id)) {
        // Update existing
        const idx = products.findIndex(p => p.id === item.id);
-       products[idx] = { ...products[idx], ...item };
-       const safeP = JSON.parse(JSON.stringify(products[idx]));
-       if (db) await db.collection("products").doc(products[idx].id).set(safeP).catch(console.error);
-       updatedProducts.push(products[idx]);
+       const oldProduct = products[idx];
+       products[idx] = { ...oldProduct, ...item };
+       const newProduct = products[idx];
+       const safeP = JSON.parse(JSON.stringify(newProduct));
+       if (db) await db.collection("products").doc(newProduct.id).set(safeP).catch(console.error);
+       
+       if (newProduct.price < oldProduct.price) {
+         const activeAlerts = priceAlerts.filter(a => a.productId === newProduct.id);
+         for (const alert of activeAlerts) {
+           if (!alert.targetPrice || newProduct.price <= alert.targetPrice) {
+             const uIdx = users.findIndex(u => u.id === alert.userId);
+             if (uIdx > -1) {
+               users[uIdx].notifications = users[uIdx].notifications || [];
+               users[uIdx].notifications.push({
+                 id: `notif_${Date.now()}_${Math.random()}`,
+                 message: `Price drop alert! ${newProduct.title} is now ৳${newProduct.price}.`,
+                 link: `/products/${newProduct.id}`,
+                 read: false,
+                 createdAt: new Date().toISOString()
+               });
+               if (db) await db.collection("users").doc(users[uIdx].id).set({ notifications: users[uIdx].notifications }, { merge: true }).catch(console.error);
+             }
+             priceAlerts = priceAlerts.filter(a => a.id !== alert.id);
+           }
+         }
+       }
+       updatedProducts.push(newProduct);
     } else {
        // Create new
        let code = item.code || item.id;
@@ -1274,10 +1382,16 @@ app.post("/api/products/bulk", async (req, res) => {
     }
   }
 
+  await recordAuditLog(admin.id, admin.name, 'BULK_UPLOAD', undefined, `Batch uploaded ${updatedProducts.length} products`);
+
   res.json({ message: "Bulk operation successful", successCount: updatedProducts.length });
 });
 
 app.post("/api/products", async (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+  const admin = users.find(u => u.id === token && (u.role === 'admin' || u.role === 'staff'));
+  if (!admin) return res.status(401).json({ error: 'Unauthorized' });
+
   let code = req.body.code;
   if (!code) {
     let attempts = 0;
@@ -1294,6 +1408,9 @@ app.post("/api/products", async (req, res) => {
   const safeP = JSON.parse(JSON.stringify(p));
   if (db) await db.collection("products").doc(p.id).set(safeP).catch(console.error);
   products.push(p);
+  
+  await recordAuditLog(admin.id, admin.name, 'CREATE', p.id, `Created product "${p.title}"`);
+  
   res.json(p);
 });
 app.put("/api/products/:id", async (req, res) => {
@@ -1384,12 +1501,52 @@ app.put("/api/products/:id", async (req, res) => {
       }
     }
 
+    if (newProduct.price < oldProduct.price) {
+      const activeAlerts = priceAlerts.filter(a => a.productId === newProduct.id);
+      for (const alert of activeAlerts) {
+        if (!alert.targetPrice || newProduct.price <= alert.targetPrice) {
+          const uIdx = users.findIndex(u => u.id === alert.userId);
+          if (uIdx > -1) {
+            users[uIdx].notifications = users[uIdx].notifications || [];
+            users[uIdx].notifications.push({
+              id: `notif_${Date.now()}_${Math.random()}`,
+              message: `Price drop alert! ${newProduct.title} is now ৳${newProduct.price}.`,
+              link: `/products/${newProduct.id}`,
+              read: false,
+              createdAt: new Date().toISOString()
+            });
+            if (db) await db.collection("users").doc(users[uIdx].id).set({ notifications: users[uIdx].notifications }, { merge: true }).catch(console.error);
+          }
+          // Remove the alert once triggered
+          priceAlerts = priceAlerts.filter(a => a.id !== alert.id);
+        }
+      }
+    }
+
+    const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+    const admin = users.find(u => u.id === token && (u.role === 'admin' || u.role === 'staff'));
+    if (admin) {
+      await recordAuditLog(admin.id, admin.name, 'UPDATE', newProduct.id, `Updated product "${newProduct.title}"`);
+    }
+
     res.json(products[idx]);
   } else res.status(404).json({ error: "Not found" });
 });
+
 app.delete("/api/products/:id", async (req, res) => {
-  products = products.filter(p => p.id !== req.params.id);
-  if (db) await db.collection("products").doc(req.params.id).delete().catch(console.error);
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+  const admin = users.find(u => u.id === token && (u.role === 'admin' || u.role === 'staff'));
+
+  const pIdx = products.findIndex(p => p.id === req.params.id);
+  if (pIdx > -1) {
+    const p = products[pIdx];
+    products = products.filter(x => x.id !== req.params.id);
+    if (db) await db.collection("products").doc(req.params.id).delete().catch(console.error);
+    if (admin) {
+      await recordAuditLog(admin.id, admin.name, 'DELETE', p.id, `Deleted product "${p.title}"`);
+    }
+  }
+  
   res.sendStatus(204);
 });
 
@@ -1397,6 +1554,32 @@ app.get("/api/products/:id", (req, res) => {
   const p = products.find(p => p.id === req.params.id);
   if (p) res.json(p);
   else res.status(404).json({ error: "Not found" });
+});
+
+app.post("/api/products/:id/price-alert", async (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer dummy-token-", "");
+  const user = users.find((u) => u.id === token);
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const idx = products.findIndex(p => p.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Not found" });
+
+  const targetPrice = req.body.targetPrice ? Number(req.body.targetPrice) : undefined;
+  
+  const existingAlert = priceAlerts.find(a => a.userId === user.id && a.productId === req.params.id);
+  if (existingAlert) {
+    existingAlert.targetPrice = targetPrice;
+  } else {
+    priceAlerts.push({
+      id: `pa_${Date.now()}_${Math.random()}`,
+      userId: user.id,
+      productId: req.params.id,
+      targetPrice,
+      createdAt: new Date().toISOString()
+    });
+  }
+
+  res.json({ success: true });
 });
 
 app.post("/api/products/:id/reviews", async (req, res) => {

@@ -31,7 +31,11 @@ export default function PastOrdersList({ token, initialOrders }: PastOrdersListP
            if (page === 1) {
              setOrders(data.data);
            } else {
-             setOrders(prev => [...prev, ...data.data]);
+             setOrders(prev => {
+               const existingIds = new Set(prev.map((o: any) => o.id));
+               const newOrders = (data.data || []).filter((o: any) => !existingIds.has(o.id));
+               return [...prev, ...newOrders];
+             });
            }
            setTotalOrders(data.total);
            setHasMore(page < data.totalPages);

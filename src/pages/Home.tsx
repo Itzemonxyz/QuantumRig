@@ -840,7 +840,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 gap-4">
             {(categories || []).map((c) => {
               const meta = getCategoryMeta(c);
               if (!c) return null;
@@ -848,29 +848,24 @@ export default function Home() {
                 <button 
                    key={c.id || 'fallback-desktop'}
                    onClick={() => c.id && navigate(`/products?category=${c.id}`)}
-                   className="group p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-900/50 hover:bg-white dark:bg-slate-900 dark:hover:bg-slate-800 text-left transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md flex flex-col items-start gap-5 cursor-pointer hover:border-indigo-500/80 dark:hover:border-indigo-400/50 active:scale-95"
+                   className="group p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-900/50 hover:bg-white dark:bg-slate-900 dark:hover:bg-slate-800 text-center transition-all duration-300 transform hover:-translate-y-1 hover:shadow-md flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-indigo-500/80 dark:hover:border-indigo-400/50 active:scale-95 aspect-square sm:aspect-auto sm:h-32"
                 >
                    {/* Icon element in highlighted colored circle badge */}
                    <div 
-                     className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-inner border ${meta.iconClass}`}
+                     className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 shadow-sm border ${meta.iconClass}`}
                      style={{ 
                        backgroundColor: meta.bgColor,
                        borderColor: meta.accentColor + "20",
-                       /* color: meta.textColor */ 
                      }}
                    >
                      {meta.icon}
                    </div>
 
                    {/* Informative description block */}
-                   <div>
-                     <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">{meta.tagline}</span>
-                     <h3 className="text-sm font-bold text-[#111827] dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">
+                   <div className="w-full px-1">
+                     <h3 className="text-sm font-bold text-[#111827] dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight truncate">
                        {c.name || 'Category'}
                      </h3>
-                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1 font-medium select-none">
-                       {meta.countDescription}
-                     </p>
                    </div>
                 </button>
               );
@@ -879,19 +874,15 @@ export default function Home() {
             {/* All Products Action Card */}
             <button 
                onClick={() => navigate('/products')}
-               className="group p-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-900/50 hover:bg-white dark:bg-slate-900 dark:hover:bg-slate-800 text-left transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md flex flex-col items-start gap-5 cursor-pointer hover:border-indigo-500/80 dark:hover:border-indigo-400/50 active:scale-95"
+               className="group p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-900/50 hover:bg-white dark:bg-slate-900 dark:hover:bg-slate-800 text-center transition-all duration-300 transform hover:-translate-y-1 hover:shadow-md flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-indigo-500/80 dark:hover:border-indigo-400/50 active:scale-95 aspect-square sm:aspect-auto sm:h-32"
             >
-               <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-inner border border-indigo-100 dark:border-indigo-500/30">
-                  <LayoutGrid className="w-5 h-5" strokeWidth={1.5} />
+               <div className="w-12 h-12 shrink-0 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 shadow-sm border border-indigo-100 dark:border-indigo-500/30">
+                  <LayoutGrid className="w-6 h-6" strokeWidth={1.5} />
                </div>
-               <div>
-                 <span className="text-[9px] font-extrabold uppercase tracking-widest text-indigo-600 block mb-1">FULL SELECTION</span>
-                 <h3 className="text-sm font-bold text-[#111827] dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">
+               <div className="w-full px-1">
+                 <h3 className="text-sm font-bold text-[#111827] dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight truncate">
                     All Products
                  </h3>
-                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1 font-medium select-none">
-                    Browse whole store Catalog
-                 </p>
                </div>
             </button>
           </div>

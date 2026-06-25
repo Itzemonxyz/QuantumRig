@@ -61,7 +61,7 @@ function CustomDateInput({ label, value, onChange }: { label: string, value: str
   const daysInCurrentMonth = new Date(yearInt, monthInt, 0).getDate();
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col h-full hover:border-indigo-200 transition-colors">
+    <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col h-full hover:border-indigo-200 transition-colors">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
         <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</label>
         <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg text-sm font-bold font-mono tracking-tight border border-indigo-100 min-w-[110px] text-center">
@@ -74,11 +74,11 @@ function CustomDateInput({ label, value, onChange }: { label: string, value: str
         {/* Year Input */}
         <div className="flex flex-col gap-2">
           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Year</label>
-          <div className="flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-xl overflow-hidden p-1 w-full justify-between">
+          <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden p-1 w-full justify-between">
              <button 
                type="button"
                onClick={() => setYear(String(yearInt - 1))}
-               className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 hover:bg-white dark:bg-slate-900 rounded-lg transition-colors shadow-sm"
+               className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-colors shadow-sm"
              >
                <ChevronLeft className="w-5 h-5" />
              </button>
@@ -87,12 +87,12 @@ function CustomDateInput({ label, value, onChange }: { label: string, value: str
                min="2000" max="2100"
                value={yearInt} 
                onChange={e => setYear(e.target.value)}
-               className="w-full bg-transparent text-center font-mono font-bold text-sm text-slate-800 dark:text-slate-200 outline-none"
+               className="w-full bg-transparent text-center font-mono font-bold text-sm text-slate-800 outline-none"
              />
              <button 
                type="button"
                onClick={() => setYear(String(yearInt + 1))}
-               className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 hover:bg-white dark:bg-slate-900 rounded-lg transition-colors shadow-sm"
+               className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-colors shadow-sm"
              >
                <ChevronRight className="w-5 h-5" />
              </button>
@@ -112,10 +112,10 @@ function CustomDateInput({ label, value, onChange }: { label: string, value: str
                   type="button"
                   onClick={() => setMonth(String(mNum).padStart(2, '0'))}
                   className={`py-1.5 px-1 rounded-lg text-[11px] font-bold transition-all ${
-                    isActive 
-                      ? 'bg-indigo-600 text-white shadow-md' 
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-100 hover:border-indigo-200'
-                  }`}
+ isActive 
+ ? 'bg-indigo-600 text-white shadow-md' 
+ : 'bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-100 hover:border-indigo-200'
+ }`}
                 >
                   {m}
                 </button>
@@ -126,9 +126,9 @@ function CustomDateInput({ label, value, onChange }: { label: string, value: str
 
         {/* Date Selection Grid */}
         <div className="flex flex-col gap-2 mt-auto">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex justify-between items-center bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-100">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
             <span>Selected Day</span>
-            <span className="text-indigo-600 font-bold bg-white dark:bg-slate-900 px-2 py-0.5 rounded shadow-sm border border-slate-200 text-xs">
+            <span className="text-indigo-600 font-bold bg-white px-2 py-0.5 rounded shadow-sm border border-slate-200 text-xs">
               {dayInt} <span className="text-slate-400 font-normal">/ {daysInCurrentMonth}</span>
             </span>
           </label>
@@ -142,10 +142,10 @@ function CustomDateInput({ label, value, onChange }: { label: string, value: str
                   type="button"
                   onClick={() => setDay(String(dNum).padStart(2, '0'))}
                   className={`h-8 rounded flex items-center justify-center text-[10px] font-mono transition-all ${
-                    isActive 
-                      ? 'bg-indigo-600 text-white font-bold scale-110 z-10 shadow-md rounded-md' 
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-100 hover:border-indigo-200'
-                  }`}
+ isActive 
+ ? 'bg-indigo-600 text-white font-bold scale-110 z-10 shadow-md rounded-md' 
+ : 'bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-100 hover:border-indigo-200'
+ }`}
                 >
                   {dNum}
                 </button>
@@ -457,7 +457,7 @@ export default function AnalyticsTab() {
   }
 
   if (!analytics) {
-    return <div className="p-6 text-slate-500 dark:text-slate-400 text-center">Failed to load analytics data.</div>;
+    return <div className="p-6 text-slate-500 text-center">Failed to load analytics data.</div>;
   }
 
   const pieData = Object.entries(analytics.orderBreakdown).map(([name, value]) => ({
@@ -565,7 +565,7 @@ export default function AnalyticsTab() {
                 <TakaIcon className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Total Revenue</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Total Revenue</p>
                 <p className="text-sm font-bold text-slate-100 flex items-baseline">
                   ৳{revenueVal.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
@@ -603,7 +603,7 @@ export default function AnalyticsTab() {
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full shrink-0 animate-pulse" style={{ backgroundColor: bulletColor }} />
               <div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Volume Count</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Volume Count</p>
                 <p className="text-sm font-bold text-slate-100">
                   {data.value} {Number(data.value) === 1 ? 'Order' : 'Orders'}
                 </p>
@@ -650,22 +650,22 @@ export default function AnalyticsTab() {
   };
 
   return (
-    <div className="p-6 space-y-8 bg-slate-50 dark:bg-slate-950 min-h-full">
+    <div className="p-6 space-y-8 bg-slate-50 min-h-full">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Overview</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">Review live financial metrics, order statuses, and projections.</p>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Overview</h2>
+          <p className="text-xs text-slate-500 font-medium mt-1">Review live financial metrics, order statuses, and projections.</p>
         </div>
       </div>
 
       {/* Time Period Filter Card */}
-      <div id="admin-analytics-date-range-picker" className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div id="admin-analytics-date-range-picker" className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <CalendarRange className="w-5 h-5 text-indigo-600" />
-            <h3 className="font-bold text-slate-900 dark:text-white text-sm">Revenue Filter</h3>
+            <h3 className="font-bold text-slate-900 text-sm">Revenue Filter</h3>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium max-w-xl">
+          <p className="text-xs text-slate-500 font-medium max-w-xl">
             Quickly filter revenue, order volumes, and charts by pre-selected ranges, or select custom start and end dates below.
           </p>
           
@@ -679,7 +679,7 @@ export default function AnalyticsTab() {
                 <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mb-1">
                   Selected Period
                 </div>
-                <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <div className="text-xs font-semibold text-slate-700">
                   {startDateStr && endDateStr ? (
                     `${new Date(startDateStr).toLocaleDateString()} — ${new Date(endDateStr).toLocaleDateString()}`
                   ) : startDateStr ? (
@@ -691,7 +691,7 @@ export default function AnalyticsTab() {
                   )}
                 </div>
               </div>
-              <div className="bg-white dark:bg-slate-900 p-2 rounded-lg shadow-2xs group-hover:shadow border border-slate-100 transition-all group-hover:-translate-y-0.5">
+              <div className="bg-white p-2 rounded-lg shadow-2xs group-hover:shadow border border-slate-100 transition-all group-hover:-translate-y-0.5">
                 <Calendar className="w-4 h-4 text-indigo-600" />
               </div>
             </div>
@@ -711,10 +711,10 @@ export default function AnalyticsTab() {
               type="button"
               onClick={() => handleApplyPreset('lifetime')}
               className={`px-3 py-2 border text-xs font-semibold rounded-xl transition-all text-center select-none cursor-pointer ${
-                !startDateStr && !endDateStr
-                  ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
-                  : 'bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:bg-slate-800 border-slate-200 text-slate-700 dark:text-slate-300'
-              }`}
+ !startDateStr && !endDateStr
+ ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+ : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 '
+ }`}
             >
               Lifetime Revenue
             </button>
@@ -722,10 +722,10 @@ export default function AnalyticsTab() {
               type="button"
               onClick={() => handleApplyPreset('7days')}
               className={`px-3 py-2 border text-xs font-semibold rounded-xl transition-all text-center select-none cursor-pointer ${
-                startDateStr && endDateStr && (Math.ceil(Math.abs(new Date(endDateStr).getTime() - new Date(startDateStr).getTime()) / (1000 * 60 * 60 * 24)) <= 7) && endDateStr === getLocalDateString(new Date())
-                  ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
-                  : 'bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:bg-slate-800 border-slate-200 text-slate-700 dark:text-slate-300'
-              }`}
+ startDateStr && endDateStr && (Math.ceil(Math.abs(new Date(endDateStr).getTime() - new Date(startDateStr).getTime()) / (1000 * 60 * 60 * 24)) <= 7) && endDateStr === getLocalDateString(new Date())
+ ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+ : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 '
+ }`}
             >
               Last 7 Days
             </button>
@@ -733,10 +733,10 @@ export default function AnalyticsTab() {
               type="button"
               onClick={() => handleApplyPreset('30days')}
               className={`px-3 py-2 border text-xs font-semibold rounded-xl transition-all text-center select-none cursor-pointer ${
-                startDateStr && endDateStr && (Math.ceil(Math.abs(new Date(endDateStr).getTime() - new Date(startDateStr).getTime()) / (1000 * 60 * 60 * 24)) === 30) && endDateStr === getLocalDateString(new Date())
-                  ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
-                  : 'bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:bg-slate-800 border-slate-200 text-slate-700 dark:text-slate-300'
-              }`}
+ startDateStr && endDateStr && (Math.ceil(Math.abs(new Date(endDateStr).getTime() - new Date(startDateStr).getTime()) / (1000 * 60 * 60 * 24)) === 30) && endDateStr === getLocalDateString(new Date())
+ ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+ : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 '
+ }`}
             >
               Last 30 Days
             </button>
@@ -744,10 +744,10 @@ export default function AnalyticsTab() {
               type="button"
               onClick={() => handleApplyPreset('90days')}
               className={`px-3 py-2 border text-xs font-semibold rounded-xl transition-all text-center select-none cursor-pointer ${
-                startDateStr && endDateStr && (Math.ceil(Math.abs(new Date(endDateStr).getTime() - new Date(startDateStr).getTime()) / (1000 * 60 * 60 * 24)) === 90) && endDateStr === getLocalDateString(new Date())
-                  ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
-                  : 'bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:bg-slate-800 border-slate-200 text-slate-700 dark:text-slate-300'
-              }`}
+ startDateStr && endDateStr && (Math.ceil(Math.abs(new Date(endDateStr).getTime() - new Date(startDateStr).getTime()) / (1000 * 60 * 60 * 24)) === 90) && endDateStr === getLocalDateString(new Date())
+ ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+ : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 '
+ }`}
             >
               Last 90 Days
             </button>
@@ -756,10 +756,10 @@ export default function AnalyticsTab() {
             type="button"
             onClick={() => handleApplyPreset('year')}
             className={`px-3 py-2 border text-xs font-semibold rounded-xl transition-all text-center select-none cursor-pointer ${
-              startDateStr && endDateStr && (Math.ceil(Math.abs(new Date(endDateStr).getTime() - new Date(startDateStr).getTime()) / (1000 * 60 * 60 * 24)) >= 360) && endDateStr === getLocalDateString(new Date())
-                ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
-                : 'bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:bg-slate-800 border-slate-200 text-slate-700 dark:text-slate-300'
-            }`}
+ startDateStr && endDateStr && (Math.ceil(Math.abs(new Date(endDateStr).getTime() - new Date(startDateStr).getTime()) / (1000 * 60 * 60 * 24)) >= 360) && endDateStr === getLocalDateString(new Date())
+ ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+ : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 '
+ }`}
           >
             Last 1 Year
           </button>
@@ -767,7 +767,7 @@ export default function AnalyticsTab() {
       </div>
       
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard 
           icon={<TakaIcon className="w-8 h-8 text-indigo-600" />} 
           title={startDateStr || endDateStr ? "Selected Period Revenue" : "Total Revenue"} 
@@ -798,9 +798,9 @@ export default function AnalyticsTab() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Sales Chart */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 shadow-sm min-h-[350px] flex flex-col">
+        <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm min-h-[350px] flex flex-col">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-            <h3 className="font-bold text-slate-900 dark:text-white flex items-center pr-2">
+            <h3 className="font-bold text-slate-900 flex items-center pr-2">
               <TrendingUp className="w-5 h-5 mr-3 text-indigo-600 shrink-0" />
               <span>
                 {startDateStr && endDateStr ? (
@@ -823,17 +823,17 @@ export default function AnalyticsTab() {
                   Custom Period Active
                 </span>
               ) : (
-                <div className="flex bg-slate-50 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 self-start sm:self-auto shrink-0 select-none">
+                <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200 self-start sm:self-auto shrink-0 select-none">
                   {(['weekly', 'monthly', 'yearly'] as const).map((segment) => (
                     <button
                       key={segment}
                       type="button"
                       onClick={() => setTimeSegment(segment)}
                       className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all capitalize cursor-pointer ${
-                        timeSegment === segment
-                          ? 'bg-indigo-600 text-white shadow-md'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:bg-slate-800'
-                      }`}
+ timeSegment === segment
+ ? 'bg-indigo-600 text-white shadow-md'
+ : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 '
+ }`}
                     >
                       {segment}
                     </button>
@@ -858,8 +858,8 @@ export default function AnalyticsTab() {
         </div>
 
         {/* Order Status Breakdown */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 shadow-sm min-h-[350px] flex flex-col">
-          <h3 className="font-bold text-slate-900 dark:text-white mb-6 tracking-tight">Order Status Breakdown</h3>
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm min-h-[350px] flex flex-col">
+          <h3 className="font-bold text-slate-900 mb-6 tracking-tight">Order Status Breakdown</h3>
           <div className="flex-1 w-full relative flex flex-col items-center justify-center">
             {pieData.length > 0 ? (
               <div className="absolute inset-0">
@@ -884,18 +884,18 @@ export default function AnalyticsTab() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <p className="text-slate-500 dark:text-slate-400 font-medium z-10">No orders yet.</p>
+              <p className="text-slate-500 font-medium z-10">No orders yet.</p>
             )}
           </div>
         </div>
       </div>
       
       {/* Inventory Status Chart */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 shadow-sm">
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
           <div>
-            <h3 className="font-bold text-slate-900 dark:text-white tracking-tight">Inventory Status & Projections</h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Visualizing up to 30 products sorted by lowest stock.</p>
+            <h3 className="font-bold text-slate-900 tracking-tight">Inventory Status & Projections</h3>
+            <p className="text-slate-500 text-sm mt-1">Visualizing up to 30 products sorted by lowest stock.</p>
           </div>
           <button 
             onClick={handleDownloadCSV}
@@ -907,7 +907,7 @@ export default function AnalyticsTab() {
           </button>
         </div>
         
-        <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 min-h-[400px] flex flex-col relative w-full">
+        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 min-h-[400px] flex flex-col relative w-full">
           <div className="absolute inset-0 p-4">
             <ResponsiveContainer width="99%" height="100%" minWidth={100} minHeight={100}>
               <BarChart
@@ -965,11 +965,11 @@ export default function AnalyticsTab() {
       {/* Top Performers */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Selling Products */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 shadow-sm">
-          <h3 className="font-bold text-slate-900 dark:text-white mb-6 tracking-tight">Top Selling Products</h3>
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h3 className="font-bold text-slate-900 mb-6 tracking-tight">Top Selling Products</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-950">
+              <thead className="text-xs text-slate-500 uppercase bg-slate-50">
                 <tr>
                   <th className="px-6 py-4 font-semibold">Rank</th>
                   <th className="px-6 py-4 font-semibold">Product Title</th>
@@ -979,15 +979,15 @@ export default function AnalyticsTab() {
               <tbody className="divide-y divide-slate-100">
                 {analytics.topProducts.length > 0 ? (
                   analytics.topProducts.map((p, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50 dark:bg-slate-950 transition-colors">
+                    <tr key={idx} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4 font-bold text-slate-400">#{idx + 1}</td>
-                      <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{p.title}</td>
+                      <td className="px-6 py-4 font-medium text-slate-900">{p.title}</td>
                       <td className="px-6 py-4 font-bold text-indigo-600 text-right">{p.count}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={3} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
+                    <td colSpan={3} className="px-6 py-8 text-center text-slate-500">
                       No sales data available.
                     </td>
                   </tr>
@@ -998,8 +998,8 @@ export default function AnalyticsTab() {
         </div>
 
         {/* Top Selling Brands */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-          <h3 className="font-bold text-slate-900 dark:text-white mb-6 tracking-tight">Top Selling Brands</h3>
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+          <h3 className="font-bold text-slate-900 mb-6 tracking-tight">Top Selling Brands</h3>
           <div className="flex-1 min-h-[300px] w-full relative">
             {topBrands.length > 0 ? (
               <ResponsiveContainer width="99%" height="100%">
@@ -1026,7 +1026,7 @@ export default function AnalyticsTab() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-slate-500 dark:text-slate-400 font-medium">
+              <div className="absolute inset-0 flex items-center justify-center text-slate-500 font-medium">
                 No brand data available.
               </div>
             )}
@@ -1038,16 +1038,16 @@ export default function AnalyticsTab() {
       <AnimatePresence>
         {showDatePickerModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs select-none">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300">
-              <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50 dark:bg-slate-950">
-                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base flex items-center gap-2">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-4 duration-300">
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
                   <CalendarRange className="w-5 h-5 text-indigo-600" />
                   Select Custom Date Range
                 </h3>
                 <button 
                   type="button"
                   onClick={() => setShowDatePickerModal(false)}
-                  className="text-slate-400 hover:text-slate-600 dark:text-slate-400 transition-colors p-1"
+                  className="text-slate-400 hover:text-slate-600 transition-colors p-1"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1078,7 +1078,7 @@ export default function AnalyticsTab() {
                       setEndDateStr('');
                       setShowDatePickerModal(false);
                     }}
-                    className="px-5 py-2.5 rounded-xl font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 transition-colors text-xs"
+                    className="px-5 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors text-xs"
                   >
                     Clear Filter
                   </button>
@@ -1105,19 +1105,19 @@ function StatCard({ icon, title, value, to }: { icon: React.ReactNode, title: st
   const isLongValue = value.toString().length > 10;
   
   const content = (
-    <div className={`bg-white dark:bg-slate-900 p-5 lg:p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4 h-full ${to ? 'hover:bg-slate-50 dark:bg-slate-950 transition-colors cursor-pointer' : ''}`}>
+    <div className={`bg-white p-5 lg:p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4 h-full ${to ? 'hover:bg-slate-50 transition-colors cursor-pointer' : ''}`}>
       <div className="p-3 flex-shrink-0 bg-indigo-50 rounded-lg">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 truncate" title={title}>{title}</p>
-        <p className={`${isLongValue ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'} font-bold text-slate-900 dark:text-white break-words tracking-tight`} title={value.toString()}>{value}</p>
+        <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 line-clamp-2" title={title}>{title}</p>
+        <p className={`${isLongValue ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'} font-bold text-slate-900 truncate tracking-tight`} title={value.toString()}>{value}</p>
       </div>
     </div>
   );
 
   if (to) {
-    return <Link to={to} className="block h-full">{content}</Link>;
+    return <Link to={to} className="block w-full h-full">{content}</Link>;
   }
-  return content;
+  return <div className="w-full h-full">{content}</div>;
 }

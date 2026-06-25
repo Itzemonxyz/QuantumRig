@@ -5,6 +5,7 @@ import { useStore } from '../store';
 import { Product } from '../types';
 import { Check, AlertTriangle, Plus, ShoppingBag, Copy, CheckCircle2, Cpu, CircuitBoard, MemoryStick, HardDrive, Monitor, Box, Gpu, PlugZap, PcCase, Fan, Gamepad2, Laptop } from 'lucide-react';
 import ScrollToTopButton from '../components/ScrollToTopButton';
+import PowerDashboard from '../components/PowerDashboard';
 
 import { api } from '../lib/api';
 
@@ -356,6 +357,17 @@ export default function Builder() {
                 <div className="pt-4 border-t border-slate-200 dark:border-slate-800 mt-6 flex justify-between items-center text-lg font-bold text-slate-900 dark:text-white">
                   <span>Total</span>
                   <span>৳{Number(totalCost || 0).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                
+                <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 border-dashed">
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                    <PlugZap className="w-4 h-4 text-emerald-500" />
+                    Power Consumption Diagnostic
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Estimated wattage breakdown of your configuration</p>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <PowerDashboard cartItems={Object.values(builderCart || {})} />
+                  </div>
                 </div>
              </div>
            )}

@@ -185,8 +185,8 @@ export default function CategoriesTab() {
 
   return (
     <div className="p-6">
-       <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-6 font-sans tracking-tight">Manage Categories</h2>
-       <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 mb-8 bg-white dark:bg-slate-900 p-6 border border-slate-200 rounded-2xl shadow-sm">
+       <h2 className="text-xl font-bold text-slate-800 mb-6 font-sans tracking-tight">Manage Categories</h2>
+       <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 mb-8 bg-white p-6 border border-slate-200 rounded-2xl shadow-sm">
          <div className="flex-1">
            <label className="block text-xs font-bold uppercase text-slate-400 mb-1.5 font-sans">Category Name</label>
            <input required type="text" placeholder="e.g. Graphics Cards" value={name} onChange={e => { setName(e.target.value); if(!editId) setSlug(e.target.value.toLowerCase().replace(/ /g, '-')); }} className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:border-indigo-500 font-sans" />
@@ -200,13 +200,13 @@ export default function CategoriesTab() {
               <Plus className="w-4 h-4" />
               <span>{editId ? 'Update' : 'Add'}</span>
            </button>
-           {editId && <button type="button" onClick={() => {setEditId(null); setName(''); setSlug('');}} className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-5 py-2.5 rounded-lg font-medium transition-colors">Cancel</button>}
+           {editId && <button type="button" onClick={() => {setEditId(null); setName(''); setSlug('');}} className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-lg font-medium transition-colors">Cancel</button>}
          </div>
        </form>
 
        <div className="space-y-3">
           {categories.length === 0 ? (
-            <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 font-sans">
+            <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 font-sans">
               <p className="text-slate-400 font-medium">No categories found. Add your first above!</p>
             </div>
           ) : (
@@ -229,15 +229,13 @@ export default function CategoriesTab() {
                     onDragEnter={() => handleDragEnter(index)}
                     onDragEnd={handleDragEnd}
                     onDragOver={(e) => e.preventDefault()}
-                    className={`
-                      flex items-center justify-between p-4 bg-white dark:bg-slate-900 border rounded-2xl shadow-sm transition-all duration-200
-                      ${isCurrentlyDragged ? 'opacity-50 border-dashed border-2 border-indigo-500 bg-indigo-50 scale-[0.98] shadow-lg' : 'border-slate-200 hover:border-slate-300 hover:shadow-md'}
-                    `}
+                    className={`flex items-center justify-between p-4 bg-white border rounded-2xl shadow-sm transition-all duration-200
+ ${isCurrentlyDragged ? 'opacity-50 border-dashed border-2 border-indigo-500 bg-indigo-50 scale-[0.98] shadow-lg' : 'border-slate-200 hover:border-slate-300 hover:shadow-md'}`}
                   >
                     <div className={`flex items-center space-x-4 ${draggedItemIndex !== null ? 'pointer-events-none' : ''}`}>
                       {/* Grab Handle - restricted triggers */}
                       <div 
-                        className="cursor-grab hover:bg-slate-100 dark:bg-slate-800 p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-400 transition-colors active:cursor-grabbing select-none pointer-events-auto"
+                        className="cursor-grab hover:bg-slate-100 p-2 rounded-lg text-slate-400 hover:text-slate-600 transition-colors active:cursor-grabbing select-none pointer-events-auto"
                         onMouseDown={() => setActiveDragId(c.id)}
                         onTouchStart={(e) => {
                           setActiveDragId(c.id);
@@ -252,7 +250,7 @@ export default function CategoriesTab() {
 
                       {/* Info Details */}
                       <div>
-                        <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base font-sans">{c.name}</h3>
+                        <h3 className="font-bold text-slate-800 text-base font-sans">{c.name}</h3>
                         <p className="text-xs font-mono text-slate-400 mt-0.5">slug: {c.slug}</p>
                       </div>
                     </div>

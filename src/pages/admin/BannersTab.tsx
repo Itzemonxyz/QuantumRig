@@ -115,18 +115,18 @@ export default function BannersTab() {
   if (isEditing) {
     return (
       <div className="p-6 w-full">
-        <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400 mb-2">
+        <div className="flex items-center space-x-2 text-slate-500 mb-2">
           <Sparkles className="w-4 h-4 text-indigo-500" />
           <span className="text-xs font-bold tracking-wider uppercase">Storefront Display Banners</span>
         </div>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 tracking-tight">
+        <h2 className="text-2xl font-bold text-slate-900 mb-6 tracking-tight">
           {currentBanner.id ? 'Edit Display Banner' : 'Create Display Banner'}
         </h2>
         
-        <form onSubmit={handleSave} className="w-full space-y-6 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <form onSubmit={handleSave} className="w-full space-y-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center gap-1">
                 <FileText className="w-3.5 h-3.5 text-slate-400" /> Administrative Title
               </label>
               <input 
@@ -135,12 +135,12 @@ export default function BannersTab() {
                 placeholder="e.g. Winter Extreme Components Promo"
                 value={currentBanner.title || ''}
                 onChange={e => setCurrentBanner({...currentBanner, title: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-xl focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none text-slate-800 dark:text-slate-200"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none text-slate-800"
               />
             </div>
             
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center gap-1">
                 <LinkIcon className="w-3.5 h-3.5 text-slate-400" /> Destination Redirect path
               </label>
               <input 
@@ -148,13 +148,13 @@ export default function BannersTab() {
                 placeholder="e.g. /builder, /products?category=processors"
                 value={currentBanner.linkUrl || ''}
                 onChange={e => setCurrentBanner({...currentBanner, linkUrl: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-xl focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none text-slate-800 dark:text-slate-200"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none text-slate-800"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 flex items-center gap-1">
               <ImageIcon className="w-3.5 h-3.5 text-slate-400" /> Display Banner Placement/Slot
             </label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -162,45 +162,45 @@ export default function BannersTab() {
                 type="button"
                 onClick={() => setCurrentBanner({...currentBanner, type: 'main'})}
                 className={`p-3 border rounded-xl text-left transition-all cursor-pointer ${
-                  (currentBanner.type || 'main') === 'main'
-                    ? 'border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-500'
-                    : 'border-slate-200 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:bg-slate-800'
-                }`}
+ (currentBanner.type || 'main') === 'main'
+ ? 'border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-500'
+ : 'border-slate-200 bg-slate-50 hover:bg-slate-100 '
+ }`}
               >
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">Main Rotating Carousel</div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-normal">Cycles automatically on the left side of the welcome container.</div>
+                <div className="text-xs font-bold text-slate-800 mb-1">Main Rotating Carousel</div>
+                <div className="text-[10px] text-slate-500 leading-normal">Cycles automatically on the left side of the welcome container.</div>
               </button>
               
               <button
                 type="button"
                 onClick={() => setCurrentBanner({...currentBanner, type: 'fixed-1'})}
                 className={`p-3 border rounded-xl text-left transition-all cursor-pointer ${
-                  currentBanner.type === 'fixed-1'
-                    ? 'border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-500'
-                    : 'border-slate-200 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:bg-slate-800'
-                }`}
+ currentBanner.type === 'fixed-1'
+ ? 'border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-500'
+ : 'border-slate-200 bg-slate-50 hover:bg-slate-100 '
+ }`}
               >
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">Top Right Fixed Banner</div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-normal">Static secondary promo banner displayed at the top right of the homepage.</div>
+                <div className="text-xs font-bold text-slate-800 mb-1">Top Right Fixed Banner</div>
+                <div className="text-[10px] text-slate-500 leading-normal">Static secondary promo banner displayed at the top right of the homepage.</div>
               </button>
               
               <button
                 type="button"
                 onClick={() => setCurrentBanner({...currentBanner, type: 'fixed-2'})}
                 className={`p-3 border rounded-xl text-left transition-all cursor-pointer ${
-                  currentBanner.type === 'fixed-2'
-                    ? 'border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-500'
-                    : 'border-slate-200 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:bg-slate-800'
-                }`}
+ currentBanner.type === 'fixed-2'
+ ? 'border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-500'
+ : 'border-slate-200 bg-slate-50 hover:bg-slate-100 '
+ }`}
               >
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">Bottom Right Fixed Banner</div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-normal">Static secondary promo banner displayed at the bottom right of the homepage.</div>
+                <div className="text-xs font-bold text-slate-800 mb-1">Bottom Right Fixed Banner</div>
+                <div className="text-[10px] text-slate-500 leading-normal">Static secondary promo banner displayed at the bottom right of the homepage.</div>
               </button>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center gap-1">
               <Upload className="w-3.5 h-3.5 text-slate-400" /> Upload Highlighted Banner Image (Horizontal aspect ratio best)
             </label>
             
@@ -211,8 +211,8 @@ export default function BannersTab() {
               onDragLeave={handleDrag}
               onDrop={handleDrop}
               className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all ${
-                isDragActive ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300 bg-slate-50 dark:bg-slate-950'
-              }`}
+ isDragActive ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300 bg-slate-50 '
+ }`}
             >
               <input 
                 type="file"
@@ -223,31 +223,31 @@ export default function BannersTab() {
               />
               <div className="flex flex-col items-center justify-center">
                 <Upload className="w-8 h-8 text-slate-400 mb-2" />
-                <p className="text-sm text-slate-700 dark:text-slate-300 font-medium mb-1">
+                <p className="text-sm text-slate-700 font-medium mb-1">
                   Drag and drop your poster file here, or{' '}
                   <label htmlFor="banner-file" className="text-indigo-600 hover:text-indigo-500 cursor-pointer font-bold outline-none">
                     browse files
                   </label>
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-normal">Supports JPEG, PNG, WEBP. Horizontal aspect ratio (e.g. 21:9 or 16:7) is best.</p>
+                <p className="text-xs text-slate-500 font-normal">Supports JPEG, PNG, WEBP. Horizontal aspect ratio (e.g. 21:9 or 16:7) is best.</p>
               </div>
             </div>
 
             <div className="mt-4">
-              <span className="text-xs text-slate-500 dark:text-slate-400 block mb-1">Or enter a Direct Image URL</span>
+              <span className="text-xs text-slate-500 block mb-1">Or enter a Direct Image URL</span>
               <input 
                 type="text"
                 placeholder="https://images.unsplash.com/photo-..."
                 value={currentBanner.imageUrl || ''}
                 onChange={e => setCurrentBanner({...currentBanner, imageUrl: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-xl focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none text-slate-800 dark:text-slate-200"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none text-slate-800"
               />
             </div>
 
             {currentBanner.imageUrl && (
-              <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl">
+              <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <span className="text-xs font-bold text-slate-400 block mb-1.5 uppercase">Banner Preview (Natural Aspect Ratio):</span>
-                <div className="w-full border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center">
+                <div className="w-full border border-slate-200 rounded-xl overflow-hidden bg-slate-100 flex flex-col items-center justify-center">
                   <img 
                     src={currentBanner.imageUrl} 
                     alt="Banner Preview" 
@@ -255,13 +255,13 @@ export default function BannersTab() {
                     referrerPolicy="no-referrer"
                   />
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Preview illustrates how it is fitted on the homepage. The natural ratio of the image is maintained to ensure no part is cut off.</p>
+                <p className="text-xs text-slate-500 mt-2">Preview illustrates how it is fitted on the homepage. The natural ratio of the image is maintained to ensure no part is cut off.</p>
               </div>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center gap-1">
               <FileText className="w-3.5 h-3.5 text-slate-400" /> Detail / Administrative Notes / Campaign Info
             </label>
             <textarea 
@@ -269,7 +269,7 @@ export default function BannersTab() {
               placeholder="Provide clean internal administrative explanations and details about this homepage banner campaign."
               value={currentBanner.description || ''}
               onChange={e => setCurrentBanner({...currentBanner, description: e.target.value})}
-              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-xl focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none text-slate-800 dark:text-slate-200 resize-none"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-sm outline-none text-slate-800 resize-none"
             />
           </div>
 
@@ -281,7 +281,7 @@ export default function BannersTab() {
               onChange={(e) => setCurrentBanner({...currentBanner, active: e.target.checked})}
               className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500/50"
             />
-            <label htmlFor="active-toggle" className="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300 select-none">
+            <label htmlFor="active-toggle" className="ml-2 text-sm font-medium text-slate-700 select-none">
               Publish this banner image immediately on the storefront slideshow rotation
             </label>
           </div>
@@ -296,7 +296,7 @@ export default function BannersTab() {
             <button 
               type="button" 
               onClick={() => { setIsEditing(false); setCurrentBanner({}); }}
-              className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-2.5 px-6 rounded-xl transition-all cursor-pointer text-xs uppercase tracking-wider"
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-6 rounded-xl transition-all cursor-pointer text-xs uppercase tracking-wider"
             >
               Cancel
             </button>
@@ -310,12 +310,12 @@ export default function BannersTab() {
     <div className="p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400 mb-1">
+          <div className="flex items-center space-x-2 text-slate-500 mb-1">
             <ImageIcon className="w-4 h-4 text-indigo-500" />
             <span className="text-xs font-bold tracking-wider uppercase">Marketing Asset Manager</span>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Storefront Banners</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Upload and manage rotating horizontal posters that will dynamically scale to their natural ratios on the homepage.</p>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Storefront Banners</h2>
+          <p className="text-xs text-slate-500 mt-1">Upload and manage rotating horizontal posters that will dynamically scale to their natural ratios on the homepage.</p>
         </div>
         
         <button
@@ -330,9 +330,9 @@ export default function BannersTab() {
       </div>
 
       {banners.length === 0 ? (
-        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 rounded-2xl p-12 text-center">
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-12 text-center">
           <ImageIcon className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400 font-medium mb-1">No homepage banners found</p>
+          <p className="text-slate-600 font-medium mb-1">No homepage banners found</p>
           <p className="text-xs text-slate-400">Click the button above to upload or assign your first product/campaign banner poster.</p>
         </div>
       ) : (
@@ -340,7 +340,7 @@ export default function BannersTab() {
           {banners.map((banner) => (
             <div 
               key={banner.id}
-              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col lg:flex-row group"
+              className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col lg:flex-row group"
             >
               {/* Banner Poster Container (Correct horizontal aspect ratio) */}
               <div className="w-full lg:w-80 aspect-[16/9] bg-[#111827] flex items-center justify-center border-b lg:border-b-0 lg:border-r border-slate-200 overflow-hidden">
@@ -356,35 +356,35 @@ export default function BannersTab() {
               <div className="p-6 flex-1 flex flex-col justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mr-auto">{banner.title || 'Untitled Banner'}</h3>
+                    <h3 className="text-lg font-bold text-slate-900 mr-auto">{banner.title || 'Untitled Banner'}</h3>
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${
-                      (banner.type || 'main') === 'main'
-                        ? 'bg-indigo-50 text-indigo-700 border border-indigo-100'
-                        : banner.type === 'fixed-1'
-                        ? 'bg-amber-50 text-amber-700 border border-amber-100'
-                        : 'bg-teal-50 text-teal-700 border border-teal-100'
-                    }`}>
+ (banner.type || 'main') === 'main'
+ ? 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+ : banner.type === 'fixed-1'
+ ? 'bg-amber-50 text-amber-700 border border-amber-100'
+ : 'bg-teal-50 text-teal-700 border border-teal-100'
+ }`}>
                       {(banner.type || 'main') === 'main' ? 'Main Carousel' : banner.type === 'fixed-1' ? 'Top Right Slot' : 'Bottom Right Slot'}
                     </span>
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                      banner.active 
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200'
-                    }`}>
+ banner.active 
+ ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+ : 'bg-slate-100 text-slate-600 border border-slate-200'
+ }`}>
                       {banner.active ? 'Active on Storefront' : 'Inactive Draft'}
                     </span>
                   </div>
 
                   {banner.description && (
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">{banner.description}</p>
+                    <p className="text-sm text-slate-600 mb-3 line-clamp-2">{banner.description}</p>
                   )}
 
                   <div className="space-y-1.5 pt-2">
-                    <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <p className="text-xs text-slate-500 flex items-center gap-1.5">
                       <LinkIcon className="w-3.5 h-3.5 text-slate-400" /> Redirect: 
-                      <span className="text-slate-700 dark:text-slate-300 font-medium">{banner.linkUrl || 'None (Static asset)'}</span>
+                      <span className="text-slate-700 font-medium">{banner.linkUrl || 'None (Static asset)'}</span>
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <p className="text-xs text-slate-500 flex items-center gap-1.5">
                       <ImageIcon className="w-3.5 h-3.5 text-slate-400" /> Asset URL: 
                       <span className="text-indigo-600 hover:underline truncate max-w-sm block">{banner.imageUrl}</span>
                     </p>
@@ -397,7 +397,7 @@ export default function BannersTab() {
                       setCurrentBanner(banner);
                       setIsEditing(true);
                     }}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-indigo-600 transition-colors uppercase tracking-wider"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-indigo-600 transition-colors uppercase tracking-wider"
                   >
                     <Edit2 className="w-3.5 h-3.5" /> Edit Details
                   </button>
@@ -415,7 +415,7 @@ export default function BannersTab() {
                       <button 
                         disabled={deletingId === banner.id}
                         onClick={() => setDeleteConfirmId(null)}
-                        className="px-2 py-1 text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors font-semibold text-xs shadow-sm"
+                        className="px-2 py-1 text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors font-semibold text-xs shadow-sm"
                       >
                         Cancel
                       </button>

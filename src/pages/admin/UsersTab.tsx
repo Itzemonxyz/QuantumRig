@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { useStore } from '../../store';
 import { useScrollLock } from '../../hooks/useScrollLock';
-import { Search, Mail, Phone, Shield, User, Download, Trash2, Bell, X, ShoppingBag, MessageSquare, AlertTriangle } from 'lucide-react';
+import { Search, Mail, Phone, Shield, User, Download, Trash2, Bell, X, ShoppingBag, MessageSquare, AlertTriangle, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface UserData {
   id: string;
@@ -23,7 +23,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
   return (
     <>
       {String(text).substring(0, idx)}
-      <span className="bg-yellow-200 text-slate-900 dark:text-white font-bold px-0.5 rounded">{String(text).substring(idx, idx + query.length)}</span>
+      <span className="bg-yellow-200 text-slate-900 font-bold px-0.5 rounded">{String(text).substring(idx, idx + query.length)}</span>
       {String(text).substring(idx + query.length)}
     </>
   );
@@ -33,6 +33,7 @@ export default function UsersTab() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const { token, addToast } = useStore();
 
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -178,18 +179,18 @@ export default function UsersTab() {
     <div className="p-6 relative">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-           <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Registered Users</h2>
-           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-4">Manage and view all registered platform users.</p>
-           <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg w-fit">
+           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Registered Users</h2>
+           <p className="text-sm text-slate-500 mt-1 mb-4">Manage and view all registered platform users.</p>
+           <div className="flex bg-slate-100 p-1 rounded-lg w-fit">
              <button
                onClick={() => setViewFilter('all')}
-               className={`px-4 py-2 text-sm font-bold rounded-md transition-colors ${viewFilter === 'all' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'}`}
+               className={`px-4 py-2 text-sm font-bold rounded-md transition-colors ${viewFilter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800 '}`}
              >
                All Users
              </button>
              <button
                onClick={() => setViewFilter('pending')}
-               className={`px-4 py-2 text-sm font-bold rounded-md transition-colors ${viewFilter === 'pending' ? 'bg-white dark:bg-slate-900 text-rose-700 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-rose-600'}`}
+               className={`px-4 py-2 text-sm font-bold rounded-md transition-colors ${viewFilter === 'pending' ? 'bg-white text-rose-700 shadow-sm' : 'text-slate-600 hover:text-rose-600'}`}
              >
                Pending Deletions
              </button>
@@ -200,7 +201,7 @@ export default function UsersTab() {
             <input 
               type="text" 
               placeholder="Search by name, email or phone..." 
-              className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow"
+              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -208,7 +209,7 @@ export default function UsersTab() {
           </div>
           <button 
             onClick={handleExportCSV}
-            className="flex items-center px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-950 transition-colors shadow-sm"
+            className="flex items-center px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
           >
             <Download className="w-4 h-4 mr-2" />
             Export CSV
@@ -237,12 +238,12 @@ export default function UsersTab() {
       )}
 
       {loading ? (
-        <div className="p-8 text-center text-slate-500 dark:text-slate-400">Loading users...</div>
+        <div className="p-8 text-center text-slate-500">Loading users...</div>
       ) : (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-bold uppercase tracking-tight text-xs">
+              <thead className="bg-slate-50 text-slate-800 font-bold uppercase tracking-tight text-xs">
                 <tr>
                   <th className="px-6 py-4 w-12 text-center checkbox-cell">
                     <input 
@@ -252,7 +253,19 @@ export default function UsersTab() {
                       onChange={toggleAll}
                     />
                   </th>
-                  <th className="px-6 py-4 whitespace-nowrap">Name</th>
+                  <th 
+                    className="px-6 py-4 whitespace-nowrap cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                    onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      Name
+                      {sortOrder === 'asc' ? (
+                        <ArrowDown className="w-3.5 h-3.5 text-indigo-500" />
+                      ) : (
+                        <ArrowUp className="w-3.5 h-3.5 text-indigo-500" />
+                      )}
+                    </div>
+                  </th>
                   <th className="px-6 py-4 whitespace-nowrap">Email</th>
                   <th className="px-6 py-4 whitespace-nowrap">Phone</th>
                   <th className="px-6 py-4 whitespace-nowrap text-center">Role</th>
@@ -260,18 +273,18 @@ export default function UsersTab() {
                   <th className="px-6 py-4 whitespace-nowrap">Last Visited</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 text-slate-900 dark:text-white">
+              <tbody className="divide-y divide-slate-200 text-slate-900">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400 font-medium">
+                    <td colSpan={7} className="px-6 py-8 text-center text-slate-500 font-medium">
                       No users found.
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((user, index) => (
+                  [...filteredUsers].sort((a,b) => sortOrder === 'asc' ? (a.name || '').localeCompare(b.name || '') : (b.name || '').localeCompare(a.name || '')).map((user, index) => (
                     <tr 
                       key={user.id || `user-${index}`} 
-                      className="hover:bg-slate-50 dark:bg-slate-950 transition-colors cursor-pointer"
+                      className="hover:bg-slate-50 transition-colors cursor-pointer"
                       onClick={(e) => openUserDetails(user.id, e)}
                     >
                       <td className="px-6 py-4 text-center checkbox-cell">
@@ -297,13 +310,13 @@ export default function UsersTab() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-slate-600 dark:text-slate-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-slate-600">
                         <div className="flex items-center">
                           <Mail className="w-4 h-4 mr-2 text-slate-400" />
                           <HighlightMatch text={user.email || 'No Email'} query={searchQuery} />
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-slate-600 dark:text-slate-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-slate-600">
                         <div className="flex items-center">
                           <Phone className="w-4 h-4 mr-2 text-slate-400" />
                           {user.phone ? <HighlightMatch text={user.phone} query={searchQuery} /> : <span className="text-slate-400 italic">Not provided</span>}
@@ -319,21 +332,21 @@ export default function UsersTab() {
                             <Shield className="w-3 h-3 mr-1" /> Staff / Manager
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
                             <User className="w-3 h-3 mr-1" /> User
                           </span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col">
-                          <span className="text-slate-900 dark:text-white font-medium">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</span>
-                          <span className="text-xs text-slate-500 dark:text-slate-400">{user.createdAt ? new Date(user.createdAt).toLocaleTimeString() : ''}</span>
+                          <span className="text-slate-900 font-medium">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</span>
+                          <span className="text-xs text-slate-500">{user.createdAt ? new Date(user.createdAt).toLocaleTimeString() : ''}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col">
-                          <span className="text-slate-900 dark:text-white font-medium">{user.lastVisited ? new Date(user.lastVisited).toLocaleDateString() : 'N/A'}</span>
-                          <span className="text-xs text-slate-500 dark:text-slate-400">{user.lastVisited ? new Date(user.lastVisited).toLocaleTimeString() : ''}</span>
+                          <span className="text-slate-900 font-medium">{user.lastVisited ? new Date(user.lastVisited).toLocaleDateString() : 'N/A'}</span>
+                          <span className="text-xs text-slate-500">{user.lastVisited ? new Date(user.lastVisited).toLocaleTimeString() : ''}</span>
                         </div>
                       </td>
                     </tr>
@@ -348,23 +361,23 @@ export default function UsersTab() {
       {/* User Details Modal */}
       {viewingUserId && (
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-950">
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center tracking-tight">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="text-xl font-bold text-slate-900 flex items-center tracking-tight">
                 <User className="w-6 h-6 mr-3 text-indigo-600" />
                 User Activity & Details
               </h3>
               <button 
                 onClick={() => {setViewingUserId(null); setUserDetails(null);}}
-                className="text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 p-2 rounded-full transition-colors"
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-2 rounded-full transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             
-            <div className="overflow-y-auto p-6 flex-1 bg-white dark:bg-slate-900">
+            <div className="overflow-y-auto p-6 flex-1 bg-white">
               {loadingDetails || !userDetails ? (
-                <div className="py-12 text-center text-slate-500 dark:text-slate-400 font-medium">Loading user history...</div>
+                <div className="py-12 text-center text-slate-500 font-medium">Loading user history...</div>
               ) : (
                 <div className="space-y-8">
                   {/* Account Details */}
@@ -381,7 +394,7 @@ export default function UsersTab() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleDenyDeletion(userDetails.id)}
-                            className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-950 transition font-bold text-sm whitespace-nowrap"
+                            className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition font-bold text-sm whitespace-nowrap"
                           >
                             Deny Request
                           </button>
@@ -395,21 +408,21 @@ export default function UsersTab() {
                         </div>
                       </div>
                     )}
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Account Overview</h4>
+                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Account Overview</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 flex items-start">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-start">
                         <div className="w-12 h-12 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold text-xl mr-4 shrink-0">
                           {userDetails.name ? userDetails.name.charAt(0).toUpperCase() : '?'}
                         </div>
                         <div>
-                          <div className="font-bold text-slate-900 dark:text-white text-lg">{userDetails.name || 'Unknown'}</div>
-                          <div className="text-sm text-slate-500 dark:text-slate-400">{userDetails.email || 'No Email'}</div>
-                          <div className="text-sm text-slate-500 dark:text-slate-400 mt-1 flex items-center"><Phone className="w-3 h-3 mr-1"/> {userDetails.phone || 'N/A'}</div>
+                          <div className="font-bold text-slate-900 text-lg">{userDetails.name || 'Unknown'}</div>
+                          <div className="text-sm text-slate-500">{userDetails.email || 'No Email'}</div>
+                          <div className="text-sm text-slate-500 mt-1 flex items-center"><Phone className="w-3 h-3 mr-1"/> {userDetails.phone || 'N/A'}</div>
                         </div>
                       </div>
-                      <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 flex flex-col justify-center space-y-3">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-center space-y-3">
                          <div>
-                           <div className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">Current Role</div>
+                           <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Current Role</div>
                            <div className="flex items-center gap-2">
                              {userDetails.role === 'admin' ? (
                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-indigo-100 text-indigo-700">
@@ -420,7 +433,7 @@ export default function UsersTab() {
                                  <Shield className="w-4 h-4 mr-1.5" /> Staff
                                  </span>
                              ) : (
-                                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200">
+                                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-slate-100 text-slate-600 border border-slate-200">
                                  <User className="w-4 h-4 mr-1.5" /> User
                                  </span>
                              )}
@@ -450,13 +463,13 @@ export default function UsersTab() {
                               </select>
                            </div>
                          </div>
-                         <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 shadow-sm text-sm">
-                           <span className="text-slate-500 dark:text-slate-400 font-medium">Joined:</span>
-                           <span className="text-slate-900 dark:text-white font-bold">{userDetails.createdAt ? new Date(userDetails.createdAt).toLocaleDateString() : 'N/A'}</span>
+                         <div className="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm text-sm">
+                           <span className="text-slate-500 font-medium">Joined:</span>
+                           <span className="text-slate-900 font-bold">{userDetails.createdAt ? new Date(userDetails.createdAt).toLocaleDateString() : 'N/A'}</span>
                          </div>
-                         <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 shadow-sm text-sm">
-                           <span className="text-slate-500 dark:text-slate-400 font-medium">Last Visit:</span>
-                           <span className="text-slate-900 dark:text-white font-bold">{userDetails.lastVisited ? new Date(userDetails.lastVisited).toLocaleDateString() : 'N/A'}</span>
+                         <div className="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm text-sm">
+                           <span className="text-slate-500 font-medium">Last Visit:</span>
+                           <span className="text-slate-900 font-bold">{userDetails.lastVisited ? new Date(userDetails.lastVisited).toLocaleDateString() : 'N/A'}</span>
                          </div>
                       </div>
                     </div>
@@ -464,22 +477,22 @@ export default function UsersTab() {
 
                   {/* Orders */}
                   <section>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 pb-2 flex items-center">
+                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2 flex items-center">
                         <ShoppingBag className="w-4 h-4 mr-2 text-indigo-600" />
                         Order History ({userDetails.orders?.length || 0})
                     </h4>
                     {userDetails.orders?.length === 0 ? (
-                        <p className="text-sm text-slate-500 dark:text-slate-400 italic">No orders placed by this user yet.</p>
+                        <p className="text-sm text-slate-500 italic">No orders placed by this user yet.</p>
                     ) : (
                         <div className="space-y-3">
                             {userDetails.orders?.map((order: any, index: number) => (
                                 <div key={order.id || `order-${index}`} className="border border-slate-200 rounded-lg p-4 flex justify-between items-center text-sm hover:border-indigo-300 transition-colors">
                                     <div>
-                                        <div className="font-bold text-slate-900 dark:text-white mb-1">{order.id}</div>
-                                        <div className="text-slate-500 dark:text-slate-400">{new Date(order.createdAt).toLocaleString()} • {order.items?.length || 0} items</div>
+                                        <div className="font-bold text-slate-900 mb-1">{order.id}</div>
+                                        <div className="text-slate-500">{new Date(order.createdAt).toLocaleString()} • {order.items?.length || 0} items</div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="font-bold text-slate-900 dark:text-white mb-1">৳{(order.totalAmount || 0).toLocaleString()}</div>
+                                        <div className="font-bold text-slate-900 mb-1">৳{(order.totalAmount || 0).toLocaleString()}</div>
                                         <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs font-bold">{order.status}</span>
                                     </div>
                                 </div>
@@ -490,23 +503,23 @@ export default function UsersTab() {
 
                   {/* Support Tickets */}
                   <section>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 pb-2 flex items-center">
+                    <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2 flex items-center">
                         <MessageSquare className="w-4 h-4 mr-2 text-indigo-600" />
                         Support Tickets ({userDetails.tickets?.length || 0})
                     </h4>
                     {userDetails.tickets?.length === 0 ? (
-                        <p className="text-sm text-slate-500 dark:text-slate-400 italic">No support tickets.</p>
+                        <p className="text-sm text-slate-500 italic">No support tickets.</p>
                     ) : (
                         <div className="space-y-3">
                             {userDetails.tickets?.map((ticket: any, index: number) => (
                                 <div key={ticket.id || `ticket-${index}`} className="border border-slate-200 rounded-lg p-4 text-sm">
                                     <div className="flex justify-between items-start mb-2">
-                                        <span className="font-bold text-slate-900 dark:text-white">{ticket.productId || 'General Inquiry'}</span>
-                                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${ticket.status === 'Open' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
+                                        <span className="font-bold text-slate-900">{ticket.productId || 'General Inquiry'}</span>
+                                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${ticket.status === 'Open' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600 '}`}>
                                             {ticket.status}
                                         </span>
                                     </div>
-                                    <p className="text-slate-600 dark:text-slate-400 line-clamp-2">{ticket.question}</p>
+                                    <p className="text-slate-600 line-clamp-2">{ticket.question}</p>
                                 </div>
                             ))}
                         </div>
@@ -535,10 +548,10 @@ export default function UsersTab() {
               )}
             </div>
             
-            <div className="p-4 border-t border-slate-100 bg-slate-50 dark:bg-slate-950 flex justify-end">
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
               <button 
                 onClick={() => {setViewingUserId(null); setUserDetails(null);}}
-                className="px-5 py-2 bg-white dark:bg-slate-900 border border-slate-300 rounded-lg font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-950 transition-colors shadow-sm"
+                className="px-5 py-2 bg-white border border-slate-300 rounded-lg font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
               >
                 Close View
               </button>

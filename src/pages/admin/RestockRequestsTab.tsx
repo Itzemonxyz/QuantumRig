@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useStore } from '../../store';
-import { RefreshCw, CheckCircle, Package, Trash2, Loader2, Check } from 'lucide-react';
+import { RefreshCw, CheckCircle, Package, Trash2, Loader2, Check, ArrowUp, ArrowDown } from 'lucide-react';
 
 export default function RestockRequestsTab() {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const { token, addToast } = useStore();
 
   const loadRequests = async (isBackground = false) => {
@@ -63,40 +64,52 @@ export default function RestockRequestsTab() {
         <h2 className="text-xl font-bold flex items-center">
           <RefreshCw className="mr-2" /> Restock Requests
         </h2>
-        <button onClick={loadRequests} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:bg-slate-700 rounded-xl font-bold text-sm">
+        <button onClick={loadRequests} className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl font-bold text-sm">
           Refresh
         </button>
       </div>
 
       {loading ? (
-        <div className="text-slate-500 dark:text-slate-400 py-10 text-center">Loading...</div>
+        <div className="text-slate-500 py-10 text-center">Loading...</div>
       ) : requests.length === 0 ? (
-        <div className="text-slate-500 dark:text-slate-400 py-10 text-center">No restock requests found.</div>
+        <div className="text-slate-500 py-10 text-center">No restock requests found.</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-200">
-                <th className="px-6 py-4 text-sm font-bold text-slate-500 dark:text-slate-400">Date</th>
-                <th className="px-6 py-4 text-sm font-bold text-slate-500 dark:text-slate-400">Product</th>
-                <th className="px-6 py-4 text-sm font-bold text-slate-500 dark:text-slate-400">User Details</th>
-                <th className="px-6 py-4 text-sm font-bold text-slate-500 dark:text-slate-400">Status</th>
-                <th className="px-6 py-4 text-sm font-bold text-slate-500 dark:text-slate-400 text-right">Actions</th>
+                <th 
+                  className="px-6 py-4 text-sm font-bold text-slate-500 cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                  onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                >
+                  <div className="flex items-center gap-1.5">
+                    Date
+                    {sortOrder === 'desc' ? (
+                      <ArrowDown className="w-3.5 h-3.5 text-indigo-500" />
+                    ) : (
+                      <ArrowUp className="w-3.5 h-3.5 text-indigo-500" />
+                    )}
+                  </div>
+                </th>
+                <th className="px-6 py-4 text-sm font-bold text-slate-500">Product</th>
+                <th className="px-6 py-4 text-sm font-bold text-slate-500">User Details</th>
+                <th className="px-6 py-4 text-sm font-bold text-slate-500">Status</th>
+                <th className="px-6 py-4 text-sm font-bold text-slate-500 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {requests.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(req => (
-                <tr key={req.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50 dark:bg-slate-950 transition-colors">
-                  <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">{new Date(req.createdAt).toLocaleString()}</td>
-                  <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+              {[...requests].sort((a,b) => sortOrder === 'desc' ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map(req => (
+                <tr key={req.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">{new Date(req.createdAt).toLocaleString()}</td>
+                  <td className="px-6 py-4 font-medium text-slate-900">
                     <Link to={`/admin/products?q=${req.productId}`} className="text-indigo-600 hover:underline flex flex-col">
                       <span>{req.productTitle}</span>
                       <span className="text-xs text-slate-400 font-mono mt-1">{req.productId}</span>
                     </Link>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm font-bold text-slate-800 dark:text-slate-200">{req.userName}</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">{req.userEmail}</div>
+                    <div className="text-sm font-bold text-slate-800">{req.userName}</div>
+                    <div className="text-xs text-slate-500">{req.userEmail}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {req.status === 'pending' ? (

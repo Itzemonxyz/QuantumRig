@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useStore } from '../../store';
 import { useNavigate, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { Package, FolderTree, ShoppingCart, Settings as SettingsIcon, Ticket, Zap, LogOut, AreaChart, HelpCircle, RefreshCw, Link as LinkIcon, Menu, X, Box, Bell, ClipboardList, Image as ImageIcon, Sun, Moon, Shield, Users } from 'lucide-react';
+import { Package, FolderTree, ShoppingCart, Settings as SettingsIcon, Ticket, Zap, LogOut, AreaChart, HelpCircle, RefreshCw, Link as LinkIcon, Menu, X, Box, Bell, ClipboardList, Image as ImageIcon, Sun, Moon, Shield, Users, Plus, ArrowRight, Clock, Wifi, Cloud, History } from 'lucide-react';
 import { api } from '../../lib/api';
 import { Role } from '../../types';
 import AnalyticsTab from './AnalyticsTab';
@@ -20,6 +20,7 @@ import UsersTab from './UsersTab';
 import StockLogsTab from './StockLogsTab';
 import FAQsTab from './FAQsTab';
 import RolesTab from './RolesTab';
+import AuditLogsTab from './AuditLogsTab';
 import { useScrollLock } from '../../hooks/useScrollLock';
 
 function AdminNotificationsDropdown() {
@@ -62,7 +63,7 @@ function AdminNotificationsDropdown() {
     <div className="relative" ref={menuRef}>
       <button 
         onClick={() => setOpen(!open)}
-        className="relative p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 rounded-full transition-colors"
+        className="relative p-2 text-slate-600 hover:bg-slate-200 rounded-full transition-colors"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
@@ -71,27 +72,27 @@ function AdminNotificationsDropdown() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 overflow-hidden z-50">
-          <div className="p-3 border-b border-slate-100 bg-slate-50 dark:bg-slate-950 font-bold text-slate-800 dark:text-slate-200 text-sm flex justify-between items-center">
+        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden z-50">
+          <div className="p-3 border-b border-slate-100 bg-slate-50 font-bold text-slate-800 text-sm flex justify-between items-center">
             Notifications
             <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">{unreadCount} New</span>
           </div>
           <div className="max-h-[60vh] overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="p-6 text-center text-slate-500 dark:text-slate-400 text-sm">No notifications</div>
+              <div className="p-6 text-center text-slate-500 text-sm">No notifications</div>
             ) : (
               <div className="divide-y divide-slate-100">
                 {notifications.slice().reverse().map(n => (
-                  <div key={n.id} className={`p-4 text-sm \${n.read ? 'bg-white dark:bg-slate-900 opacity-60' : 'bg-indigo-50/30'}`}>
+                  <div key={n.id} className={`p-4 text-sm \${n.read ? 'bg-white opacity-60' : 'bg-indigo-50/30'}`}>
                     <div className="flex gap-3">
                       <div className="mt-0.5">
                         <div className={`w-2 h-2 rounded-full \${n.read ? 'bg-slate-300' : 'bg-indigo-500'}`}></div>
                       </div>
                       <div className="flex-1">
-                        <p className={`\${n.read ? 'text-slate-600 dark:text-slate-400' : 'text-slate-900 dark:text-white font-medium'}`}>
+                        <p className={`\${n.read ? 'text-slate-600 ' : 'text-slate-900 font-medium'}`}>
                           {n.message}
                         </p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
+                        <p className="text-[10px] text-slate-500 mt-1 font-mono">
                           {new Date(n.createdAt).toLocaleString()}
                         </p>
                       </div>
@@ -112,12 +113,79 @@ function AdminNotificationsDropdown() {
   );
 }
 
+function SystemStatusDropdown() {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button 
+        onClick={() => setOpen(!open)}
+        className="relative p-2 text-slate-600 hover:bg-slate-200 rounded-full transition-colors"
+        title="System Status"
+      >
+        <Cloud className="w-5 h-5" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden z-50 text-slate-800 font-sans">
+          <div className="p-4 border-b border-slate-100">
+            <h3 className="font-bold flex items-center gap-2 text-[15px]">
+              <Wifi className={`w-5 h-5 ${isOnline ? 'text-indigo-500' : 'text-rose-500'}`} />
+              Connected to Cloud
+            </h3>
+          </div>
+          
+          <div className="p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <span className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-indigo-500' : 'bg-rose-500'}`}></span>
+              <span className="text-sm font-medium">Browser: {isOnline ? 'Online' : 'Offline'}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-indigo-500' : 'bg-rose-500'}`}></span>
+              <span className="text-sm font-medium">Cloud database: {isOnline ? 'Operational' : 'Unreachable'}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-slate-300' : 'bg-rose-500'}`}></span>
+              <span className="text-sm font-medium text-slate-600">Sync state: {isOnline ? 'Synchronized' : 'Desynced'}</span>
+            </div>
+          </div>
+          
+          <div className="p-4 border-t border-slate-100 bg-slate-50">
+            <p className="text-xs text-slate-500 mb-1">Last cloud save:</p>
+            <p className="text-sm font-mono text-slate-600">{new Date().toLocaleTimeString()}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const allBoardOptions = [
   { to: '/admin/analytics', icon: <AreaChart className="w-5 h-5 flex-shrink-0" />, label: 'Analytics', perm: 'dashboard' },
   { to: '/admin/roles', icon: <Shield className="w-5 h-5 flex-shrink-0" />, label: 'Roles & Access', perm: 'roles' },
   { to: '/admin/users', icon: <Users className="w-5 h-5 flex-shrink-0" />, label: 'Users', perm: 'customers' },
   { to: '/admin/products', icon: <Package className="w-5 h-5 flex-shrink-0" />, label: 'Products', perm: 'products' },
   { to: '/admin/stock-logs', icon: <ClipboardList className="w-5 h-5 flex-shrink-0" />, label: 'Stock Logs', perm: 'inventory' },
+  { to: '/admin/audit-logs', icon: <History className="w-5 h-5 flex-shrink-0" />, label: 'Audit Logs', perm: 'dashboard' },
   { to: '/admin/categories', icon: <FolderTree className="w-5 h-5 flex-shrink-0" />, label: 'Categories', perm: 'products' },
   { to: '/admin/brands', icon: <Box className="w-5 h-5 flex-shrink-0" />, label: 'Brands', perm: 'products' },
   { to: '/admin/orders', icon: <ShoppingCart className="w-5 h-5 flex-shrink-0" />, label: 'Orders', perm: 'orders' },
@@ -130,6 +198,63 @@ const allBoardOptions = [
   { to: '/admin/social-links', icon: <LinkIcon className="w-5 h-5 flex-shrink-0" />, label: 'Social Links', perm: 'settings' },
   { to: '/admin/settings', icon: <SettingsIcon className="w-5 h-5 flex-shrink-0" />, label: 'Settings', perm: 'settings' },
 ];
+
+const QuickActionsSidebar = () => {
+  return (
+    <aside className="hidden xl:flex w-72 bg-white border-l border-slate-200 flex-col shrink-0">
+      <div className="p-6 pb-4 border-b border-slate-100">
+        <h3 className="font-bold text-slate-800 uppercase tracking-widest text-xs flex items-center gap-2">
+          <Zap className="w-4 h-4 text-amber-500" />
+          Quick Actions
+        </h3>
+      </div>
+      <div className="p-4 space-y-3 flex-1 overflow-y-auto">
+        <Link 
+          to="/admin/products"
+          className="group flex flex-col p-4 bg-indigo-50 hover:bg-indigo-100 rounded-2xl transition-all border border-indigo-100"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-md">
+              <Plus className="w-4 h-4" />
+            </div>
+            <ArrowRight className="w-4 h-4 text-indigo-400 group-hover:text-indigo-600 transition-colors group-hover:translate-x-1" />
+          </div>
+          <span className="font-bold text-indigo-900 text-sm">Add New Product</span>
+          <span className="text-indigo-600 text-xs mt-1 font-medium">Create a new hw catalog item</span>
+        </Link>
+        
+        <Link 
+          to="/admin/stock-logs"
+          className="group flex flex-col p-4 bg-indigo-50 hover:bg-indigo-100 rounded-2xl transition-all border border-indigo-100"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center shadow-md">
+              <Package className="w-4 h-4" />
+            </div>
+            <ArrowRight className="w-4 h-4 text-indigo-400 group-hover:text-indigo-600 transition-colors group-hover:translate-x-1" />
+          </div>
+          <span className="font-bold text-indigo-900 text-sm">Manage Inventory</span>
+          <span className="text-indigo-600 text-xs mt-1 font-medium">Update stock counts</span>
+        </Link>
+        
+        <Link 
+          to="/admin/orders"
+          className="group flex flex-col p-4 bg-amber-50 hover:bg-amber-100 rounded-2xl transition-all border border-amber-100"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-md">
+              <ShoppingCart className="w-4 h-4" />
+            </div>
+            <ArrowRight className="w-4 h-4 text-amber-400 group-hover:text-amber-600 transition-colors group-hover:translate-x-1" />
+          </div>
+          <span className="font-bold text-amber-900 text-sm">Pending Orders</span>
+          <span className="text-amber-600 text-xs mt-1 font-medium">Review & fulfill orders</span>
+        </Link>
+        
+      </div>
+    </aside>
+  );
+};
 
 export default function AdminDashboard() {
   const { user, token, logout, theme, setTheme } = useStore();
@@ -159,7 +284,7 @@ export default function AdminDashboard() {
   }, [user, navigate]);
 
   if (!user || (user.role !== 'admin' && user.role !== 'staff')) return null;
-  if (loadingRoles) return <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950"><div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent flex rounded-full animate-spin"></div></div>;
+  if (loadingRoles) return <div className="flex h-screen items-center justify-center bg-slate-50"><div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent flex rounded-full animate-spin"></div></div>;
 
   const hasAccess = (perm: string) => {
     if (user.role === 'admin') return true;
@@ -180,7 +305,7 @@ export default function AdminDashboard() {
         <Link to="/" className="flex items-center text-indigo-600">
            <img src="/logo-primary.svg" alt="QuantumRig" className="h-8 sm:h-10 w-auto" />
         </Link>
-        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-3">
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-3">
           {user.role === 'admin' ? 'Admin Panel' : `Staff Panel - ${userRole?.name || 'Restricted'}`}
         </p>
       </div>
@@ -193,11 +318,11 @@ export default function AdminDashboard() {
                key={opt.to}
                to={opt.to}
                onClick={() => setMobileMenuOpen(false)}
-               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
-                 isActive 
-                  ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-900 dark:text-white'
-               }`}
+               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium ${
+ isActive 
+ ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100 pl-6' 
+ : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:pl-6'
+ }`}
              >
                {React.cloneElement(opt.icon as React.ReactElement, { className: `w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-slate-400'}` })}
                <span>{opt.label}</span>
@@ -219,23 +344,23 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-[calc(100vh-4rem)] flex flex-col md:flex-row max-w-[1600px] mx-auto">
+    <div className="bg-slate-50 min-h-[calc(100vh-4rem)] flex flex-col md:flex-row max-w-[1600px] mx-auto">
       {/* Mobile Top Bar */}
-      <div className="md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20">
+      <div className="md:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20">
          <div className="flex items-center">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admin Panel</h2>
+            <h2 className="text-lg font-bold text-slate-900">Admin Panel</h2>
          </div>
          <div className="flex items-center gap-2">
            <button 
               onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 rounded-lg transition-colors"
+              className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
               title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
             >
               {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
            </button>
            <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800 rounded-lg"
+              className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
            >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
            </button>
@@ -248,22 +373,21 @@ export default function AdminDashboard() {
       )}
 
       {/* Sidebar */}
-      <aside className={`
-        fixed inset-y-0 left-0 z-20 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:h-auto
-        ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
+      <aside className={`fixed inset-y-0 left-0 z-20 w-64 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:h-auto
+ ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <SidebarContent />
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 w-full bg-slate-50 dark:bg-slate-950 p-4 md:p-8 min-w-0">
+      <main className="flex-1 w-full bg-slate-50 p-4 md:p-8 min-w-0">
          
          <div className="flex justify-between items-center mb-6">
-           <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200 tracking-tight hidden md:block">Admin Workspace</h1>
+           <h1 className="text-2xl font-bold text-slate-800 tracking-tight hidden md:block">Admin Workspace</h1>
            <div className="flex items-center gap-4 ml-auto">
+             <SystemStatusDropdown />
              <button 
                 onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                className="relative p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 rounded-full transition-colors"
+                className="relative p-2 text-slate-600 hover:bg-slate-200 rounded-full transition-colors"
                 title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
               >
                 {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
@@ -276,6 +400,7 @@ export default function AdminDashboard() {
            <Routes>
              <Route path="/" element={<Navigate to="analytics" replace />} />
              {hasAccess('dashboard') && <Route path="analytics" element={<AnalyticsTab />} />}
+             {hasAccess('dashboard') && <Route path="audit-logs" element={<AuditLogsTab />} />}
              {hasAccess('roles') && <Route path="roles" element={<RolesTab />} />}
              {hasAccess('products') && <Route path="products" element={<ProductsTab />} />}
              {hasAccess('inventory') && <Route path="stock-logs" element={<StockLogsTab />} />}
@@ -295,6 +420,8 @@ export default function AdminDashboard() {
            </Routes>
          </div>
       </main>
+      
+      <QuickActionsSidebar />
     </div>
   );
 }

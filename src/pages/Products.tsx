@@ -7,6 +7,7 @@ import ProductSkeleton from '../components/ProductSkeleton';
 import Breadcrumbs from '../components/Breadcrumbs';
 import RecentlyViewed from '../components/RecentlyViewed';
 import ScrollToTopButton from '../components/ScrollToTopButton';
+import ExpertTip from '../components/ExpertTip';
 import { Product } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { useScrollLock } from '../hooks/useScrollLock';
@@ -85,15 +86,19 @@ export default function Products() {
       try {
         const res = await api.get(`/products/paginated?${queryParams.toString()}`);
         if (isInitial) {
-          setPaginatedProducts(res.data);
-          setAllBrands(res.allBrands || []);
-          setMinPriceLimit(res.minPriceLimit || 0);
-          setMaxPriceLimit(res.maxPriceLimit || 100000);
+          setPaginatedProducts(res?.data || []);
+          setAllBrands(res?.allBrands || []);
+          setMinPriceLimit(res?.minPriceLimit || 0);
+          setMaxPriceLimit(res?.maxPriceLimit || 100000);
         } else {
-          setPaginatedProducts(prev => [...prev, ...res.data]);
+          setPaginatedProducts(prev => {
+            const existingIds = new Set((prev || []).map(p => p.id));
+            const newItems = (res?.data || []).filter((item: Product) => !existingIds.has(item.id));
+            return [...(prev || []), ...newItems];
+          });
         }
-        setTotalProducts(res.total || 0);
-        setHasMore(page < res.totalPages);
+        setTotalProducts(res?.total || 0);
+        setHasMore(page < (res?.totalPages || 1));
       } catch (error) {
         console.error("Failed to fetch paginated products:", error);
       } finally {
@@ -155,7 +160,7 @@ export default function Products() {
           <h3 className="font-bold text-sm mb-3 text-slate-900 dark:text-white uppercase tracking-wider">Categories</h3>
           <ul className="space-y-2 text-sm max-h-48 overflow-y-auto pr-2">
             <li>
-               <label className="flex items-center space-x-3 cursor-pointer py-1.5">
+               <label className="flex items-center space-x-3 cursor-pointer py-1.5 px-2 rounded-md transition-all duration-200 hover:pl-3 hover:bg-slate-50 dark:hover:bg-slate-800 group">
                  <input 
                    type="radio" 
                    name="category"
@@ -172,7 +177,7 @@ export default function Products() {
             </li>
             {categories.map(category => (
               <li key={category.id}>
-                 <label className="flex items-center space-x-3 cursor-pointer py-1.5">
+                 <label className="flex items-center space-x-3 cursor-pointer py-1.5 px-2 rounded-md transition-all duration-200 hover:pl-3 hover:bg-slate-50 dark:hover:bg-slate-800 group">
                    <input 
                      type="radio" 
                      name="category"
@@ -197,7 +202,7 @@ export default function Products() {
         <ul className="space-y-2 text-sm">
           {['all', 'in-stock', 'out-of-stock'].map(status => (
             <li key={status}>
-               <label className="flex items-center space-x-3 cursor-pointer py-2">
+               <label className="flex items-center space-x-3 cursor-pointer py-2 px-2 rounded-md transition-all duration-200 hover:pl-3 hover:bg-slate-50 dark:hover:bg-slate-800 group">
                  <input 
                    type="radio" 
                    name="stockStatus" 
@@ -223,16 +228,23 @@ export default function Products() {
             placeholder={String(minPriceLimit)}
             value={localPriceRange.min}
             onChange={(e) => {
-              const val = e.target.value;
-              setLocalPriceRange(prev => ({ ...prev, min: val }));
+              setLocalPriceRange(prev => ({ ...prev, min: e.target.value }));
             }}
             onBlur={(e) => {
-              const val = e.target.value;
-              setPriceRange(prev => ({ ...prev, min: val }));
+              const val = Number(e.target.value);
+              const maxVal = localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max);
+              const clamped = Math.max(minPriceLimit, Math.min(val, maxVal - 10));
+              setLocalPriceRange(prev => ({ ...prev, min: String(clamped) }));
+              setPriceRange(prev => ({ ...prev, min: String(clamped) }));
             }}
             onKeyDown={(e) => {
-              const val = e.currentTarget.value;
-              if (e.key === 'Enter') setPriceRange(prev => ({ ...prev, min: val }));
+              if (e.key === 'Enter') {
+                const val = Number(e.currentTarget.value);
+                const maxVal = localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max);
+                const clamped = Math.max(minPriceLimit, Math.min(val, maxVal - 10));
+                setLocalPriceRange(prev => ({ ...prev, min: String(clamped) }));
+                setPriceRange(prev => ({ ...prev, min: String(clamped) }));
+              }
             }}
             className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-indigo-500 outline-none"
           />
@@ -242,16 +254,23 @@ export default function Products() {
             placeholder={String(maxPriceLimit)}
             value={localPriceRange.max}
             onChange={(e) => {
-              const val = e.target.value;
-              setLocalPriceRange(prev => ({ ...prev, max: val }));
+              setLocalPriceRange(prev => ({ ...prev, max: e.target.value }));
             }}
             onBlur={(e) => {
-              const val = e.target.value;
-              setPriceRange(prev => ({ ...prev, max: val }));
+              const val = Number(e.target.value);
+              const minVal = localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min);
+              const clamped = Math.min(maxPriceLimit, Math.max(val, minVal + 10));
+              setLocalPriceRange(prev => ({ ...prev, max: String(clamped) }));
+              setPriceRange(prev => ({ ...prev, max: String(clamped) }));
             }}
             onKeyDown={(e) => {
-              const val = e.currentTarget.value;
-              if (e.key === 'Enter') setPriceRange(prev => ({ ...prev, max: val }));
+              if (e.key === 'Enter') {
+                const val = Number(e.currentTarget.value);
+                const minVal = localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min);
+                const clamped = Math.min(maxPriceLimit, Math.max(val, minVal + 10));
+                setLocalPriceRange(prev => ({ ...prev, max: String(clamped) }));
+                setPriceRange(prev => ({ ...prev, max: String(clamped) }));
+              }
             }}
             className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-indigo-500 outline-none"
           />
@@ -346,21 +365,28 @@ export default function Products() {
                step={10}
                value={localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min)}
                onChange={(e) => {
-                 const currentMaxVal = localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max);
-                 const val = Math.min(Number(e.target.value), currentMaxVal - 10);
+                 const minPriceNum = minPriceLimit;
+                 const maxPriceNum = maxPriceLimit;
+                 const currentMaxVal = localPriceRange.max === '' ? maxPriceNum : Number(localPriceRange.max);
+                 const val = Math.max(minPriceNum, Math.min(Number(e.target.value), currentMaxVal - 10));
                  setLocalPriceRange(prev => ({ ...prev, min: String(val) }));
                }}
                onMouseUp={(e) => {
-                 const currentMaxVal = localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max);
-                 const val = Math.min(Number(e.currentTarget.value), currentMaxVal - 10);
+                 const minPriceNum = minPriceLimit;
+                 const maxPriceNum = maxPriceLimit;
+                 const currentMaxVal = localPriceRange.max === '' ? maxPriceNum : Number(localPriceRange.max);
+                 const val = Math.max(minPriceNum, Math.min(Number(e.currentTarget.value), currentMaxVal - 10));
                  setPriceRange(prev => ({ ...prev, min: String(val) }));
                }}
                onTouchEnd={(e) => {
-                 const currentMaxVal = localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max);
-                 const val = Math.min(Number(e.currentTarget.value), currentMaxVal - 10);
+                 const minPriceNum = minPriceLimit;
+                 const maxPriceNum = maxPriceLimit;
+                 const currentMaxVal = localPriceRange.max === '' ? maxPriceNum : Number(localPriceRange.max);
+                 const val = Math.max(minPriceNum, Math.min(Number(e.currentTarget.value), currentMaxVal - 10));
                  setPriceRange(prev => ({ ...prev, min: String(val) }));
                }}
                className="dual-range-inputs left-0 h-1"
+               style={{ zIndex: (((localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min)) - minPriceLimit) / (maxPriceLimit - minPriceLimit || 1)) > 0.5 ? 40 : 20 }}
              />
 
              <input 
@@ -370,21 +396,28 @@ export default function Products() {
                step={10}
                value={localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max)}
                onChange={(e) => {
-                 const currentMinVal = localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min);
-                 const val = Math.max(Number(e.target.value), currentMinVal + 10);
+                 const minPriceNum = minPriceLimit;
+                 const maxPriceNum = maxPriceLimit;
+                 const currentMinVal = localPriceRange.min === '' ? minPriceNum : Number(localPriceRange.min);
+                 const val = Math.min(maxPriceNum, Math.max(Number(e.target.value), currentMinVal + 10));
                  setLocalPriceRange(prev => ({ ...prev, max: String(val) }));
                }}
                onMouseUp={(e) => {
-                 const currentMinVal = localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min);
-                 const val = Math.max(Number(e.currentTarget.value), currentMinVal + 10);
+                 const minPriceNum = minPriceLimit;
+                 const maxPriceNum = maxPriceLimit;
+                 const currentMinVal = localPriceRange.min === '' ? minPriceNum : Number(localPriceRange.min);
+                 const val = Math.min(maxPriceNum, Math.max(Number(e.currentTarget.value), currentMinVal + 10));
                  setPriceRange(prev => ({ ...prev, max: String(val) }));
                }}
                onTouchEnd={(e) => {
-                 const currentMinVal = localPriceRange.min === '' ? minPriceLimit : Number(localPriceRange.min);
-                 const val = Math.max(Number(e.currentTarget.value), currentMinVal + 10);
+                 const minPriceNum = minPriceLimit;
+                 const maxPriceNum = maxPriceLimit;
+                 const currentMinVal = localPriceRange.min === '' ? minPriceNum : Number(localPriceRange.min);
+                 const val = Math.min(maxPriceNum, Math.max(Number(e.currentTarget.value), currentMinVal + 10));
                  setPriceRange(prev => ({ ...prev, max: String(val) }));
                }}
                className="dual-range-inputs left-0 h-1"
+               style={{ zIndex: (((localPriceRange.max === '' ? maxPriceLimit : Number(localPriceRange.max)) - minPriceLimit) / (maxPriceLimit - minPriceLimit || 1)) < 0.5 ? 40 : 20 }}
              />
            </div>
          </div>
@@ -396,7 +429,7 @@ export default function Products() {
           <ul className="space-y-2 text-sm max-h-48 overflow-y-auto pr-2">
             {allBrands.map(brand => (
               <li key={brand}>
-                 <label className="flex items-center space-x-3 cursor-pointer py-2">
+                 <label className="flex items-center space-x-3 cursor-pointer py-2 px-2 rounded-md transition-all duration-200 hover:pl-3 hover:bg-slate-50 dark:hover:bg-slate-800 group">
                    <input 
                      type="checkbox" 
                      checked={selectedBrands.includes(brand)}
@@ -440,9 +473,12 @@ export default function Products() {
            </h1>
            <p className="text-sm text-slate-500 dark:text-slate-400">Showing {paginatedProducts.length} of {totalProducts} results</p>
            {isBuilderMode && (
-             <div className="mt-3 flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 text-xs font-bold px-3 py-1.5 rounded-full w-fit border border-indigo-100 dark:border-indigo-800/50">
-               <Scale className="w-4 h-4" />
-               <span>Strict Compatibility Engine Active</span>
+             <div className="flex items-center flex-wrap gap-2">
+               <div className="mt-3 flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 text-xs font-bold px-3 py-1.5 rounded-full w-fit border border-indigo-100 dark:border-indigo-800/50">
+                 <Scale className="w-4 h-4" />
+                 <span>Strict Compatibility Engine Active</span>
+               </div>
+               <ExpertTip categoryId={activeCategory} />
              </div>
            )}
          </div>

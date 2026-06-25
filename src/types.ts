@@ -1,8 +1,27 @@
+export interface AuditLog {
+  id: string;
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'BULK_UPLOAD';
+  entityType: 'PRODUCT';
+  entityId?: string;
+  details: string;
+  adminId: string;
+  adminName?: string;
+  createdAt: string;
+}
+
 export interface UserNotification {
   id: string;
   message: string;
   link?: string;
   read: boolean;
+  createdAt: string;
+}
+
+export interface PriceAlert {
+  id: string;
+  userId: string;
+  productId: string;
+  targetPrice?: number;
   createdAt: string;
 }
 
@@ -115,9 +134,11 @@ export interface Product {
   inventoryCount?: number;
   imageUrl: string;
   additionalImages?: string[];
+  thumbnails?: Record<string, string>; // e.g. { '150': url, '600': url }
   description: string;
   // Specific specs for PC Builder
   specs: Record<string, string>;
+  specSegments?: { segment: string; items: { key: string; value: string }[] }[];
   socket?: string; // For CPU/Motherboard
   wattage?: number; // For PSU or general consumption
   reviews?: Review[];

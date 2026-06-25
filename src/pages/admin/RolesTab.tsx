@@ -96,23 +96,23 @@ export default function RolesTab() {
       </div>
 
       {editingRole && (
-        <form onSubmit={handleSave} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl mb-8">
+        <form onSubmit={handleSave} className="bg-white border border-slate-200 p-6 rounded-2xl mb-8">
           <h3 className="font-bold text-lg mb-4">{editingRole.id ? 'Edit Role' : 'New Role Definition'}</h3>
           
           <div className="mb-6">
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Role Name</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">Role Name</label>
             <input 
               type="text" 
               required
               value={editingRole.name || ''} 
               onChange={e => setEditingRole({ ...editingRole, name: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-600"
               placeholder="e.g. Support Agent, Inventory Manager"
             />
           </div>
 
           <div className="mb-6">
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-4">Module Access Permissions</label>
+            <label className="block text-sm font-bold text-slate-700 mb-4">Module Access Permissions</label>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {PERMISSION_KEYS.map(key => (
                 <label key={key} className={`flex items-center space-x-3 p-3 rounded-xl border cursor-pointer transition-colors ${editingRole.permissions?.[key as keyof typeof editingRole.permissions] ? 'bg-indigo-50 border-indigo-200 text-indigo-800' : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-indigo-200'}`}>
@@ -141,9 +141,9 @@ export default function RolesTab() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {roles.map(role => (
-          <div key={role.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6">
+          <div key={role.id} className="bg-white border border-slate-200 rounded-2xl p-6">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
                  <Shield className="w-5 h-5 text-indigo-500" /> {role.name}
               </h3>
               <div className="flex gap-2">

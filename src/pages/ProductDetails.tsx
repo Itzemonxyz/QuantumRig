@@ -228,6 +228,23 @@ function ProductDetailsInner({ product }: { product: any }) {
     }
   };
 
+  const [priceAlertSuccess, setPriceAlertSuccess] = useState(false);
+
+  const handlePriceDropAlert = async () => {
+    if (!user) {
+      navigate('/login', { state: { from: location } });
+      return;
+    }
+    try {
+      await api.post(`/products/${product.id}/price-alert`, { targetPrice: product.price - 1 }, token);
+      setPriceAlertSuccess(true);
+      setTimeout(() => setPriceAlertSuccess(false), 5000);
+    } catch (e) {
+      console.error(e);
+      alert("Error setting price alert");
+    }
+  };
+
   const handleShare = () => {
     const url = new URL(window.location.origin + window.location.pathname);
     navigator.clipboard.writeText(url.toString());
@@ -662,13 +679,23 @@ function ProductDetailsInner({ product }: { product: any }) {
               </>
             )}
 
-            <div className="w-full mt-2 flex justify-center sm:justify-start">
+            <div className="w-full mt-2 flex flex-col sm:flex-row justify-center sm:justify-start items-center gap-4">
               <Link 
                 to={`/products?category=${product.categoryId}`} 
                 className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 font-medium transition-colors text-sm hover:underline underline-offset-4"
               >
                 View full category
               </Link>
+              {!isOutOfStock && (
+                <button
+                  onClick={handlePriceDropAlert}
+                  disabled={priceAlertSuccess}
+                  className="text-indigo-600 hover:text-indigo-700 font-medium transition-colors text-sm flex items-center gap-1.5"
+                >
+                  {priceAlertSuccess ? <Check className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                  {priceAlertSuccess ? 'Price Alert Set!' : 'Notify me when price drops'}
+                </button>
+              )}
             </div>
           </div>
 

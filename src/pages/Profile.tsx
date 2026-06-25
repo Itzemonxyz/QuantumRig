@@ -1022,10 +1022,10 @@ export default function Profile() {
         <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-1">
           <button 
              onClick={() => { setActiveTab('orders'); setShowMobileMenu(false); }}
-             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium ${
                activeTab === 'orders' 
-                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-900 dark:text-white'
+                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100 pl-6' 
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white hover:pl-6'
              }`}
           >
              <Package className={`w-5 h-5 ${activeTab === 'orders' ? 'text-indigo-600' : 'text-slate-400'}`} />
@@ -1034,10 +1034,10 @@ export default function Profile() {
           
           <button 
              onClick={() => { setActiveTab('saved'); setShowMobileMenu(false); }}
-             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium ${
                activeTab === 'saved' 
-                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-900 dark:text-white'
+                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100 pl-6' 
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white hover:pl-6'
              }`}
           >
              <Heart className={`w-5 h-5 ${activeTab === 'saved' ? 'text-indigo-600' : 'text-slate-400'}`} />
@@ -1046,10 +1046,10 @@ export default function Profile() {
           
           <button 
              onClick={() => { setActiveTab('settings'); setShowMobileMenu(false); }}
-             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium ${
                activeTab === 'settings' 
-                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-900 dark:text-white'
+                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100 pl-6' 
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white hover:pl-6'
              }`}
           >
              <Settings className={`w-5 h-5 ${activeTab === 'settings' ? 'text-indigo-600' : 'text-slate-400'}`} />
@@ -1058,10 +1058,10 @@ export default function Profile() {
           
           <button 
              onClick={() => { setActiveTab('analytics'); setShowMobileMenu(false); }}
-             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium mb-1 ${
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium mb-1 ${
                activeTab === 'analytics' 
-                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-900 dark:text-white'
+                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100 pl-6' 
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white hover:pl-6'
              }`}
           >
              <TrendingUp className={`w-5 h-5 ${activeTab === 'analytics' ? 'text-indigo-600' : 'text-slate-400'}`} />
@@ -1070,10 +1070,10 @@ export default function Profile() {
           
           <button 
              onClick={() => { setActiveTab('support'); setShowMobileMenu(false); }}
-             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium ${
                activeTab === 'support' 
-                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' 
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-900 dark:text-white'
+                ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100 pl-6' 
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white hover:pl-6'
              }`}
           >
              <LifeBuoy className={`w-5 h-5 ${activeTab === 'support' ? 'text-indigo-600' : 'text-slate-400'}`} />

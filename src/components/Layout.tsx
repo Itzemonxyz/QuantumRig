@@ -212,11 +212,11 @@ export default function Layout() {
         (p.brand || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (p.code || '').toLowerCase().includes(searchQuery.toLowerCase())
       ).slice(0, 5)
-    : [];
+    : products.slice(0, 3); // Default suggestions
 
   const categoryResults = searchQuery.trim()
     ? categories.filter(c => (c.name || '').toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 3)
-    : [];
+    : categories.slice(0, 3); // Default categories
 
   const selectableOptions: { type: 'recent' | 'category' | 'product' | 'viewAll'; id?: string; value: string; data?: any }[] = [];
   
@@ -235,6 +235,15 @@ export default function Layout() {
 
   const getOptionIndex = (type: string, idOrValue: string) => {
     return selectableOptions.findIndex(o => o.type === type && (o.id === idOrValue || o.value === idOrValue));
+  };
+
+  const highlightMatch = (text: string, query: string) => {
+    if (!query.trim()) return text;
+    const regex = new RegExp(`(${query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    return parts.map((part, i) => 
+      regex.test(part) ? <span key={i} className="text-indigo-600 bg-indigo-50 dark:bg-indigo-900/40 dark:text-indigo-400 font-bold px-0.5 rounded">{part}</span> : part
+    );
   };
 
   const executeSearchSelection = () => {
@@ -301,7 +310,9 @@ export default function Layout() {
       )}
       {categoryResults.length > 0 && (
         <div className="p-3 border-b border-slate-100 dark:border-slate-800/60">
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">Categories</h4>
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">
+            {searchQuery.trim() === '' ? 'Suggested Categories' : 'Categories'}
+          </h4>
           {categoryResults.map(cat => {
             const isActive = getOptionIndex('category', cat.name) === searchSelectedIndex;
             return (
@@ -315,7 +326,7 @@ export default function Layout() {
                 className={`px-2 py-2 text-sm font-medium rounded-lg cursor-pointer flex items-center transition-colors ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-950 hover:text-indigo-600'}`}
               >
                 <Search className={`w-4 h-4 mr-2 ${isActive ? 'text-indigo-500' : 'text-slate-400'}`} />
-                {cat.name}
+                {highlightMatch(cat.name, searchQuery)}
               </div>
             );
           })}
@@ -324,7 +335,9 @@ export default function Layout() {
 
       {searchResults.length > 0 ? (
         <div className="p-2">
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-3 pt-2">Products</h4>
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-3 pt-2">
+            {searchQuery.trim() === '' ? 'Suggested Products' : 'Products'}
+          </h4>
           {searchResults.map(product => {
             const isActive = getOptionIndex('product', product.id) === searchSelectedIndex;
             return (
@@ -339,7 +352,9 @@ export default function Layout() {
               >
                 <img src={product.imageUrl} alt={product.title} className={`w-12 h-12 object-contain bg-white dark:bg-slate-900 rounded-lg border ${isActive ? 'border-indigo-200 dark:border-indigo-700' : 'border-slate-100 dark:border-slate-800/60 group-hover:border-indigo-100'}`} />
                 <div className="flex-1 min-w-0">
-                  <h4 className={`text-sm font-bold truncate transition-colors ${isActive ? 'text-indigo-700 dark:text-indigo-400' : 'text-slate-900 dark:text-white group-hover:text-indigo-600'}`}>{product.title}</h4>
+                  <h4 className={`text-sm font-bold truncate transition-colors ${isActive ? 'text-indigo-700 dark:text-indigo-400' : 'text-slate-900 dark:text-white group-hover:text-indigo-600'}`}>
+                    {highlightMatch(product.title, searchQuery)}
+                  </h4>
                   <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{product.categoryId ? categories.find(c => c.id === product.categoryId)?.name : ''}</p>
                 </div>
                 <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center">
@@ -412,7 +427,7 @@ export default function Layout() {
               </div>
               
               <AnimatePresence>
-                {isSearchOpen && (searchQuery.trim() !== '' || recentSearches.length > 0) && (
+                {isSearchOpen && (searchQuery.trim() !== '' || recentSearches.length > 0 || categoryResults.length > 0 || searchResults.length > 0) && (
                   <motion.div 
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -670,7 +685,7 @@ export default function Layout() {
             />
             
             <AnimatePresence>
-              {isSearchOpen && (searchQuery.trim() !== '' || recentSearches.length > 0) && (
+              {isSearchOpen && (searchQuery.trim() !== '' || recentSearches.length > 0 || categoryResults.length > 0 || searchResults.length > 0) && (
                 <motion.div 
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
